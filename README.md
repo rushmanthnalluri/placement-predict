@@ -3,35 +3,73 @@ title: Placement Predict
 sdk: docker
 ---
 
+<div align="center">
+
 # Placement Predict System
 
+**An end-to-end ML pipeline that predicts engineering-student placements —
+from raw CSV to a deployed prediction service, in one nine-stage web app.**
+
 [![CI](https://github.com/rushmanthnalluri/placement-predict/actions/workflows/ci.yml/badge.svg)](https://github.com/rushmanthnalluri/placement-predict/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![Python](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org)
 
-An end-to-end machine-learning pipeline that predicts whether an engineering
-student will be placed — from raw data upload to a deployed prediction form —
-built as a nine-stage web application over a 50,000-record dataset.
-
-**Live app (interactive):** https://placement-predict-p2z1.onrender.com — uploads, training, and prediction all work here.
-**Live demo (static showcase):** https://rushmanthnalluri.github.io/placement-predict/
+[🚀 **Live app**](https://placement-predict-p2z1.onrender.com) ·
+[📊 **Static showcase**](https://rushmanthnalluri.github.io/placement-predict/) ·
+[📋 **Model card**](MODEL_CARD.md) ·
+[🔍 **Forensic audit**](docs/audit/FINAL_AUDIT.md)
 
 ![Demo: explore the data, then get a placement call](screenshots/demo.gif)
 
+</div>
+
+## Quick start
+
+```bash
+pip install -r requirements.txt
+python flask_project/app.py        # → http://127.0.0.1:5000
+```
+
+or one container, any host:
+
+```bash
+docker build -t placement-predict . && docker run -p 7860:7860 placement-predict
+```
+
 ## What it does
 
-Every stage of the ML lifecycle is a live page in the app, computed from the
-real dataset on every load — nothing is hardcoded:
+Every stage of the ML lifecycle is a live page, computed from the real
+dataset on every load — nothing is hardcoded:
 
 | # | Stage | What it shows |
 |---|-------|---------------|
-| 01 | Upload Dataset | Drag-and-drop CSV/Excel intake with instant profile (rows, columns, missing cells, preview) |
-| 02 | Analyse Features | Full 31-field registry: types, roles, coverage, sample values |
-| 03 | Descriptive Statistics | Centre/spread/range for 20 numeric fields, then split by outcome |
-| 04 | Missing Value Analysis | 19,976 missing cells across 5 columns, repaired by mean imputation |
-| 05 | Data Visualization | Distributions, z-scored scores, 21×21 correlation heatmap, boxplots by outcome, category rates |
-| 06 | Preprocessing | Stratified 80/20 split (seed 42) with frozen train-only transforms |
-| 07 | Model Training | Logistic regression, random forest, gradient boosting — trained and timed |
-| 08 | Model Evaluation | Sealed-test metrics, ROC curves, confusion matrix, feature importance |
-| 09 | Predict Placement | Validated profile form returning the champion's call + probability |
+| 01 | Upload Dataset | Drag-and-drop CSV/Excel intake with instant profiling |
+| 02 | Analyse Features | Full 31-field registry: types, roles, coverage, samples |
+| 03 | Descriptive Statistics | Centre/spread/range for 20 numeric fields, split by outcome |
+| 04 | Missing Value Analysis | 19,976 missing cells across 5 columns, mean-imputed |
+| 05 | Data Visualization | Distributions, z-scores, 21×21 correlation heatmap, boxplots |
+| 06 | Preprocessing | Stratified 80/20 split (seed 42), frozen train-only transforms |
+| 07 | Model Training | Logistic regression, random forest, gradient boosting |
+| 08 | Model Evaluation | Sealed-test metrics, ROC curves, confusion matrix, importances |
+| 09 | Predict Placement | Validated profile form → champion's call + probability |
+
+## How it fits together
+
+```
+CSV upload ──► EDA bundle (cached) ──► split 80/20 (sealed test)
+                                              │
+              build time: train 3 models ──► champion by 3-fold CV
+                                              │
+                       validated 0.3 MB artifact (sha256 + recipe version)
+                                              │
+              ┌───────────────────────────────┼────────────────────┐
+              ▼                               ▼                    ▼
+        Flask web app                   JSON API              Static showcase
+        (9 live stages)           /api/predict · /api/health   (GitHub Pages)
+```
+
+Runtime never trains on request for the bundled dataset — the artifact loads
+in ~50 ms; uploads retrain once (~9 s) and are cached.
 
 ## Results (sealed test set, assessed once)
 
@@ -42,114 +80,104 @@ real dataset on every load — nothing is hardcoded:
 | **Gradient Boosting (champion)** | **0.909** | **0.916** | **0.948** | **0.932** | **0.973** |
 
 Top drivers: CGPA (0.65), Mock Interview Score (0.63), Soft Skills Rating (0.60).
-
-The champion is chosen by 3-fold cross-validated ROC-AUC on a 12,000-row
-stratified subsample of the training split; the sealed test set is touched
-exactly once — to produce this table.
+Champion selection: 3-fold CV ROC-AUC on a 12k stratified training subsample.
+Every number reproduced by the independent [forensic audit](docs/audit/FINAL_AUDIT.md).
 
 ![Model evaluation](screenshots/evaluate.png)
 
+## JSON API
+
+```bash
+curl https://placement-predict-p2z1.onrender.com/api/health
+# → {"status":"ok","model":"Gradient Boosting","roc_auc":0.9733, ...}
+
+curl -X POST https://placement-predict-p2z1.onrender.com/api/predict \
+  -H "Content-Type: application/json" \
+  -d '{"CGPA": 8.6, "MockInterviewScore": 88, "CodingTestScore": 85}'
+# → {"placed": true, "probability": 99.9, "threshold": 0.5,
+#    "model": "Gradient Boosting", "roc_auc": 0.9733, ...}
+```
+
+All 12 fields optional (absent = dataset median). Errors are JSON: `400` with
+per-field details, `415` for non-JSON, `503` when no model can train.
+
 ## Engineering practices worth pointing at
 
-- **Leakage found in the wild**: the dataset ships a corrupt sentinel row
-  (StudentID 0, holding per-column missing counts as values) — detected,
-  dropped, and disclosed in the UI.
-- **Honest evaluation**: the test set is sealed before any transform is fit
-  and touched exactly once; preprocessing statistics come from training rows
-  only.
-- **Graceful failure**: off-schema uploads, single-class datasets, and tiny
-  files each get a clear explanation instead of a crash.
-- **Performance**: a 6.5 MB dataset is parsed once, cached, and every chart is
-  computed from cached aggregates; the model is **pre-trained at build time**
-  and shipped as a validated 0.3 MB artifact, so model pages load instantly —
-  uploads retrain in ~9 s once, cached after.
-- **Accessibility & responsive**: keyboard-navigable throughout, AA contrast,
-  reduced-motion support, works from phone to desktop.
+- **Leakage found in the wild** — the dataset ships a corrupt sentinel row
+  (StudentID 0, holding per-column missing counts as values): detected,
+  dropped, disclosed in the UI.
+- **Honest evaluation** — the test set is sealed before any transform is fit
+  and touched exactly once; all preprocessing statistics are train-only.
+- **Graceful failure** — off-schema uploads, single-class datasets, and tiny
+  files each get a clear explanation, never a crash or a traceback.
+- **Secure by construction** — ephemeral session keys, path containment,
+  schema-validated uploads, security headers, non-root container, strict
+  pip-audit in CI.
+- **Accessible & responsive** — keyboard-navigable, AA contrast,
+  reduced-motion support, phone-to-desktop layouts.
 
 ![Data visualization](screenshots/visualize.png)
 ![Prediction form](screenshots/predict.png)
 
-## Tech stack
+## Testing & CI
 
-Python · Flask · pandas · scikit-learn · Chart.js — no JavaScript framework,
-no build step. A pytest suite in `tests/` covers every route × dataset state;
-CI (pytest + Docker build + pip-audit) runs on every push. Full methodology
-and limits: [MODEL_CARD.md](MODEL_CARD.md) · forensic audit trail:
-[docs/audit/](docs/audit/FINAL_AUDIT.md).
-
-## JSON API
-
-The same champion model behind the form is available as a service:
+41 pytest tests cover every route × dataset state, the API contract, model
+artifacts, and degenerate-input guards:
 
 ```bash
-# liveness + which model is warm
-curl https://placement-predict-p2z1.onrender.com/api/health
-# → {"status":"ok","dataset":"placement_predict_50k.csv","trained":true,
-#    "model":"Gradient Boosting","roc_auc":0.9733, ...}
-
-# prediction — all 12 fields optional (absent = dataset median)
-curl -X POST https://placement-predict-p2z1.onrender.com/api/predict \
-  -H "Content-Type: application/json" \
-  -d '{"CGPA": 8.6, "MockInterviewScore": 88, "CodingTestScore": 85}'
-# → {"placed": true, "probability": 99.5, "threshold": 0.5,
-#    "model": "Gradient Boosting", "roc_auc": 0.9733, ...}
+pytest -q                 # full suite (~30s)
+pytest -m "not slow" -q   # fast subset (~3s)
 ```
 
-Errors are JSON too: `400` with per-field `details` for out-of-range or
-non-numeric values, `415` for non-JSON bodies, `503` if the active dataset
-can't be trained.
+Every push runs **pytest + Docker build + pip-audit** on GitHub Actions.
 
-## Run it locally
+## Deploy it
 
-```bash
-pip install -r requirements.txt
-python flask_project/app.py        # http://127.0.0.1:5000
-```
+**This app lives on Render:** https://placement-predict-p2z1.onrender.com
+(free tier sleeps when idle — first hit after a lull takes ~30–60 s to wake).
 
-## Deploy it (one Dockerfile, any host)
-
-```bash
-docker build -t placement-predict .
-docker run -p 7860:7860 placement-predict
-```
-
-**This app is deployed on Render:** https://placement-predict-p2z1.onrender.com
-
-- **Render** (what we use): New → Blueprint → this repo (`render.yaml` is
-  included). Free tier sleeps after ~15 idle minutes; first hit after that
-  takes ~30–60s to wake.
-- **Hugging Face Spaces**: works via the Docker SDK, but note HF now requires
-  a PRO subscription to run Docker Spaces on their free CPU hardware.
-- **Railway / Fly.io / any container host**: the Dockerfile is portable —
-  build it, expose `$PORT` (defaults to 7860), done.
-- **GitHub Pages** (static showcase): `python flask_project/export_pages.py`
-  re-renders `docs/` from the live app; push to update the demo.
+- **Render**: New → Blueprint → this repo (`render.yaml` included).
+- **Railway / Fly.io / any container host**: portable Dockerfile; expose `$PORT`.
+- **Hugging Face Spaces**: Docker SDK works, but HF now requires PRO for Docker runtimes.
+- **GitHub Pages**: `python flask_project/export_pages.py` re-renders `docs/`.
 
 ## Project structure
 
 ```
 flask_project/
-├── app.py            # routes, pipeline registry, error handlers
-├── eda.py            # cached dataset → EDA artifact computation
-├── model.py          # split, train, evaluate, infer (cached per dataset)
-├── export_pages.py   # renders the static GitHub Pages snapshot
-├── data/             # bundled 50k dataset (CSV twin of the Excel original)
-├── static/           # design system CSS, Chart.js builders
-└── templates/        # Jinja templates, one per stage
-docs/                 # static showcase served by GitHub Pages
-eda.ipynb             # original exploratory notebook
+├── app.py              # routes, JSON API, error handlers, security
+├── eda.py              # cached dataset → EDA artifact computation
+├── model.py            # split, CV selection, train, evaluate, infer, artifacts
+├── train_artifact.py   # build-time pretraining for zero-cost cold starts
+├── export_pages.py     # renders the static GitHub Pages snapshot
+├── data/               # bundled 50k dataset
+├── static/             # design system CSS, Chart.js builders
+└── templates/          # Jinja templates, one per stage
+tests/                  # 41-test pytest suite
+docs/                   # Pages site + audit trail (docs/audit/)
+MODEL_CARD.md           # intended use, methodology, limitations
+Dockerfile · render.yaml · requirements.txt
+eda.ipynb               # original exploratory notebook
 ```
 
 ## Data
 
 Synthetic 50,000-record dataset modelled on Indian engineering-college
-placement data: 8 semester SGPAs, CGPA, attendance, experience counts
-(internships, projects, workshops, certifications, publications), four skill
-scores, and the placement outcome. One corrupt sentinel row (StudentID 0) is
-dropped; the 1,750 records the dataset flags as `IsAnomaly` are *retained* —
-their placement rate matches the population (65.7%) and they act as
-label-consistent noise — a deliberate, disclosed choice rather than silent
-filtering.
+placement data: 8 semester SGPAs, CGPA, attendance, experience counts,
+four skill scores, and the placement outcome. The corrupt sentinel row
+(StudentID 0) is dropped; the 1,750 `IsAnomaly` records are *retained* —
+their placement rate matches the population (65.7%), so they act as
+label-consistent noise. A deliberate, disclosed choice.
+
+## Roadmap
+
+- Probability calibration (isotonic/Platt) + cost-based threshold control
+- Per-prediction explanations (SHAP-style "why this call")
+- Fairness slices: performance by Gender/CollegeTier with group metrics
+
+## License
+
+MIT — see [LICENSE](LICENSE).
 
 ---
 
