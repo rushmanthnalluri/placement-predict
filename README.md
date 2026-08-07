@@ -80,19 +80,15 @@ docker build -t placement-predict .
 docker run -p 7860:7860 placement-predict
 ```
 
-- **Hugging Face Spaces** (recommended — free, no sleep on a public Space):
-  1. [huggingface.co/new-space](https://huggingface.co/new-space) → name it
-     `placement-predict` → SDK **Docker** → Public → Create.
-  2. From this repo, push straight to the Space:
-     ```bash
-     git remote add hf https://huggingface.co/spaces/<your-username>/placement-predict
-     git push hf main
-     ```
-     (use a [HF access token](https://huggingface.co/settings/tokens) as the password)
-  3. The Space builds the Dockerfile and goes live at
-     `https://<your-username>-placement-predict.hf.space` — uploads, training,
-     and prediction all work there.
-- **Render**: New → Blueprint → this repo (`render.yaml` is included).
+**This app is deployed on Render:** https://placement-predict-p2z1.onrender.com
+
+- **Render** (what we use): New → Blueprint → this repo (`render.yaml` is
+  included). Free tier sleeps after ~15 idle minutes; first hit after that
+  takes ~30–60s to wake.
+- **Hugging Face Spaces**: works via the Docker SDK, but note HF now requires
+  a PRO subscription to run Docker Spaces on their free CPU hardware.
+- **Railway / Fly.io / any container host**: the Dockerfile is portable —
+  build it, expose `$PORT` (defaults to 7860), done.
 - **GitHub Pages** (static showcase): `python flask_project/export_pages.py`
   re-renders `docs/` from the live app; push to update the demo.
 
