@@ -62,7 +62,7 @@
             <td class="dim">{{ 'z-scored' if m.needs_scaling else 'raw imputed' }}</td>
             <td class="mono num dim">
               {%- if m.name == 'Logistic Regression' -%}max_iter 2000
-              {%- elif m.name == 'Random Forest' -%}200 trees · all cores
+              {%- elif m.name == 'Random Forest' -%}150 trees · all cores
               {%- else -%}default depth · lr 0.1{%- endif -%}
             </td>
             <td class="num">{{ m.train_time }}s</td>

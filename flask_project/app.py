@@ -1,5 +1,6 @@
 import os
 import secrets
+import threading
 from uuid import uuid4
 
 import pandas as pd
@@ -55,6 +56,21 @@ def set_security_headers(response):
     response.headers["X-Frame-Options"] = "DENY"
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
     return response
+
+
+def _warm_model_cache():
+    """Train the bundled dataset's models in the background at startup so
+    the first user request never pays the full training cost. The
+    single-flight lock in model.get_model_bundle makes this safe to race
+    with an early request."""
+    try:
+        model.get_model_bundle(DEFAULT_DATASET)
+        app.logger.info("model warm-up complete")
+    except Exception:  # noqa: BLE001 - warm-up failure must never kill the app
+        app.logger.exception("model warm-up failed (will retry on first request)")
+
+
+threading.Thread(target=_warm_model_cache, daemon=True).start()
 
 # ---------------------------------------------------------------------------
 # The ML pipeline, left to right in build order. This single list drives

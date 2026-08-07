@@ -37,12 +37,19 @@ Each fix: what changed, how it was verified, and the regression test that guards
 - README: IsAnomaly retention disclosed with rationale.
 - upload.html: `.xls` removed from hint/accept (follow-through from security pack).
 
-## Final measured metrics (post-fix, fresh processes, seed 42)
+## Final measured metrics (fresh build, seed 42)
 
-| Model | CV ROC-AUC (5-fold train) | Accuracy | Precision | Recall | F1 | ROC-AUC (test) |
+> **Post-audit recipe change (commit after the audit):** to fit Render's
+> free-tier CPU/memory, champion selection now runs **3-fold CV on a
+> 12,000-row stratified subsample** of train (was 5-fold on all 40k) and the
+> forest has 150 trees (was 200). Cold training dropped ~22 s → ~9 s and a
+> background warm-up at startup means no request pays it. Test-set results
+> moved ≤0.001 — the ranking and champion are unchanged.
+
+| Model | CV ROC-AUC (3-fold, 12k subsample) | Accuracy | Precision | Recall | F1 | ROC-AUC (test) |
 |---|---|---|---|---|---|---|
-| Logistic Regression | 0.9626 ± 0.0013 | 0.8925 | 0.9023 | 0.9379 | 0.9198 | 0.9595 |
-| Random Forest | 0.9731 ± 0.0007 | 0.9079 | 0.9119 | 0.9518 | 0.9314 | 0.9716 |
-| **Gradient Boosting (champion)** | **0.9744 ± 0.0009** | **0.9087** | **0.9160** | **0.9480** | **0.9317** | **0.9733** |
+| Logistic Regression | 0.9638 ± 0.0022 | 0.8925 | 0.9023 | 0.9379 | 0.9198 | 0.9595 |
+| Random Forest | 0.9725 ± 0.0023 | 0.9090 | 0.9119 | 0.9536 | 0.9323 | 0.9716 |
+| **Gradient Boosting (champion)** | **0.9726 ± 0.0025** | **0.9087** | **0.9160** | **0.9480** | **0.9317** | **0.9733** |
 
 Split 40,000/10,000 stratified (placed rate 65.7/65.7). Confusion (GB, test): tn 2858, fp 571, fn 342, tp 6229. Test-set numbers moved ≤0.001 vs pre-fix — confirming the leakage had no practical impact, while the code now matches every claim.

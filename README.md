@@ -37,14 +37,15 @@ real dataset on every load — nothing is hardcoded:
 
 | Model | Accuracy | Precision | Recall | F1 | ROC-AUC |
 |-------|----------|-----------|--------|----|---------|
-| Logistic Regression | 0.892 | 0.902 | 0.938 | 0.920 | 0.960 |
-| Random Forest | 0.908 | 0.912 | 0.952 | 0.931 | 0.972 |
+| Logistic Regression | 0.893 | 0.902 | 0.938 | 0.920 | 0.960 |
+| Random Forest | 0.909 | 0.912 | 0.954 | 0.932 | 0.972 |
 | **Gradient Boosting (champion)** | **0.909** | **0.916** | **0.948** | **0.932** | **0.973** |
 
 Top drivers: CGPA (0.65), Mock Interview Score (0.63), Soft Skills Rating (0.60).
 
-The champion is chosen by 5-fold cross-validated ROC-AUC on the training
-split; the sealed test set is touched exactly once — to produce this table.
+The champion is chosen by 3-fold cross-validated ROC-AUC on a 12,000-row
+stratified subsample of the training split; the sealed test set is touched
+exactly once — to produce this table.
 
 ![Model evaluation](screenshots/evaluate.png)
 
@@ -59,8 +60,9 @@ split; the sealed test set is touched exactly once — to produce this table.
 - **Graceful failure**: off-schema uploads, single-class datasets, and tiny
   files each get a clear explanation instead of a crash.
 - **Performance**: a 6.5 MB dataset is parsed once, cached, and every chart is
-  computed from cached aggregates; models retrain in ~22 s on dataset change
-  (5-fold cross-validation plus the three final fits), cached after.
+  computed from cached aggregates; models train in ~9 s (3-fold CV for
+  selection plus the three final fits), warmed in the background at startup
+  and cached after.
 - **Accessibility & responsive**: keyboard-navigable throughout, AA contrast,
   reduced-motion support, works from phone to desktop.
 

@@ -86,7 +86,7 @@ PASS — execution. Numbers above. Cold-burst herd and cross-session thrash (the
 
 ## Remaining Limitations (the conditions)
 
-1. First request after a cold start pays synchronous model training (~22s incl. 5-fold CV); cached thereafter. By design; documented in README.
+1. Cold start trains the models (~9s: 3-fold CV on a 12k subsample + three final fits); a background warm-up at startup absorbs it, and the result is cached thereafter. By design; documented in README.
 2. Uploads from dead sessions are not garbage-collected (gitignored disk residue; bounded by 10MB cap and per-session namespacing).
 3. Dependency floors are `>=` ranges by design; the strict pip-audit CI job is the tripwire for future advisories.
 4. The root-level `placement_predict_50k Dataset.csv` (user's original, sentinel-free, identical cohort content) is kept deliberately; the app's runtime source is `flask_project/data/placement_predict_50k.csv`.

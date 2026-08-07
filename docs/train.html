@@ -149,7 +149,7 @@
             <th>Input</th>
             <th>Key settings</th>
             <th>Train time</th>
-            <th>CV ROC-AUC · 5-fold train</th>
+            <th>CV ROC-AUC · 3-fold train</th>
           </tr>
         </thead>
         <tbody>
@@ -162,8 +162,8 @@
             <td class="dim" style="white-space: normal; min-width: 220px;">interpretable linear baseline — the bar to beat</td>
             <td class="dim">z-scored</td>
             <td class="mono num dim">max_iter 2000</td>
-            <td class="num">0.09s</td>
-            <td class="num accent">0.9626 ± 0.0013</td>
+            <td class="num">0.07s</td>
+            <td class="num accent">0.9638 ± 0.0022</td>
           </tr>
           
           <tr class="">
@@ -173,9 +173,9 @@
             </td>
             <td class="dim" style="white-space: normal; min-width: 220px;">deep decorrelated trees — averages away variance</td>
             <td class="dim">raw imputed</td>
-            <td class="mono num dim">200 trees · all cores</td>
-            <td class="num">1.71s</td>
-            <td class="num accent">0.9731 ± 0.0007</td>
+            <td class="mono num dim">150 trees · all cores</td>
+            <td class="num">1.29s</td>
+            <td class="num accent">0.9725 ± 0.0023</td>
           </tr>
           
           <tr class="champion-row">
@@ -186,8 +186,8 @@
             <td class="dim" style="white-space: normal; min-width: 220px;">shallow sequential trees — corrects residual bias</td>
             <td class="dim">raw imputed</td>
             <td class="mono num dim">default depth · lr 0.1</td>
-            <td class="num">0.78s</td>
-            <td class="num accent">0.9744 ± 0.0009</td>
+            <td class="num">0.68s</td>
+            <td class="num accent">0.9726 ± 0.0025</td>
           </tr>
           
         </tbody>

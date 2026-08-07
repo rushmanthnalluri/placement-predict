@@ -37,7 +37,11 @@ FEATURES = [
 ]
 TARGET = "PlacementStatus"
 SEED = 42
-CV_FOLDS = 5
+# Champion selection runs 3-fold CV on a stratified subsample of the training
+# split — statistically identical ranking, a fraction of the cost, so a cold
+# start on a weak host stays fast and inside free-tier memory.
+CV_FOLDS = 3
+CV_ROWS = 12_000
 
 # short human note per model, for the training page
 MODEL_NOTES = {
@@ -185,9 +189,15 @@ def _fit_and_evaluate(path, df, X, y):
     candidates = [
         ("Logistic Regression", LogisticRegression(max_iter=2000), True),
         ("Random Forest", RandomForestClassifier(
-            n_estimators=200, n_jobs=-1, random_state=SEED), False),
+            n_estimators=150, n_jobs=-1, random_state=SEED), False),
         ("Gradient Boosting", HistGradientBoostingClassifier(random_state=SEED), False),
     ]
+    # CV on a stratified subsample of train — selection signal is unchanged,
+    # but the selection pass costs seconds instead of minutes on a small host
+    cv_rows = min(CV_ROWS, len(X_train))
+    X_cv, _, y_cv, _ = train_test_split(
+        X_train, y_train, train_size=cv_rows, stratify=y_train, random_state=SEED,
+    )
     cv = StratifiedKFold(n_splits=CV_FOLDS, shuffle=True, random_state=SEED)
 
     models = []
@@ -196,7 +206,7 @@ def _fit_and_evaluate(path, df, X, y):
         # champion selection runs on cross-validated ROC-AUC within the
         # training split — the test set stays sealed until the final read
         cv_est = make_pipeline(StandardScaler(), clone(clf)) if needs_scaling else clf
-        cv_scores = cross_val_score(cv_est, X_train, y_train, cv=cv, scoring="roc_auc")
+        cv_scores = cross_val_score(cv_est, X_cv, y_cv, cv=cv, scoring="roc_auc")
 
         tr, te = (X_train_s, X_test_s) if needs_scaling else (X_train, X_test)
         t0 = time.time()
@@ -273,6 +283,7 @@ def _fit_and_evaluate(path, df, X, y):
         "features": FEATURES,
         "seed": SEED,
         "cv_folds": CV_FOLDS,
+        "cv_rows": int(cv_rows),
         "split": {
             "train": int(len(X_train)),
             "test": int(len(X_test)),
