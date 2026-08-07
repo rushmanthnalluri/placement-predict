@@ -154,14 +154,20 @@ def get_fitted(path):
 
 
 def warm_status(path):
-    """Champion info if the model bundle is already cached — never trains.
-    Used by /api/health so health checks stay cheap."""
+    """Model readiness without triggering training — used by /api/health so
+    health checks stay cheap. Reports the in-memory state plus whether a
+    precomputed artifact is on disk (loads in ~ms on first use)."""
     with _cache_lock:
         bundle = _bundle_cache.get(_cache_key(path))
+    artifact_ready = False
     if not bundle or not bundle.get("ok"):
-        return {"trained": False}
+        ap = _artifact_path(path)
+        artifact_ready = os.path.exists(ap)
+    if not bundle or not bundle.get("ok"):
+        return {"trained": False, "artifact_available": artifact_ready}
     return {
         "trained": True,
+        "artifact_available": True,
         "model": bundle["best"],
         "roc_auc": next(
             m["metrics"]["roc_auc"] for m in bundle["models"]
