@@ -70,7 +70,10 @@ def _warm_model_cache():
         app.logger.exception("model warm-up failed (will retry on first request)")
 
 
-threading.Thread(target=_warm_model_cache, daemon=True).start()
+# Boot-time warm-up is opt-in: on memory-capped hosts, training at boot can
+# OOM the worker before it ever serves. Set WARM_MODEL=1 on hosts with room.
+if os.environ.get("WARM_MODEL", "").lower() in {"1", "true", "yes"}:
+    threading.Thread(target=_warm_model_cache, daemon=True).start()
 
 # ---------------------------------------------------------------------------
 # The ML pipeline, left to right in build order. This single list drives
