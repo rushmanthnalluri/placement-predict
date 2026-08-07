@@ -99,12 +99,14 @@
 
 {% block scripts %}
 {% if mb and mb.ok %}
+{% set champ = mb.models | selectattr('name', 'equalto', mb.best) | first %}
 <script>
   // The logistic baseline as JSON. The Flask app predicts server-side with
   // the champion model; the static Pages build (where the form is inert)
   // uses this in script.js to predict in the browser.
   window.LR_MODEL = {{ mb.lr_export | tojson }};
   window.FORM_META = {{ mb.form_meta | tojson }};
+  window.CHAMPION = {{ {'name': champ.name, 'auc': champ.metrics.roc_auc} | tojson }};
 </script>
 {% endif %}
 {% endblock %}

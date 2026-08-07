@@ -1,4 +1,8 @@
 __pycache__/
 *.pyc
 .vs/
+.idea/
+.ipynb_checkpoints/
+.pytest_cache/
+.env
 flask_project/data/uploads/

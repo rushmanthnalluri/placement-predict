@@ -75,8 +75,7 @@
         <thead>
           <tr>
             <th>Feature</th>
-            <th>Imputed mean</th>
-            <th>Train mean</th>
+            <th>Imputed mean (train)</th>
             <th>Train std</th>
             <th>Transform</th>
           </tr>
@@ -86,7 +85,6 @@
           <tr>
             <td class="mono strong">{{ col }}</td>
             <td class="num accent">{{ mb.impute_means[col] }}</td>
-            <td class="num">{{ mb.scaler.mean[col] }}</td>
             <td class="num dim">{{ mb.scaler.std[col] }}</td>
             <td class="dim">impute → z-score</td>
           </tr>
@@ -95,14 +93,13 @@
             <td class="mono strong">{{ 'PlacementStatus' }}</td>
             <td class="num dim">—</td>
             <td class="num dim">—</td>
-            <td class="num dim">—</td>
             <td><span class="role-tag role-target">target</span></td>
           </tr>
         </tbody>
       </table>
     </div>
-    <p class="note">Scaling statistics are computed on the training split only, then frozen —
-      the test rows never influence the transforms applied to them.</p>
+    <p class="note">Imputation means and scaling statistics are computed on the training split
+      only, then frozen — the test rows never influence the transforms applied to them.</p>
   </section>
   {% endif %}
 

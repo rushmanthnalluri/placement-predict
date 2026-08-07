@@ -80,7 +80,11 @@
             <td class="mono strong">{{ col.name }}</td>
             <td class="num">{{ "{:,}".format(col.count) }}</td>
             <td class="num dim">{{ col.pct }}%</td>
+            {% if col.impute_mean is none %}
+            <td class="num dim">n/a (no observed values)</td>
+            {% else %}
             <td class="num accent">{{ col.impute_mean }}</td>
+            {% endif %}
             <td>
               <span class="coverage">
                 <span class="coverage-track"><span class="coverage-fill" style="--w: {{ col.non_null_pct }}%"></span></span>

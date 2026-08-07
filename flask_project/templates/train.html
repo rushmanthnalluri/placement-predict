@@ -48,7 +48,7 @@
             <th>Input</th>
             <th>Key settings</th>
             <th>Train time</th>
-            <th>Test ROC-AUC</th>
+            <th>CV ROC-AUC · {{ mb.cv_folds }}-fold train</th>
           </tr>
         </thead>
         <tbody>
@@ -66,14 +66,15 @@
               {%- else -%}default depth · lr 0.1{%- endif -%}
             </td>
             <td class="num">{{ m.train_time }}s</td>
-            <td class="num accent">{{ m.metrics.roc_auc }}</td>
+            <td class="num accent">{{ m.cv_auc_mean }} ± {{ m.cv_auc_std }}</td>
           </tr>
           {% endfor %}
         </tbody>
       </table>
     </div>
-    <p class="note">The champion is chosen by ROC-AUC on the sealed test set and carries into the
-      evaluation and prediction stages. Full metrics on the next page.</p>
+    <p class="note">The champion is chosen by cross-validated ROC-AUC on the training split —
+      the sealed test set plays no part in the choice — and carries into the evaluation and
+      prediction stages. Full metrics on the next page.</p>
   </section>
   {% endif %}
 

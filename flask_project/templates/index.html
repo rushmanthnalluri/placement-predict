@@ -61,7 +61,7 @@
   <section class="section">
     <div class="section-head">
       <h2 class="section-title">Dataset snapshot</h2>
-      <span class="mono dim" style="font-size: 10.5px;">{{ "{:,}".format(overview.anomalies) }} anomalous records flagged{% if dropped_rows %} · {{ dropped_rows }} corrupt record removed{% endif %}</span>
+      <span class="mono dim" style="font-size: 10.5px;">{{ "{:,}".format(overview.anomalies) }} anomalous records flagged{% if dropped_rows %} · {{ dropped_rows }} corrupt record{{ 's' if dropped_rows != 1 }} removed{% endif %}</span>
     </div>
 
     <div class="metrics">
@@ -106,7 +106,7 @@
       <a href="{{ url_for('visualize_data') }}" class="section-link">Full analysis →</a>
     </div>
     <p class="section-sub">Correlation of each factor with the placement outcome, after cleaning.
-      CGPA leads by a wide margin.</p>
+      {{ top_drivers[0].name }} leads the ranking.</p>
     <div class="driver-list">
       {% for d in top_drivers %}
       <div class="driver-row">
@@ -123,7 +123,7 @@
   <section class="section">
     <div class="section-head">
       <h2 class="section-title">The record, at a glance</h2>
-      <a href="{{ url_for('analyse_features') }}" class="section-link">All 31 fields →</a>
+      <a href="{{ url_for('analyse_features') }}" class="section-link">All {{ features.registry | length }} fields →</a>
     </div>
     <div class="group-index">
       {% for group in features.groups %}

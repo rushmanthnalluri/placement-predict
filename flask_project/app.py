@@ -1,7 +1,10 @@
 import os
+import secrets
+from uuid import uuid4
 
 import pandas as pd
 from flask import Flask, redirect, render_template, request, session, url_for
+from werkzeug.exceptions import HTTPException
 from werkzeug.utils import secure_filename
 
 import eda
@@ -10,14 +13,24 @@ import model
 app = Flask(__name__)
 
 # Needed for session (Flask signs the session cookie with this). Set the
-# SECRET_KEY environment variable in production; the fallback is dev-only.
-app.secret_key = os.environ.get("SECRET_KEY", "dev-only-change-me")
+# SECRET_KEY environment variable in production; with no key configured an
+# ephemeral random one is generated at startup, so a signed cookie can never
+# be forged from a hardcoded value (sessions just don't survive restarts).
+_secret_key = os.environ.get("SECRET_KEY")
+if _secret_key:
+    app.secret_key = _secret_key
+else:
+    app.secret_key = secrets.token_hex(32)
+    app.logger.warning(
+        "SECRET_KEY is not set - using an ephemeral random key; "
+        "sessions will not survive restarts."
+    )
 
 # ---------------------------------------------------------------------------
 # Upload configuration
 # ---------------------------------------------------------------------------
 UPLOAD_FOLDER = os.path.join(app.root_path, "data", "uploads")
-ALLOWED_EXTENSIONS = {"csv", "xlsx", "xls"}
+ALLOWED_EXTENSIONS = {"csv", "xlsx"}
 MAX_PREVIEW_ROWS = 8
 
 # Bundled dataset (CSV twin of "placement_predict_50k Dataset.xlsx", kept for
@@ -28,6 +41,20 @@ DEFAULT_DATASET_NAME = "placement_predict_50k.csv"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 app.config["MAX_CONTENT_LENGTH"] = 10 * 1024 * 1024  # 10 MB
+app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+# Off by default so local http keeps working; set SESSION_COOKIE_SECURE=1
+# when serving over https.
+app.config["SESSION_COOKIE_SECURE"] = os.environ.get(
+    "SESSION_COOKIE_SECURE", ""
+).lower() in {"1", "true", "yes"}
+
+
+@app.after_request
+def set_security_headers(response):
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    return response
 
 # ---------------------------------------------------------------------------
 # The ML pipeline, left to right in build order. This single list drives
@@ -155,9 +182,25 @@ def inject_pipeline():
 # Active dataset helpers
 # ---------------------------------------------------------------------------
 
+def _dataset_path(stored_name):
+    """Resolve a stored upload basename to a path inside UPLOAD_FOLDER.
+
+    The session cookie only ever carries a bare filename — never a path —
+    so a tampered or legacy value resolves inside the upload dir or not
+    at all.
+    """
+    if not stored_name:
+        return None
+    upload_dir = os.path.abspath(app.config["UPLOAD_FOLDER"])
+    path = os.path.abspath(os.path.join(upload_dir, os.path.basename(stored_name)))
+    if os.path.commonpath((upload_dir, path)) != upload_dir:
+        return None
+    return path
+
+
 def _active_dataset():
     """(path, display name, is_default) for the dataset currently in play."""
-    path = session.get("dataset_path")
+    path = _dataset_path(session.get("dataset_file"))
     if path and os.path.exists(path):
         return path, session.get("dataset_name", "uploaded dataset"), False
     return DEFAULT_DATASET, DEFAULT_DATASET_NAME, True
@@ -235,29 +278,42 @@ def upload_dataset():
         if uploaded_file is None or uploaded_file.filename == "":
             error = "Choose a CSV or Excel file before uploading."
         elif not _allowed_file(uploaded_file.filename):
-            error = "Only .csv, .xlsx, or .xls files are accepted."
+            error = "Only .csv or .xlsx files are accepted."
         else:
-            filename = secure_filename(uploaded_file.filename)
-            filepath = os.path.join(app.config["UPLOAD_FOLDER"], filename)
+            display_name = uploaded_file.filename
+            # Namespace the stored file per upload so concurrent sessions
+            # can't clobber each other's dataset; the original name is
+            # kept only for display.
+            stored_name = f"{uuid4().hex[:8]}_{secure_filename(display_name)}"
+            filepath = os.path.join(app.config["UPLOAD_FOLDER"], stored_name)
             uploaded_file.save(filepath)
 
             try:
                 df = _read_dataset(filepath)
-            except Exception as exc:  # noqa: BLE001 - surface any parse error to the user
-                error = f"Could not read that file: {exc}"
+            except Exception:  # noqa: BLE001 - any parse failure rejects the upload
+                app.logger.exception("Could not parse uploaded file %s", stored_name)
+                os.remove(filepath)
+                error = ("That file couldn't be read as a CSV or Excel "
+                         "dataset. Check the file and try again.")
             else:
-                session["dataset_path"] = filepath
-                session["dataset_name"] = filename
-                preview = _build_preview(df)
+                missing = sorted(eda.REQUIRED_COLS - set(df.columns))
+                if missing:
+                    os.remove(filepath)
+                    error = ("That file is missing required columns: "
+                             + ", ".join(missing) + ".")
+                else:
+                    session["dataset_file"] = stored_name
+                    session["dataset_name"] = display_name
+                    preview = _build_preview(df)
 
     # No fresh upload this request - if one is already on file, show it
     # (even alongside an error, so the active dataset stays visible).
-    if preview is None and session.get("dataset_path"):
+    if preview is None and session.get("dataset_file"):
         try:
-            df = _read_dataset(session["dataset_path"])
+            df = _read_dataset(_dataset_path(session["dataset_file"]))
             preview = _build_preview(df)
         except Exception:  # noqa: BLE001 - stored file is missing or unreadable
-            session.pop("dataset_path", None)
+            session.pop("dataset_file", None)
             session.pop("dataset_name", None)
 
     # With no upload on file, preview the bundled dataset instead.
@@ -275,7 +331,7 @@ def upload_dataset():
         error=error,
         preview=preview,
         dataset_name=dataset_name,
-        is_default=not session.get("dataset_path"),
+        is_default=not session.get("dataset_file"),
         prev_step=prev_step,
         next_step=next_step,
     )
@@ -283,8 +339,9 @@ def upload_dataset():
 
 @app.route("/upload/clear", methods=["POST"])
 def clear_dataset():
-    filepath = session.pop("dataset_path", None)
+    stored_name = session.pop("dataset_file", None)
     session.pop("dataset_name", None)
+    filepath = _dataset_path(stored_name)
     if filepath and os.path.exists(filepath):
         os.remove(filepath)
     return redirect(url_for("upload_dataset"))
@@ -500,5 +557,19 @@ def server_error(err):
     ), 500
 
 
+@app.errorhandler(HTTPException)
+def http_error(err):
+    """Branded page for any HTTP error without its own handler (405, ...)."""
+    code = err.code or 500
+    return render_template(
+        "error.html",
+        code=code,
+        title=err.name,
+        message=err.description,
+        active_step=None,
+    ), code
+
+
 if __name__ == "__main__":
-    app.run(debug=True)
+    # Debug is opt-in: set FLASK_DEBUG=1 for local development.
+    app.run(debug=os.environ.get("FLASK_DEBUG", "").lower() in {"1", "true", "yes"})

@@ -176,8 +176,7 @@
         <thead>
           <tr>
             <th>Feature</th>
-            <th>Imputed mean</th>
-            <th>Train mean</th>
+            <th>Imputed mean (train)</th>
             <th>Train std</th>
             <th>Transform</th>
           </tr>
@@ -186,24 +185,21 @@
           
           <tr>
             <td class="mono strong">CGPA</td>
-            <td class="num accent">7.25</td>
-            <td class="num">7.244</td>
+            <td class="num accent">7.24</td>
             <td class="num dim">1.618</td>
             <td class="dim">impute → z-score</td>
           </tr>
           
           <tr>
             <td class="mono strong">AttendancePercent</td>
-            <td class="num accent">76.71</td>
-            <td class="num">76.687</td>
+            <td class="num accent">76.69</td>
             <td class="num dim">12.464</td>
             <td class="dim">impute → z-score</td>
           </tr>
           
           <tr>
             <td class="mono strong">Internships</td>
-            <td class="num accent">1.13</td>
-            <td class="num">1.125</td>
+            <td class="num accent">1.12</td>
             <td class="num dim">0.811</td>
             <td class="dim">impute → z-score</td>
           </tr>
@@ -211,7 +207,6 @@
           <tr>
             <td class="mono strong">Projects</td>
             <td class="num accent">2.11</td>
-            <td class="num">2.108</td>
             <td class="num dim">1.206</td>
             <td class="dim">impute → z-score</td>
           </tr>
@@ -219,7 +214,6 @@
           <tr>
             <td class="mono strong">Workshops</td>
             <td class="num accent">1.8</td>
-            <td class="num">1.803</td>
             <td class="num dim">0.986</td>
             <td class="dim">impute → z-score</td>
           </tr>
@@ -227,7 +221,6 @@
           <tr>
             <td class="mono strong">Certifications</td>
             <td class="num accent">1.93</td>
-            <td class="num">1.932</td>
             <td class="num dim">1.178</td>
             <td class="dim">impute → z-score</td>
           </tr>
@@ -235,15 +228,13 @@
           <tr>
             <td class="mono strong">Publications</td>
             <td class="num accent">0.74</td>
-            <td class="num">0.735</td>
             <td class="num dim">0.717</td>
             <td class="dim">impute → z-score</td>
           </tr>
           
           <tr>
             <td class="mono strong">AptitudeTestScore</td>
-            <td class="num accent">68.86</td>
-            <td class="num">68.848</td>
+            <td class="num accent">68.85</td>
             <td class="num dim">14.746</td>
             <td class="dim">impute → z-score</td>
           </tr>
@@ -251,23 +242,20 @@
           <tr>
             <td class="mono strong">SoftSkillsRating</td>
             <td class="num accent">3.15</td>
-            <td class="num">3.154</td>
             <td class="num dim">0.946</td>
             <td class="dim">impute → z-score</td>
           </tr>
           
           <tr>
             <td class="mono strong">CodingTestScore</td>
-            <td class="num accent">57.41</td>
-            <td class="num">57.377</td>
+            <td class="num accent">57.37</td>
             <td class="num dim">20.381</td>
             <td class="dim">impute → z-score</td>
           </tr>
           
           <tr>
             <td class="mono strong">MockInterviewScore</td>
-            <td class="num accent">55.41</td>
-            <td class="num">55.398</td>
+            <td class="num accent">55.4</td>
             <td class="num dim">16.622</td>
             <td class="dim">impute → z-score</td>
           </tr>
@@ -275,7 +263,6 @@
           <tr>
             <td class="mono strong">ExtraCurricular</td>
             <td class="num accent">0.53</td>
-            <td class="num">0.533</td>
             <td class="num dim">0.499</td>
             <td class="dim">impute → z-score</td>
           </tr>
@@ -284,14 +271,13 @@
             <td class="mono strong">PlacementStatus</td>
             <td class="num dim">—</td>
             <td class="num dim">—</td>
-            <td class="num dim">—</td>
             <td><span class="role-tag role-target">target</span></td>
           </tr>
         </tbody>
       </table>
     </div>
-    <p class="note">Scaling statistics are computed on the training split only, then frozen —
-      the test rows never influence the transforms applied to them.</p>
+    <p class="note">Imputation means and scaling statistics are computed on the training split
+      only, then frozen — the test rows never influence the transforms applied to them.</p>
   </section>
   
 

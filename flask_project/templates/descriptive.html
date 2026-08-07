@@ -55,7 +55,8 @@
         </tbody>
       </table>
     </div>
-    <p class="note">Counts below 50,000 reflect missing values in the raw file — see
+    <p class="note">Counts below the {{ "{:,}".format(bundle.n_rows) }}-row total reflect missing
+      values in the raw file — see
       <a href="{{ url_for('missing_values') }}" style="color: var(--accent);">Missing Value Analysis</a>.</p>
   </section>
 

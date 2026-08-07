@@ -10,6 +10,8 @@ with PlacementStatus, and per-category placement rates.
 """
 
 import os
+import threading
+from collections import OrderedDict
 
 import numpy as np
 import pandas as pd
@@ -93,21 +95,34 @@ for _col in SGPA_COLS:
 # Loading + caching
 # ---------------------------------------------------------------------------
 
-_df_cache = {}
-_bundle_cache = {}
+_df_cache = OrderedDict()
+_bundle_cache = OrderedDict()
+# RLock because get_bundle nests load_dataframe while holding the lock;
+# building under the lock gives single-flight behaviour on a cold burst
+_cache_lock = threading.RLock()
+_CACHE_MAX = 2  # the bundled dataset plus one upload, without re-reading on every switch
+
+
+def _cache_key(path):
+    st = os.stat(path)
+    return (os.path.abspath(path), st.st_mtime, st.st_size)
 
 
 def load_dataframe(path):
-    """Read (and cache) a CSV/Excel dataset, keyed by path + mtime."""
-    key = (os.path.abspath(path), os.path.getmtime(path))
-    if key not in _df_cache:
-        _df_cache.clear()  # keep memory bounded — only one active dataset
-        if path.lower().endswith(".csv"):
-            df = pd.read_csv(path)
+    """Read (and cache) a CSV/Excel dataset, keyed by path + mtime + size."""
+    key = _cache_key(path)
+    with _cache_lock:
+        if key not in _df_cache:
+            while len(_df_cache) >= _CACHE_MAX:
+                _df_cache.popitem(last=False)
+            if path.lower().endswith(".csv"):
+                df = pd.read_csv(path)
+            else:
+                df = pd.read_excel(path)
+            _df_cache[key] = df
         else:
-            df = pd.read_excel(path)
-        _df_cache[key] = df
-    return _df_cache[key]
+            _df_cache.move_to_end(key)
+        return _df_cache[key]
 
 
 def schema_ok(df):
@@ -117,13 +132,17 @@ def schema_ok(df):
 def get_bundle(path):
     """All EDA artifacts for the dataset at `path`, computed once and cached.
 
-    Keyed by (path, mtime) like the DataFrame cache — keying by id(df) is
+    Keyed by (path, mtime, size) like the DataFrame cache — keying by id(df) is
     unsafe because a garbage-collected frame's id can be recycled."""
-    key = (os.path.abspath(path), os.path.getmtime(path))
-    if key not in _bundle_cache:
-        _bundle_cache.clear()  # only one active dataset — keep memory bounded
-        _bundle_cache[key] = _build_bundle(load_dataframe(path))
-    return _bundle_cache[key]
+    key = _cache_key(path)
+    with _cache_lock:
+        if key not in _bundle_cache:
+            while len(_bundle_cache) >= _CACHE_MAX:
+                _bundle_cache.popitem(last=False)
+            _bundle_cache[key] = _build_bundle(load_dataframe(path))
+        else:
+            _bundle_cache.move_to_end(key)
+        return _bundle_cache[key]
 
 
 # ---------------------------------------------------------------------------
@@ -230,6 +249,14 @@ def _build_bundle(df):
         dropped_rows = _i((df["StudentID"] == 0).sum())
         df = df[df["StudentID"] != 0]
 
+    # a schema-passing frame can still be unusable — zero rows after the
+    # sentinel drop, or core columns that arrived as text. Treat those like
+    # a schema mismatch so no stage raises mid-build.
+    if len(df) == 0 or not all(
+        pd.api.types.is_numeric_dtype(df[c]) for c in CORE_NUMERIC + [TARGET]
+    ):
+        return {"schema_ok": False}
+
     bundle = {
         "schema_ok": schema_ok(df),
         "n_rows": _i(df.shape[0]),
@@ -324,20 +351,22 @@ def _build_bundle(df):
     # -- missing values (stage 04) ---------------------------------------------
     missing_counts = df.isna().sum()
     affected = missing_counts[missing_counts > 0]
+    affected_rows = []
+    for col in affected.index:
+        mean = df[col].mean()
+        affected_rows.append({
+            "name": col,
+            "count": _i(affected[col]),
+            "pct": _f(affected[col] / len(df) * 100, 1),
+            "non_null_pct": _f(100 - affected[col] / len(df) * 100, 1),
+            # an all-NaN column has no observed mean to impute with
+            "impute_mean": None if pd.isna(mean) else _f(mean),
+        })
     bundle["missing"] = {
         "total": _i(missing_counts.sum()),
         "total_cells": _i(df.size),
         "completeness": _f(100 * (1 - missing_counts.sum() / df.size), 1),
-        "affected": [
-            {
-                "name": col,
-                "count": _i(affected[col]),
-                "pct": _f(affected[col] / len(df) * 100, 1),
-                "non_null_pct": _f(100 - affected[col] / len(df) * 100, 1),
-                "impute_mean": _f(df[col].mean()),
-            }
-            for col in affected.index
-        ],
+        "affected": affected_rows,
         "chart_labels": [str(c) for c in affected.index],
         "chart_values": [_i(v) for v in affected.values],
     }
@@ -427,16 +456,21 @@ def _build_bundle(df):
         col: _clean_categories(df, col) for col in CATEGORICAL_RATE_COLS if col in df
     }
 
-    gender_rows = df[df["Gender"].apply(lambda v: isinstance(v, str))]
-    g = (
-        gender_rows.groupby(["Gender", TARGET]).size()
-        .unstack(fill_value=0)
-        .reindex(columns=[0, 1], fill_value=0)
-    )
-    bundle["gender_split"] = {
-        "labels": [str(x) for x in g.index],
-        "not_placed": [_i(v) for v in g[0].values],
-        "placed": [_i(v) for v in g[1].values],
-    }
+    # the gender card only makes sense when the column exists and actually
+    # holds string labels — a schema-valid upload may legitimately lack it
+    bundle["gender_split"] = None
+    if "Gender" in df:
+        gender_rows = df[df["Gender"].apply(lambda v: isinstance(v, str))]
+        if len(gender_rows):
+            g = (
+                gender_rows.groupby(["Gender", TARGET]).size()
+                .unstack(fill_value=0)
+                .reindex(columns=[0, 1], fill_value=0)
+            )
+            bundle["gender_split"] = {
+                "labels": [str(x) for x in g.index],
+                "not_placed": [_i(v) for v in g[0].values],
+                "placed": [_i(v) for v in g[1].values],
+            }
 
     return bundle

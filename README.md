@@ -35,11 +35,14 @@ real dataset on every load — nothing is hardcoded:
 
 | Model | Accuracy | Precision | Recall | F1 | ROC-AUC |
 |-------|----------|-----------|--------|----|---------|
-| Logistic Regression | 0.893 | 0.902 | 0.938 | 0.920 | 0.960 |
-| Random Forest | 0.907 | 0.912 | 0.950 | 0.931 | 0.972 |
-| **Gradient Boosting (champion)** | **0.908** | **0.916** | **0.948** | **0.931** | **0.973** |
+| Logistic Regression | 0.892 | 0.902 | 0.938 | 0.920 | 0.960 |
+| Random Forest | 0.908 | 0.912 | 0.952 | 0.931 | 0.972 |
+| **Gradient Boosting (champion)** | **0.909** | **0.916** | **0.948** | **0.932** | **0.973** |
 
 Top drivers: CGPA (0.65), Mock Interview Score (0.63), Soft Skills Rating (0.60).
+
+The champion is chosen by 5-fold cross-validated ROC-AUC on the training
+split; the sealed test set is touched exactly once — to produce this table.
 
 ![Model evaluation](screenshots/evaluate.png)
 
@@ -54,7 +57,8 @@ Top drivers: CGPA (0.65), Mock Interview Score (0.63), Soft Skills Rating (0.60)
 - **Graceful failure**: off-schema uploads, single-class datasets, and tiny
   files each get a clear explanation instead of a crash.
 - **Performance**: a 6.5 MB dataset is parsed once, cached, and every chart is
-  computed from cached aggregates; models retrain in ~2 s on dataset change.
+  computed from cached aggregates; models retrain in ~22 s on dataset change
+  (5-fold cross-validation plus the three final fits), cached after.
 - **Accessibility & responsive**: keyboard-navigable throughout, AA contrast,
   reduced-motion support, works from phone to desktop.
 
@@ -64,7 +68,7 @@ Top drivers: CGPA (0.65), Mock Interview Score (0.63), Soft Skills Rating (0.60)
 ## Tech stack
 
 Python · Flask · pandas · scikit-learn · Chart.js — no JavaScript framework,
-no build step. Tests of every route × dataset state are run with Playwright.
+no build step. A pytest suite in `tests/` covers every route × dataset state.
 
 ## Run it locally
 
@@ -112,8 +116,11 @@ eda.ipynb             # original exploratory notebook
 Synthetic 50,000-record dataset modelled on Indian engineering-college
 placement data: 8 semester SGPAs, CGPA, attendance, experience counts
 (internships, projects, workshops, certifications, publications), four skill
-scores, and the placement outcome. One corrupt sentinel row and 1,750 flagged
-anomalous records are handled explicitly.
+scores, and the placement outcome. One corrupt sentinel row (StudentID 0) is
+dropped; the 1,750 records the dataset flags as `IsAnomaly` are *retained* —
+their placement rate matches the population (65.7%) and they act as
+label-consistent noise — a deliberate, disclosed choice rather than silent
+filtering.
 
 ---
 

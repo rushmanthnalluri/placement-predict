@@ -1,0 +1,18 @@
+# VCS and IDE metadata
+.git
+**/.vs
+
+# Python caches
+**/__pycache__
+**/*.pyc
+
+# Runtime uploads (created by the app at startup)
+flask_project/data/uploads
+
+# Docs, screenshots, and notebooks not needed at runtime
+docs
+screenshots
+eda.ipynb
+
+# The bundled xlsx is never read by code (the CSV twin is the runtime source)
+**/*.xlsx

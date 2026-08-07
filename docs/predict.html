@@ -185,7 +185,7 @@
             <label class="field">
               <span class="field-label">Workshops</span>
               <input type="number" name="Workshops" class="field-input"
-                     min="0.0" max="4.0" step="0.1"
+                     min="0.0" max="4.0" step="1"
                      value="2.0" inputmode="decimal">
               <span class="field-hint">0.0–4.0 · median 2.0</span>
             </label>
@@ -301,12 +301,14 @@
   <script src="static/js/script.js"></script>
   
 
+
 <script>
   // The logistic baseline as JSON. The Flask app predicts server-side with
   // the champion model; the static Pages build (where the form is inert)
   // uses this in script.js to predict in the browser.
-  window.LR_MODEL = {"auc": 0.9595, "coef": [2.09286, 0.153789, 0.573644, 0.386945, 0.377163, 0.545849, 0.185609, -0.095998, 1.115711, -0.765867, 1.137284, 0.075042], "features": ["CGPA", "AttendancePercent", "Internships", "Projects", "Workshops", "Certifications", "Publications", "AptitudeTestScore", "SoftSkillsRating", "CodingTestScore", "MockInterviewScore", "ExtraCurricular"], "intercept": 2.117537, "mean": {"AptitudeTestScore": 68.848082, "AttendancePercent": 76.687013, "CGPA": 7.243574, "Certifications": 1.931575, "CodingTestScore": 57.376914, "ExtraCurricular": 0.5328, "Internships": 1.1248, "MockInterviewScore": 55.398403, "Projects": 2.1082, "Publications": 0.73505, "SoftSkillsRating": 3.154404, "Workshops": 1.802815}, "std": {"AptitudeTestScore": 14.746102, "AttendancePercent": 12.464175, "CGPA": 1.618047, "Certifications": 1.177558, "CodingTestScore": 20.381014, "ExtraCurricular": 0.498923, "Internships": 0.810787, "MockInterviewScore": 16.621586, "Projects": 1.206252, "Publications": 0.717497, "SoftSkillsRating": 0.946282, "Workshops": 0.986426}};
-  window.FORM_META = [{"default": 7.25, "max": 10.0, "min": 4.0, "name": "CGPA", "step": "0.1"}, {"default": 77.2, "max": 100.0, "min": 50.0, "name": "AttendancePercent", "step": "0.1"}, {"default": 1.0, "max": 3.0, "min": 0.0, "name": "Internships", "step": "1"}, {"default": 2.0, "max": 5.0, "min": 0.0, "name": "Projects", "step": "1"}, {"default": 2.0, "max": 4.0, "min": 0.0, "name": "Workshops", "step": "0.1"}, {"default": 2.0, "max": 5.0, "min": 0.0, "name": "Certifications", "step": "1"}, {"default": 1.0, "max": 3.0, "min": 0.0, "name": "Publications", "step": "1"}, {"default": 69.9, "max": 100.0, "min": 30.0, "name": "AptitudeTestScore", "step": "0.1"}, {"default": 3.2, "max": 5.0, "min": 1.0, "name": "SoftSkillsRating", "step": "0.1"}, {"default": 57.7, "max": 100.0, "min": 0.0, "name": "CodingTestScore", "step": "0.1"}, {"default": 54.7, "max": 100.0, "min": 15.9, "name": "MockInterviewScore", "step": "0.1"}, {"default": 1.0, "max": 1.0, "min": 0.0, "name": "ExtraCurricular", "step": "1"}];
+  window.LR_MODEL = {"auc": 0.9595, "coef": [2.09288, 0.15377, 0.573646, 0.38693, 0.377176, 0.545805, 0.185607, -0.095997, 1.11566, -0.765947, 1.137508, 0.075034], "features": ["CGPA", "AttendancePercent", "Internships", "Projects", "Workshops", "Certifications", "Publications", "AptitudeTestScore", "SoftSkillsRating", "CodingTestScore", "MockInterviewScore", "ExtraCurricular"], "intercept": 2.117567, "mean": {"AptitudeTestScore": 68.847112, "AttendancePercent": 76.687013, "CGPA": 7.243574, "Certifications": 1.931575, "CodingTestScore": 57.374737, "ExtraCurricular": 0.5328, "Internships": 1.1248, "MockInterviewScore": 55.3973, "Projects": 2.1082, "Publications": 0.73505, "SoftSkillsRating": 3.154419, "Workshops": 1.802652}, "std": {"AptitudeTestScore": 14.746101, "AttendancePercent": 12.464175, "CGPA": 1.618047, "Certifications": 1.177558, "CodingTestScore": 20.381012, "ExtraCurricular": 0.498923, "Internships": 0.810787, "MockInterviewScore": 16.621586, "Projects": 1.206252, "Publications": 0.717497, "SoftSkillsRating": 0.946282, "Workshops": 0.986426}};
+  window.FORM_META = [{"default": 7.25, "max": 10.0, "min": 4.0, "name": "CGPA", "step": "0.1"}, {"default": 77.2, "max": 100.0, "min": 50.0, "name": "AttendancePercent", "step": "0.1"}, {"default": 1.0, "max": 3.0, "min": 0.0, "name": "Internships", "step": "1"}, {"default": 2.0, "max": 5.0, "min": 0.0, "name": "Projects", "step": "1"}, {"default": 2.0, "max": 4.0, "min": 0.0, "name": "Workshops", "step": "1"}, {"default": 2.0, "max": 5.0, "min": 0.0, "name": "Certifications", "step": "1"}, {"default": 1.0, "max": 3.0, "min": 0.0, "name": "Publications", "step": "1"}, {"default": 69.9, "max": 100.0, "min": 30.0, "name": "AptitudeTestScore", "step": "0.1"}, {"default": 3.2, "max": 5.0, "min": 1.0, "name": "SoftSkillsRating", "step": "0.1"}, {"default": 57.7, "max": 100.0, "min": 0.0, "name": "CodingTestScore", "step": "0.1"}, {"default": 54.7, "max": 100.0, "min": 15.9, "name": "MockInterviewScore", "step": "0.1"}, {"default": 1.0, "max": 1.0, "min": 0.0, "name": "ExtraCurricular", "step": "1"}];
+  window.CHAMPION = {"auc": 0.9733, "name": "Gradient Boosting"};
 </script>
 
 

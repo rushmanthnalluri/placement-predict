@@ -31,6 +31,7 @@ document.addEventListener("DOMContentLoaded", () => {
   if (predictBtn && window.LR_MODEL) {
     predictBtn.addEventListener("click", () => {
       const M = window.LR_MODEL;
+      const C = window.CHAMPION || {};
       const meta = Object.fromEntries((window.FORM_META || []).map((m) => [m.name, m]));
 
       let z = M.intercept;
@@ -38,7 +39,9 @@ document.addEventListener("DOMContentLoaded", () => {
         const input = document.querySelector(`[name="${name}"]`);
         let v = parseFloat(input && input.value !== "" ? input.value : NaN);
         if (Number.isNaN(v)) v = meta[name] ? meta[name].default : M.mean[name];
-        // clamp into the observed range, same guard as the server
+        // clamp into the observed range — this diverges from the server on
+        // purpose: the live app rejects out-of-range input, the static demo
+        // has no server to push back, so it clamps instead
         if (meta[name]) v = Math.min(meta[name].max, Math.max(meta[name].min, v));
         z += M.coef[i] * (v - M.mean[name]) / M.std[name];
       });
@@ -63,7 +66,7 @@ document.addEventListener("DOMContentLoaded", () => {
         </div>
         <p class="note">Static demo: this call comes from the logistic baseline
           (ROC-AUC ${M.auc}) running in your browser. The full app predicts
-          server-side with the gradient-boosting champion (ROC-AUC 0.9733).</p>`;
+          server-side with the ${C.name || "champion"} champion (ROC-AUC ${C.auc}).</p>`;
     });
   }
 

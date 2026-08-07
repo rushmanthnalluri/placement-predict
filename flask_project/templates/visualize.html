@@ -46,7 +46,7 @@
       <h2 class="section-title">Distributions — repaired frame, 10 key fields</h2>
     </div>
     <div class="chart-grid">
-      {% for col, hist in bundle.histograms.items() %}
+      {% for col, hist in bundle.histograms.items() if hist.labels %}
       <div class="chart-card">
         <div class="chart-card-head">
           <h3>{{ col }}</h3>
@@ -71,7 +71,7 @@
     <p class="section-sub">The four test scores, re-centred at mean 0 and scaled to unit
       variance — comparable on one axis, ready for modelling.</p>
     <div class="chart-grid">
-      {% for col, hist in bundle.standardized.items() %}
+      {% for col, hist in bundle.standardized.items() if hist.labels %}
       <div class="chart-card">
         <div class="chart-card-head">
           <h3>{{ col }} <span class="std-badge">z</span></h3>
@@ -93,6 +93,9 @@
     <div class="section-head">
       <h2 class="section-title">Correlation matrix — every numeric field</h2>
     </div>
+    <p class="section-sub">This matrix is computed on the raw file with pairwise-complete
+      observations, while every other chart on this page uses the imputed frame — small
+      differences between the two are expected.</p>
     <div class="heat-scroll">
       <div class="heat-grid" style="--n: {{ bundle.heatmap.labels | length }}">
         <div></div>
@@ -189,6 +192,7 @@
         </div>
       </div>
       {% endfor %}
+      {% if bundle.gender_split %}
       <div class="chart-card">
         <div class="chart-card-head">
           <h3>Gender × outcome</h3>
@@ -199,6 +203,7 @@
                   aria-label="Grouped bar chart of placed and not-placed counts by gender"></canvas>
         </div>
       </div>
+      {% endif %}
     </div>
   </section>
   {% endif %}

@@ -149,7 +149,7 @@
             <th>Input</th>
             <th>Key settings</th>
             <th>Train time</th>
-            <th>Test ROC-AUC</th>
+            <th>CV ROC-AUC · 5-fold train</th>
           </tr>
         </thead>
         <tbody>
@@ -162,8 +162,8 @@
             <td class="dim" style="white-space: normal; min-width: 220px;">interpretable linear baseline — the bar to beat</td>
             <td class="dim">z-scored</td>
             <td class="mono num dim">max_iter 2000</td>
-            <td class="num">0.06s</td>
-            <td class="num accent">0.9595</td>
+            <td class="num">0.09s</td>
+            <td class="num accent">0.9626 ± 0.0013</td>
           </tr>
           
           <tr class="">
@@ -174,8 +174,8 @@
             <td class="dim" style="white-space: normal; min-width: 220px;">deep decorrelated trees — averages away variance</td>
             <td class="dim">raw imputed</td>
             <td class="mono num dim">200 trees · all cores</td>
-            <td class="num">2.13s</td>
-            <td class="num accent">0.9716</td>
+            <td class="num">1.71s</td>
+            <td class="num accent">0.9731 ± 0.0007</td>
           </tr>
           
           <tr class="champion-row">
@@ -186,15 +186,16 @@
             <td class="dim" style="white-space: normal; min-width: 220px;">shallow sequential trees — corrects residual bias</td>
             <td class="dim">raw imputed</td>
             <td class="mono num dim">default depth · lr 0.1</td>
-            <td class="num">4.7s</td>
-            <td class="num accent">0.9733</td>
+            <td class="num">0.78s</td>
+            <td class="num accent">0.9744 ± 0.0009</td>
           </tr>
           
         </tbody>
       </table>
     </div>
-    <p class="note">The champion is chosen by ROC-AUC on the sealed test set and carries into the
-      evaluation and prediction stages. Full metrics on the next page.</p>
+    <p class="note">The champion is chosen by cross-validated ROC-AUC on the training split —
+      the sealed test set plays no part in the choice — and carries into the evaluation and
+      prediction stages. Full metrics on the next page.</p>
   </section>
   
 

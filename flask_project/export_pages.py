@@ -57,8 +57,13 @@ def _rewrite(html):
 
 def main():
     if os.path.exists(DOCS):
-        shutil.rmtree(DOCS)
-    os.makedirs(DOCS)
+        # wipe generated pages but keep docs/audit/ (hand-written audit records)
+        for entry in os.listdir(DOCS):
+            if entry == "audit":
+                continue
+            path = os.path.join(DOCS, entry)
+            shutil.rmtree(path) if os.path.isdir(path) else os.remove(path)
+    os.makedirs(DOCS, exist_ok=True)
 
     client = app.test_client()
     for route, filename in ROUTES.items():
