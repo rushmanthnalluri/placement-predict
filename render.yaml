@@ -1,0 +1,11 @@
+# One-click deploy on Render: New > Blueprint, point at this repo.
+services:
+  - type: web
+    name: placement-predict
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn --bind 0.0.0.0:$PORT --workers 1 --timeout 120 --chdir flask_project app:app
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true

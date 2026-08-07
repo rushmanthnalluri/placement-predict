@@ -9,9 +9,9 @@ import model
 
 app = Flask(__name__)
 
-# Needed for session (Flask signs the session cookie with this). Change this
-# to a random, secret value before deploying anywhere real.
-app.secret_key = "dev-only-change-me"
+# Needed for session (Flask signs the session cookie with this). Set the
+# SECRET_KEY environment variable in production; the fallback is dev-only.
+app.secret_key = os.environ.get("SECRET_KEY", "dev-only-change-me")
 
 # ---------------------------------------------------------------------------
 # Upload configuration
