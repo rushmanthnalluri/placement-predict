@@ -55,8 +55,9 @@
               <span class="field-label">{{ meta.name }}</span>
               <input type="number" name="{{ meta.name }}" class="field-input"
                      min="{{ meta.min }}" max="{{ meta.max }}" step="{{ meta.step }}"
-                     value="{{ values.get(meta.name, meta.default) }}" inputmode="decimal">
-              <span class="field-hint">{{ meta.min }}–{{ meta.max }} · median {{ meta.default }}</span>
+                     value="{{ values.get(meta.name, '') }}" placeholder="{{ meta.default }}"
+                     inputmode="decimal">
+              <span class="field-hint">{{ meta.min }}–{{ meta.max }} · blank = median {{ meta.default }}</span>
             </label>
             {% endfor %}
           </div>
