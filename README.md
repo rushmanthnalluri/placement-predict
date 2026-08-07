@@ -1,3 +1,8 @@
+---
+title: Placement Predict
+sdk: docker
+---
+
 # Placement Predict System
 
 An end-to-end machine-learning pipeline that predicts whether an engineering
@@ -5,6 +10,7 @@ student will be placed — from raw data upload to a deployed prediction form �
 built as a nine-stage web application over a 50,000-record dataset.
 
 **Live demo (static showcase):** https://rushmanthnalluri.github.io/placement-predict/
+**Live app (interactive):** deploy in two minutes — see [Deploy it](#deploy-it-one-dockerfile-any-host) below.
 
 ![Overview](screenshots/home.png)
 
@@ -74,15 +80,19 @@ docker build -t placement-predict .
 docker run -p 7860:7860 placement-predict
 ```
 
+- **Hugging Face Spaces** (recommended — free, no sleep on a public Space):
+  1. [huggingface.co/new-space](https://huggingface.co/new-space) → name it
+     `placement-predict` → SDK **Docker** → Public → Create.
+  2. From this repo, push straight to the Space:
+     ```bash
+     git remote add hf https://huggingface.co/spaces/<your-username>/placement-predict
+     git push hf main
+     ```
+     (use a [HF access token](https://huggingface.co/settings/tokens) as the password)
+  3. The Space builds the Dockerfile and goes live at
+     `https://<your-username>-placement-predict.hf.space` — uploads, training,
+     and prediction all work there.
 - **Render**: New → Blueprint → this repo (`render.yaml` is included).
-- **Hugging Face Spaces**: create a Space with the **Docker** SDK and add this
-  header to the Space's README:
-  ```yaml
-  ---
-  title: Placement Predict
-  sdk: docker
-  ---
-  ```
 - **GitHub Pages** (static showcase): `python flask_project/export_pages.py`
   re-renders `docs/` from the live app; push to update the demo.
 
