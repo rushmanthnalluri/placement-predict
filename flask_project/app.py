@@ -459,6 +459,7 @@ def predict_placement():
 
     result = None
     errors = []
+    invalid_fields = []
     values = {}
 
     if request.method == "POST" and model_ready:
@@ -471,12 +472,14 @@ def predict_placement():
                 val = float(raw)
             except ValueError:
                 errors.append(f"{name}: “{raw}” is not a number.")
+                invalid_fields.append(name)
                 continue
             if not (meta["min"] <= val <= meta["max"]):
                 errors.append(
                     f"{name}: {val:g} is outside the observed range "
                     f"{meta['min']:g}–{meta['max']:g}."
                 )
+                invalid_fields.append(name)
             values[name] = val
         if not errors:
             proba = model.predict(path, values)
@@ -501,6 +504,7 @@ def predict_placement():
         next_step=next_step,
         result=result,
         errors=errors,
+        invalid_fields=invalid_fields,
         values=values,
     )
 

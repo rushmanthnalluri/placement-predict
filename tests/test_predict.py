@@ -43,6 +43,9 @@ def test_predict_out_of_range_flagged(client, model_bundle):
     assert resp.status_code == 200
     assert "outside the observed range" in body
     assert not _has_verdict(body)  # invalid input suppresses the verdict
+    # the offending field is marked for red styling; a valid field is not
+    assert 'name="CGPA" class="field-input input-error"' in body
+    assert 'name="Internships" class="field-input "' in body
 
 
 @pytest.mark.slow

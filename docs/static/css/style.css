@@ -1179,6 +1179,17 @@ select:focus-visible, textarea:focus-visible, [tabindex]:focus-visible,
 .field-input:focus { border-color: var(--accent); outline: none; }
 .field-input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 
+/* invalid values turn red — instantly in the browser (:user-invalid, after
+   the field is touched) and on server-rejected fields (.input-error) */
+.field-input:user-invalid,
+.field-input.input-error {
+  border-color: var(--danger);
+  background: var(--danger-dim);
+}
+.field-input:user-invalid:focus,
+.field-input.input-error:focus { border-color: var(--danger); outline-color: var(--danger); }
+.field-hint-error { color: var(--danger); }
+
 .field-hint { font-family: var(--font-mono); font-size: 9.5px; color: var(--text-3); }
 
 /* result panel */

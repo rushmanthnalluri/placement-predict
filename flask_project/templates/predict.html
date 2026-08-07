@@ -53,11 +53,11 @@
             {% for meta in mb.form_meta if meta.name in cols %}
             <label class="field">
               <span class="field-label">{{ meta.name }}</span>
-              <input type="number" name="{{ meta.name }}" class="field-input"
+              <input type="number" name="{{ meta.name }}" class="field-input {{ 'input-error' if meta.name in invalid_fields }}"
                      min="{{ meta.min }}" max="{{ meta.max }}" step="{{ meta.step }}"
                      value="{{ values.get(meta.name, '') }}" placeholder="{{ meta.default }}"
                      inputmode="decimal">
-              <span class="field-hint">{{ meta.min }}–{{ meta.max }} · blank = median {{ meta.default }}</span>
+              <span class="field-hint {{ 'field-hint-error' if meta.name in invalid_fields }}">{{ meta.min }}–{{ meta.max }} · blank = median {{ meta.default }}</span>
             </label>
             {% endfor %}
           </div>
