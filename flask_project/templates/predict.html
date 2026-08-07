@@ -34,7 +34,7 @@
 
   <section class="section">
     {% if errors %}
-    <div class="alert alert-error" role="alert" style="margin-bottom: 24px;">
+    <div class="alert alert-error mb-24" role="alert">
       <strong>Check the highlighted inputs</strong>
       {% for e in errors %}{{ e }}<br>{% endfor %}
     </div>
@@ -64,7 +64,7 @@
         </fieldset>
         {% endfor %}
         <button type="submit" class="btn btn-primary">Predict placement</button>
-        <p class="note" style="margin-top: 10px;">Blank inputs fall back to the dataset median.</p>
+        <p class="note mt-10">Blank inputs fall back to the dataset median.</p>
       </form>
 
       <aside class="predict-result" aria-live="polite">
@@ -86,7 +86,7 @@
         <div class="result-panel result-idle">
           <span class="result-kicker">Awaiting input</span>
           <span class="result-verdict result-verdict-idle">—</span>
-          <p class="note" style="margin: 0;">Fill the profile on the left and the champion
+          <p class="note note-flush">Fill the profile on the left and the champion
             model's placement call appears here, with its probability.</p>
         </div>
         {% endif %}

@@ -13,7 +13,7 @@
   <section class="upload-section">
 
     {% if error %}
-    <div class="alert alert-error" role="alert" style="margin-bottom: 20px;">
+    <div class="alert alert-error mb-20" role="alert">
       <strong>Upload failed</strong>
       {{ error }}
     </div>
@@ -41,7 +41,7 @@
         {% endif %}
       </div>
 
-      <div class="metrics" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 32px;">
+      <div class="metrics grid-3 mb-32">
         <div class="metric">
           <span class="metric-value">{{ "{:,}".format(preview.rows) }}</span>
           <span class="metric-label">Rows</span>
@@ -51,18 +51,18 @@
           <span class="metric-label">Columns</span>
         </div>
         <div class="metric">
-          <span class="metric-value" {% if preview.missing_total %}style="color: var(--danger);"{% endif %}>{{ "{:,}".format(preview.missing_total) }}</span>
+          <span class="metric-value {{ 'text-danger' if preview.missing_total }}">{{ "{:,}".format(preview.missing_total) }}</span>
           <span class="metric-label">Missing values</span>
         </div>
       </div>
       {% if is_default %}
-      <p class="note" style="margin: -16px 0 32px;">Raw file counts — one corrupt record is removed in the analysis stages.</p>
+      <p class="note note-offset">Raw file counts — one corrupt record is removed in the analysis stages.</p>
       {% endif %}
 
       <div class="section-head">
         <h2 class="section-title">Columns</h2>
       </div>
-      <div class="table-scroll" style="margin-bottom: 32px;">
+      <div class="table-scroll mb-32">
         <table class="table">
           <thead>
             <tr><th>Field</th><th>Type</th></tr>
@@ -80,7 +80,7 @@
 
       <div class="section-head">
         <h2 class="section-title">Preview — first {{ preview.head|length }} rows</h2>
-        <span class="mono dim" style="font-size: 10.5px;">{{ preview.column_names|length }} columns · scroll →</span>
+        <span class="mono dim mono-sm">{{ preview.column_names|length }} columns · scroll →</span>
       </div>
       <div class="table-scroll">
         <table class="table">
@@ -103,7 +103,7 @@
         </table>
       </div>
 
-      <a href="{{ url_for('analyse_features') }}" class="btn btn-primary" style="margin-top: 28px;">Continue to Analyse Features →</a>
+      <a href="{{ url_for('analyse_features') }}" class="btn btn-primary mt-28">Continue to Analyse Features →</a>
     </div>
     {% endif %}
 

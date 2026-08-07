@@ -53,7 +53,7 @@
           <tr class="{{ 'champion-row' if m.name == mb.best else '' }}">
             <td class="strong">
               {{ m.name }}
-              {% if m.name == mb.best %}<span class="badge badge-accent" style="margin-left: 8px;">Champion</span>{% endif %}
+              {% if m.name == mb.best %}<span class="badge badge-accent badge-offset">Champion</span>{% endif %}
             </td>
             <td class="num">{{ m.metrics.accuracy }}</td>
             <td class="num">{{ m.metrics.precision }}</td>
@@ -86,7 +86,7 @@
 
     <div class="eval-duo">
       <div>
-        <div class="section-head" style="margin-top: 0;">
+        <div class="section-head mt-0">
           <h2 class="section-title">Confusion matrix — {{ mb.best }}</h2>
         </div>
         <div class="cm-grid" role="img"
@@ -104,11 +104,11 @@
       </div>
 
       <div>
-        <div class="section-head" style="margin-top: 0;">
+        <div class="section-head mt-0">
           <h2 class="section-title">Feature importance — Random Forest</h2>
         </div>
         <div class="chart-card">
-          <div class="chart-wrap" style="height: 340px;">
+          <div class="chart-wrap h-340">
             <canvas data-chart="importance" role="img"
                     aria-label="Feature importance bar chart from the random forest"></canvas>
           </div>

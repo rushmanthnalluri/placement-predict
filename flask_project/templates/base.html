@@ -27,8 +27,7 @@
 
       <p class="nav-caption">Pipeline</p>
       <nav class="pipeline-stepper" aria-label="ML pipeline stages">
-        <ol>
-          {% for step in pipeline_steps %}
+        <ol>{% for step in pipeline_steps %}
           <li class="{{ 'is-active' if step.id == active_step else '' }}">
             <a href="{{ url_for(step.endpoint) }}"
                {% if step.id == active_step %}aria-current="page"{% endif %}>
@@ -36,8 +35,7 @@
               <span class="step-label">{{ step.label }}</span>
               {% if not step.live %}<span class="step-soon">Soon</span>{% endif %}
             </a>
-          </li>
-          {% endfor %}
+          </li>{% endfor %}
         </ol>
       </nav>
 

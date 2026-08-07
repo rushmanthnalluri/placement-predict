@@ -35,7 +35,7 @@
   <section class="section">
     <div class="section-head">
       <h2 class="section-title">The candidates</h2>
-      <span class="mono dim" style="font-size: 10.5px;">seed {{ mb.seed }} · scikit-learn</span>
+      <span class="mono dim mono-sm">seed {{ mb.seed }} · scikit-learn</span>
     </div>
     <p class="section-sub">One model from each family of the classical canon, so the choice between
       them is a measured one — not a guess.</p>
@@ -56,9 +56,9 @@
           <tr class="{{ 'champion-row' if m.name == mb.best else '' }}">
             <td class="strong">
               {{ m.name }}
-              {% if m.name == mb.best %}<span class="badge badge-accent" style="margin-left: 8px;">Champion</span>{% endif %}
+              {% if m.name == mb.best %}<span class="badge badge-accent badge-offset">Champion</span>{% endif %}
             </td>
-            <td class="dim" style="white-space: normal; min-width: 220px;">{{ m.note }}</td>
+            <td class="dim cell-role">{{ m.note }}</td>
             <td class="dim">{{ 'z-scored' if m.needs_scaling else 'raw imputed' }}</td>
             <td class="mono num dim">
               {%- if m.name == 'Logistic Regression' -%}max_iter 2000

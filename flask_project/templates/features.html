@@ -24,8 +24,8 @@
 
   <div class="divider" aria-hidden="true"></div>
 
-  <section class="section" style="padding-bottom: 8px;">
-    <div class="metrics" style="grid-template-columns: repeat(3, 1fr);">
+  <section class="section pb-8">
+    <div class="metrics grid-3">
       <div class="metric">
         <span class="metric-value">{{ bundle.n_cols }}</span>
         <span class="metric-label">Fields per record</span>
@@ -41,7 +41,7 @@
     </div>
   </section>
 
-  <section class="section" style="padding-top: 12px;">
+  <section class="section pt-12">
     {% for group in bundle.features.groups %}
     <div class="registry-group" id="group-{{ group|lower|replace(' ', '-') }}">
       <div class="registry-group-head">
@@ -49,7 +49,7 @@
         {% set n = bundle.features.registry | selectattr('group', 'equalto', group) | list | length %}
         <span class="registry-count">{{ n }} field{{ 's' if n != 1 }}</span>
       </div>
-      <div class="table-scroll" style="border: none; border-radius: 0;">
+      <div class="table-scroll borderless">
         <table class="table">
           <thead>
             <tr>
@@ -74,7 +74,7 @@
                 </span>
               </td>
               <td class="num dim">{{ col.unique }}</td>
-              <td class="registry-optional dim" style="white-space: normal; font-size: 12.5px;">{{ col.note }}{% if col.samples %} · <span class="samples">e.g. {{ col.samples | join(' · ') }}</span>{% endif %}</td>
+              <td class="registry-optional dim cell-note">{{ col.note }}{% if col.samples %} · <span class="samples">e.g. {{ col.samples | join(' · ') }}</span>{% endif %}</td>
             </tr>
             {% endfor %}
           </tbody>
