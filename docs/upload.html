@@ -1,0 +1,982 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Upload Dataset · Placement Predict System</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23D9A63F'/%3E%3Ctext x='16' y='21.5' font-family='monospace' font-size='13' font-weight='bold' text-anchor='middle' fill='%2316130A'%3EPP%3C/text%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="static/css/style.css">
+</head>
+<body>
+
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <div class="app-shell">
+
+    <aside class="pipeline-sidebar">
+      <a class="sidebar-brand" href="index.html">
+        <span class="brand-mark">PP</span>
+        <span class="brand-text">
+          <span class="brand-line-1">Placement Predict</span>
+          <span class="brand-line-2">ML Pipeline</span>
+        </span>
+      </a>
+
+      <p class="nav-caption">Pipeline</p>
+      <nav class="pipeline-stepper" aria-label="ML pipeline stages">
+        <ol>
+          
+          <li class="is-active">
+            <a href="upload.html"
+               aria-current="page">
+              <span class="step-num">01</span>
+              <span class="step-label">Upload Dataset</span>
+              
+            </a>
+          </li>
+          
+          <li class="">
+            <a href="features.html"
+               >
+              <span class="step-num">02</span>
+              <span class="step-label">Analyse Features</span>
+              
+            </a>
+          </li>
+          
+          <li class="">
+            <a href="descriptive.html"
+               >
+              <span class="step-num">03</span>
+              <span class="step-label">Descriptive Statistics</span>
+              
+            </a>
+          </li>
+          
+          <li class="">
+            <a href="missing.html"
+               >
+              <span class="step-num">04</span>
+              <span class="step-label">Missing Value Analysis</span>
+              
+            </a>
+          </li>
+          
+          <li class="">
+            <a href="visualize.html"
+               >
+              <span class="step-num">05</span>
+              <span class="step-label">Data Visualization</span>
+              
+            </a>
+          </li>
+          
+          <li class="">
+            <a href="preprocess.html"
+               >
+              <span class="step-num">06</span>
+              <span class="step-label">Preprocessing</span>
+              <span class="step-soon">Soon</span>
+            </a>
+          </li>
+          
+          <li class="">
+            <a href="train.html"
+               >
+              <span class="step-num">07</span>
+              <span class="step-label">Model Training</span>
+              <span class="step-soon">Soon</span>
+            </a>
+          </li>
+          
+          <li class="">
+            <a href="evaluate.html"
+               >
+              <span class="step-num">08</span>
+              <span class="step-label">Model Evaluation</span>
+              <span class="step-soon">Soon</span>
+            </a>
+          </li>
+          
+          <li class="">
+            <a href="predict.html"
+               >
+              <span class="step-num">09</span>
+              <span class="step-label">Predict Placement</span>
+              <span class="step-soon">Soon</span>
+            </a>
+          </li>
+          
+        </ol>
+      </nav>
+
+      <div class="sidebar-footer">
+        <a href="index.html" class="sidebar-overview-link">← Overview</a>
+        <span>placement_predict_50k.csv</span>
+      </div>
+    </aside>
+
+    <div class="app-body">
+      <main id="main" tabindex="-1">
+        
+  <section class="page-head">
+    <p class="page-kicker">Stage 01 · Intake</p>
+    <h1>Upload Dataset</h1>
+    <p class="page-desc">Bring in the raw placement records as a CSV or Excel file — or explore the bundled 50k-student cohort.</p>
+  </section>
+
+  <div class="divider" aria-hidden="true"></div>
+
+  <section class="upload-section">
+
+    
+
+    <form onsubmit="return false" action="upload.html" method="post" enctype="multipart/form-data" class="upload-form" id="uploadForm">
+      <label for="datasetInput" class="upload-drop" id="uploadDrop">
+        <span class="upload-drop-title">Drop a file here, or click to browse</span>
+        <span class="upload-drop-hint">.csv · .xlsx · .xls · up to 10 MB</span>
+        <span class="upload-drop-filename" id="uploadFilename"></span>
+        <input type="file" name="dataset" id="datasetInput" accept=".csv,.xlsx,.xls">
+      </label>
+      <button type="button" class="btn btn-primary upload-submit">Upload dataset</button>
+    </form>
+
+    
+    <div class="loaded-panel">
+      <div class="loaded-header">
+        <span class="badge ">Default</span>
+        <span class="loaded-name">placement_predict_50k.csv</span>
+        
+      </div>
+
+      <div class="metrics" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 32px;">
+        <div class="metric">
+          <span class="metric-value">50,001</span>
+          <span class="metric-label">Rows</span>
+        </div>
+        <div class="metric">
+          <span class="metric-value">31</span>
+          <span class="metric-label">Columns</span>
+        </div>
+        <div class="metric">
+          <span class="metric-value" style="color: var(--danger);">19,976</span>
+          <span class="metric-label">Missing values</span>
+        </div>
+      </div>
+      
+      <p class="note" style="margin: -16px 0 32px;">Raw file counts — one corrupt record is removed in the analysis stages.</p>
+      
+
+      <div class="section-head">
+        <h2 class="section-title">Columns</h2>
+      </div>
+      <div class="table-scroll" style="margin-bottom: 32px;">
+        <table class="table">
+          <thead>
+            <tr><th>Field</th><th>Type</th></tr>
+          </thead>
+          <tbody>
+            
+            <tr>
+              <td class="mono strong">StudentID</td>
+              <td class="num dim">int64</td>
+            </tr>
+            
+            <tr>
+              <td class="mono strong">Gender</td>
+              <td class="num dim">str</td>
+            </tr>
+            
+            <tr>
+              <td class="mono strong">City</td>
+              <td class="num dim">str</td>
+            </tr>
+            
+            <tr>
+              <td class="mono strong">CollegeTier</td>
+              <td class="num dim">str</td>
+            </tr>
+            
+            <tr>
+              <td class="mono strong">Stream</td>
+              <td class="num dim">str</td>
+            </tr>
+            
+            <tr>
+              <td class="mono strong">Specialisation</td>
+              <td class="num dim">str</td>
+            </tr>
+            
+            <tr>
+              <td class="mono strong">Hostel</td>
+              <td class="num dim">str</td>
+            </tr>
+            
+            <tr>
+              <td class="mono strong">HistoryOfBacklogs</td>
+              <td class="num dim">str</td>
+            </tr>
+            
+            <tr>
+              <td class="mono strong">SGPA_Sem1</td>
+              <td class="num dim">float64</td>
+            </tr>
+            
+            <tr>
+              <td class="mono strong">SGPA_Sem2</td>
+              <td class="num dim">float64</td>
+            </tr>
+            
+            <tr>
+              <td class="mono strong">SGPA_Sem3</td>
+              <td class="num dim">float64</td>
+            </tr>
+            
+            <tr>
+              <td class="mono strong">SGPA_Sem4</td>
+              <td class="num dim">float64</td>
+            </tr>
+            
+            <tr>
+              <td class="mono strong">SGPA_Sem5</td>
+              <td class="num dim">float64</td>
+            </tr>
+            
+            <tr>
+              <td class="mono strong">SGPA_Sem6</td>
+              <td class="num dim">float64</td>
+            </tr>
+            
+            <tr>
+              <td class="mono strong">SGPA_Sem7</td>
+              <td class="num dim">float64</td>
+            </tr>
+            
+            <tr>
+              <td class="mono strong">SGPA_Sem8</td>
+              <td class="num dim">float64</td>
+            </tr>
+            
+            <tr>
+              <td class="mono strong">CGPA</td>
+              <td class="num dim">float64</td>
+            </tr>
+            
+            <tr>
+              <td class="mono strong">AttendancePercent</td>
+              <td class="num dim">float64</td>
+            </tr>
+            
+            <tr>
+              <td class="mono strong">Internships</td>
+              <td class="num dim">int64</td>
+            </tr>
+            
+            <tr>
+              <td class="mono strong">Projects</td>
+              <td class="num dim">int64</td>
+            </tr>
+            
+            <tr>
+              <td class="mono strong">Workshops</td>
+              <td class="num dim">float64</td>
+            </tr>
+            
+            <tr>
+              <td class="mono strong">Certifications</td>
+              <td class="num dim">int64</td>
+            </tr>
+            
+            <tr>
+              <td class="mono strong">Publications</td>
+              <td class="num dim">int64</td>
+            </tr>
+            
+            <tr>
+              <td class="mono strong">AptitudeTestScore</td>
+              <td class="num dim">float64</td>
+            </tr>
+            
+            <tr>
+              <td class="mono strong">SoftSkillsRating</td>
+              <td class="num dim">float64</td>
+            </tr>
+            
+            <tr>
+              <td class="mono strong">CodingTestScore</td>
+              <td class="num dim">float64</td>
+            </tr>
+            
+            <tr>
+              <td class="mono strong">MockInterviewScore</td>
+              <td class="num dim">float64</td>
+            </tr>
+            
+            <tr>
+              <td class="mono strong">ExtraCurricular</td>
+              <td class="num dim">int64</td>
+            </tr>
+            
+            <tr>
+              <td class="mono strong">CGPA_Tier</td>
+              <td class="num dim">str</td>
+            </tr>
+            
+            <tr>
+              <td class="mono strong">PlacementStatus</td>
+              <td class="num dim">int64</td>
+            </tr>
+            
+            <tr>
+              <td class="mono strong">IsAnomaly</td>
+              <td class="num dim">int64</td>
+            </tr>
+            
+          </tbody>
+        </table>
+      </div>
+
+      <div class="section-head">
+        <h2 class="section-title">Preview — first 8 rows</h2>
+        <span class="mono dim" style="font-size: 10.5px;">31 columns · scroll →</span>
+      </div>
+      <div class="table-scroll">
+        <table class="table">
+          <thead>
+            <tr>
+              
+              <th>StudentID</th>
+              
+              <th>Gender</th>
+              
+              <th>City</th>
+              
+              <th>CollegeTier</th>
+              
+              <th>Stream</th>
+              
+              <th>Specialisation</th>
+              
+              <th>Hostel</th>
+              
+              <th>HistoryOfBacklogs</th>
+              
+              <th>SGPA_Sem1</th>
+              
+              <th>SGPA_Sem2</th>
+              
+              <th>SGPA_Sem3</th>
+              
+              <th>SGPA_Sem4</th>
+              
+              <th>SGPA_Sem5</th>
+              
+              <th>SGPA_Sem6</th>
+              
+              <th>SGPA_Sem7</th>
+              
+              <th>SGPA_Sem8</th>
+              
+              <th>CGPA</th>
+              
+              <th>AttendancePercent</th>
+              
+              <th>Internships</th>
+              
+              <th>Projects</th>
+              
+              <th>Workshops</th>
+              
+              <th>Certifications</th>
+              
+              <th>Publications</th>
+              
+              <th>AptitudeTestScore</th>
+              
+              <th>SoftSkillsRating</th>
+              
+              <th>CodingTestScore</th>
+              
+              <th>MockInterviewScore</th>
+              
+              <th>ExtraCurricular</th>
+              
+              <th>CGPA_Tier</th>
+              
+              <th>PlacementStatus</th>
+              
+              <th>IsAnomaly</th>
+              
+            </tr>
+          </thead>
+          <tbody>
+            
+            <tr>
+              
+              <td class="num dim">1</td>
+              
+              <td class="num dim">Male</td>
+              
+              <td class="num dim">Ahmedabad</td>
+              
+              <td class="num dim">Tier2</td>
+              
+              <td class="num dim">ECE</td>
+              
+              <td class="num dim">Networking</td>
+              
+              <td class="num dim">No</td>
+              
+              <td class="num dim">No</td>
+              
+              <td class="num dim">6.02</td>
+              
+              <td class="num dim">6.54</td>
+              
+              <td class="num dim">6.52</td>
+              
+              <td class="num dim">6.0</td>
+              
+              <td class="num dim">6.47</td>
+              
+              <td class="num dim">5.91</td>
+              
+              <td class="num dim">6.49</td>
+              
+              <td class="num dim">5.5</td>
+              
+              <td class="num dim">6.29</td>
+              
+              <td class="num dim">73.3</td>
+              
+              <td class="num dim">1</td>
+              
+              <td class="num dim">2</td>
+              
+              <td class="num dim">nan</td>
+              
+              <td class="num dim">2</td>
+              
+              <td class="num dim">0</td>
+              
+              <td class="num dim">66.7</td>
+              
+              <td class="num dim">2.2</td>
+              
+              <td class="num dim">49.4</td>
+              
+              <td class="num dim">47.8</td>
+              
+              <td class="num dim">0</td>
+              
+              <td class="num dim">Low</td>
+              
+              <td class="num dim">0</td>
+              
+              <td class="num dim">0</td>
+              
+            </tr>
+            
+            <tr>
+              
+              <td class="num dim">2</td>
+              
+              <td class="num dim">Female</td>
+              
+              <td class="num dim">Mumbai</td>
+              
+              <td class="num dim">Tier2</td>
+              
+              <td class="num dim">ECE</td>
+              
+              <td class="num dim">DataScience</td>
+              
+              <td class="num dim">Yes</td>
+              
+              <td class="num dim">Yes</td>
+              
+              <td class="num dim">5.84</td>
+              
+              <td class="num dim">5.12</td>
+              
+              <td class="num dim">5.34</td>
+              
+              <td class="num dim">5.18</td>
+              
+              <td class="num dim">5.03</td>
+              
+              <td class="num dim">4.93</td>
+              
+              <td class="num dim">5.4</td>
+              
+              <td class="num dim">5.13</td>
+              
+              <td class="num dim">5.23</td>
+              
+              <td class="num dim">54.5</td>
+              
+              <td class="num dim">0</td>
+              
+              <td class="num dim">1</td>
+              
+              <td class="num dim">0.0</td>
+              
+              <td class="num dim">1</td>
+              
+              <td class="num dim">0</td>
+              
+              <td class="num dim">48.2</td>
+              
+              <td class="num dim">2.4</td>
+              
+              <td class="num dim">26.7</td>
+              
+              <td class="num dim">25.8</td>
+              
+              <td class="num dim">0</td>
+              
+              <td class="num dim">Low</td>
+              
+              <td class="num dim">0</td>
+              
+              <td class="num dim">0</td>
+              
+            </tr>
+            
+            <tr>
+              
+              <td class="num dim">3</td>
+              
+              <td class="num dim">Male</td>
+              
+              <td class="num dim">Kolkata</td>
+              
+              <td class="num dim">Tier2</td>
+              
+              <td class="num dim">IT</td>
+              
+              <td class="num dim">DataScience</td>
+              
+              <td class="num dim">Yes</td>
+              
+              <td class="num dim">No</td>
+              
+              <td class="num dim">4.91</td>
+              
+              <td class="num dim">5.29</td>
+              
+              <td class="num dim">5.49</td>
+              
+              <td class="num dim">5.73</td>
+              
+              <td class="num dim">5.33</td>
+              
+              <td class="num dim">5.88</td>
+              
+              <td class="num dim">5.82</td>
+              
+              <td class="num dim">5.67</td>
+              
+              <td class="num dim">5.52</td>
+              
+              <td class="num dim">77.6</td>
+              
+              <td class="num dim">1</td>
+              
+              <td class="num dim">3</td>
+              
+              <td class="num dim">1.0</td>
+              
+              <td class="num dim">1</td>
+              
+              <td class="num dim">0</td>
+              
+              <td class="num dim">73.8</td>
+              
+              <td class="num dim">2.8</td>
+              
+              <td class="num dim">67.7</td>
+              
+              <td class="num dim">41.5</td>
+              
+              <td class="num dim">0</td>
+              
+              <td class="num dim">Low</td>
+              
+              <td class="num dim">1</td>
+              
+              <td class="num dim">0</td>
+              
+            </tr>
+            
+            <tr>
+              
+              <td class="num dim">4</td>
+              
+              <td class="num dim">Male</td>
+              
+              <td class="num dim">Jaipur</td>
+              
+              <td class="num dim">Tier1</td>
+              
+              <td class="num dim">CS</td>
+              
+              <td class="num dim">AI</td>
+              
+              <td class="num dim">No</td>
+              
+              <td class="num dim">No</td>
+              
+              <td class="num dim">7.67</td>
+              
+              <td class="num dim">8.03</td>
+              
+              <td class="num dim">8.08</td>
+              
+              <td class="num dim">7.64</td>
+              
+              <td class="num dim">6.86</td>
+              
+              <td class="num dim">7.1</td>
+              
+              <td class="num dim">7.56</td>
+              
+              <td class="num dim">7.39</td>
+              
+              <td class="num dim">7.51</td>
+              
+              <td class="num dim">68.8</td>
+              
+              <td class="num dim">1</td>
+              
+              <td class="num dim">2</td>
+              
+              <td class="num dim">1.0</td>
+              
+              <td class="num dim">2</td>
+              
+              <td class="num dim">0</td>
+              
+              <td class="num dim">69.8</td>
+              
+              <td class="num dim">2.7</td>
+              
+              <td class="num dim">66.9</td>
+              
+              <td class="num dim">48.0</td>
+              
+              <td class="num dim">0</td>
+              
+              <td class="num dim">Mid</td>
+              
+              <td class="num dim">1</td>
+              
+              <td class="num dim">0</td>
+              
+            </tr>
+            
+            <tr>
+              
+              <td class="num dim">5</td>
+              
+              <td class="num dim">Male</td>
+              
+              <td class="num dim">Pune</td>
+              
+              <td class="num dim">Tier2</td>
+              
+              <td class="num dim">IT</td>
+              
+              <td class="num dim">DataScience</td>
+              
+              <td class="num dim">Yes</td>
+              
+              <td class="num dim">No</td>
+              
+              <td class="num dim">8.14</td>
+              
+              <td class="num dim">8.97</td>
+              
+              <td class="num dim">8.36</td>
+              
+              <td class="num dim">8.55</td>
+              
+              <td class="num dim">8.55</td>
+              
+              <td class="num dim">8.38</td>
+              
+              <td class="num dim">9.1</td>
+              
+              <td class="num dim">8.86</td>
+              
+              <td class="num dim">8.65</td>
+              
+              <td class="num dim">95.8</td>
+              
+              <td class="num dim">2</td>
+              
+              <td class="num dim">3</td>
+              
+              <td class="num dim">nan</td>
+              
+              <td class="num dim">4</td>
+              
+              <td class="num dim">1</td>
+              
+              <td class="num dim">73.1</td>
+              
+              <td class="num dim">2.1</td>
+              
+              <td class="num dim">71.7</td>
+              
+              <td class="num dim">61.7</td>
+              
+              <td class="num dim">1</td>
+              
+              <td class="num dim">High</td>
+              
+              <td class="num dim">1</td>
+              
+              <td class="num dim">0</td>
+              
+            </tr>
+            
+            <tr>
+              
+              <td class="num dim">6</td>
+              
+              <td class="num dim">Male</td>
+              
+              <td class="num dim">Ahmedabad</td>
+              
+              <td class="num dim">Tier2</td>
+              
+              <td class="num dim">EE</td>
+              
+              <td class="num dim">Networking</td>
+              
+              <td class="num dim">No</td>
+              
+              <td class="num dim">No</td>
+              
+              <td class="num dim">10.0</td>
+              
+              <td class="num dim">10.0</td>
+              
+              <td class="num dim">10.0</td>
+              
+              <td class="num dim">10.0</td>
+              
+              <td class="num dim">10.0</td>
+              
+              <td class="num dim">10.0</td>
+              
+              <td class="num dim">10.0</td>
+              
+              <td class="num dim">10.0</td>
+              
+              <td class="num dim">10.0</td>
+              
+              <td class="num dim">88.9</td>
+              
+              <td class="num dim">2</td>
+              
+              <td class="num dim">5</td>
+              
+              <td class="num dim">2.0</td>
+              
+              <td class="num dim">4</td>
+              
+              <td class="num dim">1</td>
+              
+              <td class="num dim">81.5</td>
+              
+              <td class="num dim">3.9</td>
+              
+              <td class="num dim">nan</td>
+              
+              <td class="num dim">75.3</td>
+              
+              <td class="num dim">0</td>
+              
+              <td class="num dim">High</td>
+              
+              <td class="num dim">1</td>
+              
+              <td class="num dim">0</td>
+              
+            </tr>
+            
+            <tr>
+              
+              <td class="num dim">7</td>
+              
+              <td class="num dim">Male</td>
+              
+              <td class="num dim">Hyderabad</td>
+              
+              <td class="num dim">Tier2</td>
+              
+              <td class="num dim">Mechanical</td>
+              
+              <td class="num dim">Networking</td>
+              
+              <td class="num dim">Yes</td>
+              
+              <td class="num dim">No</td>
+              
+              <td class="num dim">8.7</td>
+              
+              <td class="num dim">9.55</td>
+              
+              <td class="num dim">9.72</td>
+              
+              <td class="num dim">9.86</td>
+              
+              <td class="num dim">8.85</td>
+              
+              <td class="num dim">9.07</td>
+              
+              <td class="num dim">9.71</td>
+              
+              <td class="num dim">9.7</td>
+              
+              <td class="num dim">9.35</td>
+              
+              <td class="num dim">87.1</td>
+              
+              <td class="num dim">2</td>
+              
+              <td class="num dim">2</td>
+              
+              <td class="num dim">3.0</td>
+              
+              <td class="num dim">3</td>
+              
+              <td class="num dim">2</td>
+              
+              <td class="num dim">76.5</td>
+              
+              <td class="num dim">4.6</td>
+              
+              <td class="num dim">83.0</td>
+              
+              <td class="num dim">61.5</td>
+              
+              <td class="num dim">1</td>
+              
+              <td class="num dim">High</td>
+              
+              <td class="num dim">1</td>
+              
+              <td class="num dim">0</td>
+              
+            </tr>
+            
+            <tr>
+              
+              <td class="num dim">8</td>
+              
+              <td class="num dim">Male</td>
+              
+              <td class="num dim">Delhi</td>
+              
+              <td class="num dim">Tier2</td>
+              
+              <td class="num dim">Mechanical</td>
+              
+              <td class="num dim">Embedded</td>
+              
+              <td class="num dim">Yes</td>
+              
+              <td class="num dim">No</td>
+              
+              <td class="num dim">5.87</td>
+              
+              <td class="num dim">5.64</td>
+              
+              <td class="num dim">5.48</td>
+              
+              <td class="num dim">5.78</td>
+              
+              <td class="num dim">5.89</td>
+              
+              <td class="num dim">6.0</td>
+              
+              <td class="num dim">5.12</td>
+              
+              <td class="num dim">5.19</td>
+              
+              <td class="num dim">5.51</td>
+              
+              <td class="num dim">67.9</td>
+              
+              <td class="num dim">0</td>
+              
+              <td class="num dim">1</td>
+              
+              <td class="num dim">1.0</td>
+              
+              <td class="num dim">0</td>
+              
+              <td class="num dim">0</td>
+              
+              <td class="num dim">nan</td>
+              
+              <td class="num dim">2.0</td>
+              
+              <td class="num dim">35.2</td>
+              
+              <td class="num dim">27.8</td>
+              
+              <td class="num dim">0</td>
+              
+              <td class="num dim">Low</td>
+              
+              <td class="num dim">0</td>
+              
+              <td class="num dim">0</td>
+              
+            </tr>
+            
+          </tbody>
+        </table>
+      </div>
+
+      <a href="features.html" class="btn btn-primary" style="margin-top: 28px;">Continue to Analyse Features →</a>
+    </div>
+    
+
+  </section>
+
+  
+<nav class="stage-pager" aria-label="Pipeline stages">
+  <span></span>
+  
+  <a href="features.html" class="pager-link pager-next">
+    <span class="pager-dir">Stage 02 →</span>
+    <span class="pager-label">Analyse Features</span>
+  </a>
+  
+</nav>
+
+
+      </main>
+
+      <footer class="site-footer">
+        <div class="footer-row">
+          <span>Placement Predict System</span>
+          <span>5 of 9 stages live</span>
+        </div>
+      </footer>
+    </div>
+
+  </div>
+
+  <script src="static/js/script.js"></script>
+  
+</body>
+</html>

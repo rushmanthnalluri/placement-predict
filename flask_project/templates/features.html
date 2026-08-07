@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block title %}{{ step.label }} · Placement Predict System{% endblock %}
+
+{% block content %}
+  <section class="page-head">
+    <p class="page-kicker">{{ step.eyebrow }}</p>
+    <h1>{{ step.label }}</h1>
+    <p class="page-desc">{{ step.note }}</p>
+    <p class="page-meta">Dataset · {{ dataset_name }}{{ ' (bundled default)' if is_default else '' }}</p>
+  </section>
+
+  {% if not bundle.schema_ok %}
+  <div class="divider" aria-hidden="true"></div>
+  <section class="upload-section">
+    <div class="alert">
+      <strong>Dataset schema not supported</strong>
+      This stage expects the placement schema (CGPA, skill scores,
+      PlacementStatus, …). The uploaded file has different columns, so there
+      is nothing to analyse here — the bundled cohort would work.
+      <div class="alert-actions"><a href="{{ url_for('upload_dataset') }}">Review the upload</a></div>
+    </div>
+  </section>
+  {% else %}
+
+  <div class="divider" aria-hidden="true"></div>
+
+  <section class="section" style="padding-bottom: 8px;">
+    <div class="metrics" style="grid-template-columns: repeat(3, 1fr);">
+      <div class="metric">
+        <span class="metric-value">{{ bundle.n_cols }}</span>
+        <span class="metric-label">Fields per record</span>
+      </div>
+      <div class="metric">
+        <span class="metric-value">{{ bundle.features.n_numeric }}</span>
+        <span class="metric-label">Numeric</span>
+      </div>
+      <div class="metric">
+        <span class="metric-value">{{ bundle.features.n_categorical }}</span>
+        <span class="metric-label">Categorical</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" style="padding-top: 12px;">
+    {% for group in bundle.features.groups %}
+    <div class="registry-group" id="group-{{ group|lower|replace(' ', '-') }}">
+      <div class="registry-group-head">
+        <h2>{{ group }}</h2>
+        {% set n = bundle.features.registry | selectattr('group', 'equalto', group) | list | length %}
+        <span class="registry-count">{{ n }} field{{ 's' if n != 1 }}</span>
+      </div>
+      <div class="table-scroll" style="border: none; border-radius: 0;">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Field</th>
+              <th>Type</th>
+              <th>Role</th>
+              <th>Coverage</th>
+              <th>Unique</th>
+              <th class="registry-optional">Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for col in bundle.features.registry if col.group == group %}
+            <tr>
+              <td class="mono strong">{{ col.name }}</td>
+              <td class="mono num dim">{{ col.dtype }}</td>
+              <td><span class="role-tag {{ 'role-target' if col.role == 'target' else '' }}">{{ col.role }}</span></td>
+              <td>
+                <span class="coverage">
+                  <span class="coverage-track"><span class="coverage-fill {{ 'coverage-low' if col.non_null_pct < 95 else '' }}" style="--w: {{ col.non_null_pct }}%"></span></span>
+                  <span class="coverage-pct">{{ col.non_null_pct }}%</span>
+                </span>
+              </td>
+              <td class="num dim">{{ col.unique }}</td>
+              <td class="registry-optional dim" style="white-space: normal; font-size: 12.5px;">{{ col.note }}{% if col.samples %} · <span class="samples">e.g. {{ col.samples | join(' · ') }}</span>{% endif %}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {% endfor %}
+  </section>
+  {% endif %}
+
+  {% include "_pager.html" %}
+{% endblock %}

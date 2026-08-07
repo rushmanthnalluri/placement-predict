@@ -1,0 +1,4 @@
+__pycache__/
+*.pyc
+.vs/
+flask_project/data/uploads/

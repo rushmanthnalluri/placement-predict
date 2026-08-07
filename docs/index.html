@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Overview · Placement Predict System</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23D9A63F'/%3E%3Ctext x='16' y='21.5' font-family='monospace' font-size='13' font-weight='bold' text-anchor='middle' fill='%2316130A'%3EPP%3C/text%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="static/css/style.css">
+</head>
+<body>
+
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <div class="app-shell">
+
+    <aside class="pipeline-sidebar">
+      <a class="sidebar-brand" href="index.html">
+        <span class="brand-mark">PP</span>
+        <span class="brand-text">
+          <span class="brand-line-1">Placement Predict</span>
+          <span class="brand-line-2">ML Pipeline</span>
+        </span>
+      </a>
+
+      <p class="nav-caption">Pipeline</p>
+      <nav class="pipeline-stepper" aria-label="ML pipeline stages">
+        <ol>
+          
+          <li class="">
+            <a href="upload.html"
+               >
+              <span class="step-num">01</span>
+              <span class="step-label">Upload Dataset</span>
+              
+            </a>
+          </li>
+          
+          <li class="">
+            <a href="features.html"
+               >
+              <span class="step-num">02</span>
+              <span class="step-label">Analyse Features</span>
+              
+            </a>
+          </li>
+          
+          <li class="">
+            <a href="descriptive.html"
+               >
+              <span class="step-num">03</span>
+              <span class="step-label">Descriptive Statistics</span>
+              
+            </a>
+          </li>
+          
+          <li class="">
+            <a href="missing.html"
+               >
+              <span class="step-num">04</span>
+              <span class="step-label">Missing Value Analysis</span>
+              
+            </a>
+          </li>
+          
+          <li class="">
+            <a href="visualize.html"
+               >
+              <span class="step-num">05</span>
+              <span class="step-label">Data Visualization</span>
+              
+            </a>
+          </li>
+          
+          <li class="">
+            <a href="preprocess.html"
+               >
+              <span class="step-num">06</span>
+              <span class="step-label">Preprocessing</span>
+              <span class="step-soon">Soon</span>
+            </a>
+          </li>
+          
+          <li class="">
+            <a href="train.html"
+               >
+              <span class="step-num">07</span>
+              <span class="step-label">Model Training</span>
+              <span class="step-soon">Soon</span>
+            </a>
+          </li>
+          
+          <li class="">
+            <a href="evaluate.html"
+               >
+              <span class="step-num">08</span>
+              <span class="step-label">Model Evaluation</span>
+              <span class="step-soon">Soon</span>
+            </a>
+          </li>
+          
+          <li class="">
+            <a href="predict.html"
+               >
+              <span class="step-num">09</span>
+              <span class="step-label">Predict Placement</span>
+              <span class="step-soon">Soon</span>
+            </a>
+          </li>
+          
+        </ol>
+      </nav>
+
+      <div class="sidebar-footer">
+        <a href="index.html" class="sidebar-overview-link">← Overview</a>
+        <span>placement_predict_50k.csv</span>
+      </div>
+    </aside>
+
+    <div class="app-body">
+      <main id="main" tabindex="-1">
+        
+
+  <section class="home-head">
+    <div>
+      <p class="page-kicker">Overview</p>
+      <h1>Placement Predict System</h1>
+      <p class="page-desc">
+        A nine-stage machine-learning pipeline over a record of
+        <strong>50,000</strong> graduating students —
+        grades, skills, internships, and outcomes — from raw upload to a
+        trained placement call. The exploratory stages are live on the data now.
+      </p>
+      <div class="page-actions">
+        <a href="upload.html" class="btn btn-primary">Start the pipeline</a>
+        <a href="visualize.html" class="btn btn-secondary">Explore the data</a>
+      </div>
+    </div>
+
+    <aside class="panel" aria-label="Active dataset">
+      <div class="panel-head">
+        <span class="panel-title">Active dataset</span>
+        <span class="badge ">Default</span>
+      </div>
+      <div class="panel-body">
+        <span class="dataset-file">placement_predict_50k.csv</span>
+        <dl class="dataset-facts">
+          <div class="dataset-fact"><dt>Records</dt><dd>50,000</dd></div>
+          <div class="dataset-fact"><dt>Fields</dt><dd>31</dd></div>
+          <div class="dataset-fact"><dt>Placement rate</dt><dd>65.7%</dd></div>
+          <div class="dataset-fact"><dt>Completeness</dt><dd>98.7%</dd></div>
+        </dl>
+        <a href="upload.html" class="section-link">Upload a different file →</a>
+      </div>
+    </aside>
+  </section>
+
+  <div class="divider" aria-hidden="true"></div>
+
+  <section class="section">
+    <div class="section-head">
+      <h2 class="section-title">Dataset snapshot</h2>
+      <span class="mono dim" style="font-size: 10.5px;">1,750 anomalous records flagged · 1 corrupt record removed</span>
+    </div>
+
+    <div class="metrics">
+      <div class="metric">
+        <span class="metric-value">50,000</span>
+        <span class="metric-label">Student records</span>
+      </div>
+      <div class="metric">
+        <span class="metric-value">7.25</span>
+        <span class="metric-label">Average CGPA</span>
+      </div>
+      <div class="metric">
+        <span class="metric-value">76.7%</span>
+        <span class="metric-label">Average attendance</span>
+      </div>
+      <div class="metric">
+        <span class="metric-value">65.7%</span>
+        <span class="metric-label">Placement rate</span>
+      </div>
+    </div>
+
+    <div class="outcome" style="margin-top: 32px;" role="img"
+         aria-label="65.7 percent of students placed">
+      <div class="outcome-track">
+        <div class="outcome-placed" style="width: 65.7%"></div>
+        <div class="outcome-not"></div>
+      </div>
+      <div class="outcome-legend">
+        <span class="outcome-key"><span class="outcome-swatch outcome-swatch-placed"></span>
+          Placed · <span class="mono">32,856</span></span>
+        <span class="outcome-key"><span class="outcome-swatch outcome-swatch-not"></span>
+          Not placed · <span class="mono">17,144</span></span>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider" aria-hidden="true"></div>
+
+  <section class="section">
+    <div class="section-head">
+      <h2 class="section-title">What drives the offer</h2>
+      <a href="visualize.html" class="section-link">Full analysis →</a>
+    </div>
+    <p class="section-sub">Correlation of each factor with the placement outcome, after cleaning.
+      CGPA leads by a wide margin.</p>
+    <div class="driver-list">
+      
+      <div class="driver-row">
+        <span class="driver-name">CGPA</span>
+        <div class="driver-track"><div class="driver-fill" style="--w: 65.0%"></div></div>
+        <span class="driver-value">0.65</span>
+      </div>
+      
+      <div class="driver-row">
+        <span class="driver-name">MockInterviewScore</span>
+        <div class="driver-track"><div class="driver-fill" style="--w: 63.0%"></div></div>
+        <span class="driver-value">0.63</span>
+      </div>
+      
+      <div class="driver-row">
+        <span class="driver-name">SoftSkillsRating</span>
+        <div class="driver-track"><div class="driver-fill" style="--w: 60.0%"></div></div>
+        <span class="driver-value">0.60</span>
+      </div>
+      
+      <div class="driver-row">
+        <span class="driver-name">Certifications</span>
+        <div class="driver-track"><div class="driver-fill" style="--w: 60.0%"></div></div>
+        <span class="driver-value">0.60</span>
+      </div>
+      
+      <div class="driver-row">
+        <span class="driver-name">CodingTestScore</span>
+        <div class="driver-track"><div class="driver-fill" style="--w: 59.0%"></div></div>
+        <span class="driver-value">0.59</span>
+      </div>
+      
+    </div>
+  </section>
+
+  <div class="divider" aria-hidden="true"></div>
+
+  <section class="section">
+    <div class="section-head">
+      <h2 class="section-title">The record, at a glance</h2>
+      <a href="features.html" class="section-link">All 31 fields →</a>
+    </div>
+    <div class="group-index">
+      
+      
+      <a href="features.html#group-identity" class="group-cell">
+        <span class="group-cell-name">Identity</span>
+        <span class="group-cell-meta">
+          <span>1 field</span>
+          <span class="group-cell-cta">→</span>
+        </span>
+      </a>
+      
+      
+      <a href="features.html#group-demographics" class="group-cell">
+        <span class="group-cell-name">Demographics</span>
+        <span class="group-cell-meta">
+          <span>6 fields</span>
+          <span class="group-cell-cta">→</span>
+        </span>
+      </a>
+      
+      
+      <a href="features.html#group-academic" class="group-cell">
+        <span class="group-cell-name">Academic</span>
+        <span class="group-cell-meta">
+          <span>12 fields</span>
+          <span class="group-cell-cta">→</span>
+        </span>
+      </a>
+      
+      
+      <a href="features.html#group-experience" class="group-cell">
+        <span class="group-cell-name">Experience</span>
+        <span class="group-cell-meta">
+          <span>6 fields</span>
+          <span class="group-cell-cta">→</span>
+        </span>
+      </a>
+      
+      
+      <a href="features.html#group-skill-scores" class="group-cell">
+        <span class="group-cell-name">Skill scores</span>
+        <span class="group-cell-meta">
+          <span>4 fields</span>
+          <span class="group-cell-cta">→</span>
+        </span>
+      </a>
+      
+      
+      <a href="features.html#group-outcome" class="group-cell">
+        <span class="group-cell-name">Outcome</span>
+        <span class="group-cell-meta">
+          <span>2 fields</span>
+          <span class="group-cell-cta">→</span>
+        </span>
+      </a>
+      
+    </div>
+  </section>
+
+  <div class="divider" aria-hidden="true"></div>
+
+  <section class="section" style="padding-bottom: 64px;">
+    <div class="section-head">
+      <h2 class="section-title">The pipeline</h2>
+    </div>
+    <ol class="pipeline-list">
+      
+      <li>
+        <a href="upload.html" class="pipeline-row">
+          <span class="pipeline-index">01</span>
+          <span class="pipeline-body">
+            <span class="pipeline-label">Upload Dataset</span>
+            <span class="pipeline-note">Bring in the raw placement records as a CSV or Excel file — or explore the bundled 50k-student cohort.</span>
+          </span>
+          <span class="pipeline-status status-live">Live</span>
+          <span class="pipeline-chevron">→</span>
+        </a>
+      </li>
+      
+      <li>
+        <a href="features.html" class="pipeline-row">
+          <span class="pipeline-index">02</span>
+          <span class="pipeline-body">
+            <span class="pipeline-label">Analyse Features</span>
+            <span class="pipeline-note">Every column in the record — its type, role, coverage, and sample values — before any analysis begins.</span>
+          </span>
+          <span class="pipeline-status status-live">Live</span>
+          <span class="pipeline-chevron">→</span>
+        </a>
+      </li>
+      
+      <li>
+        <a href="descriptive.html" class="pipeline-row">
+          <span class="pipeline-index">03</span>
+          <span class="pipeline-body">
+            <span class="pipeline-label">Descriptive Statistics</span>
+            <span class="pipeline-note">Mean, median, spread, and range across twenty numeric fields, then split by placement outcome.</span>
+          </span>
+          <span class="pipeline-status status-live">Live</span>
+          <span class="pipeline-chevron">→</span>
+        </a>
+      </li>
+      
+      <li>
+        <a href="missing.html" class="pipeline-row">
+          <span class="pipeline-index">04</span>
+          <span class="pipeline-body">
+            <span class="pipeline-label">Missing Value Analysis</span>
+            <span class="pipeline-note">Five skill and activity columns have gaps — measured here, then repaired with mean imputation.</span>
+          </span>
+          <span class="pipeline-status status-live">Live</span>
+          <span class="pipeline-chevron">→</span>
+        </a>
+      </li>
+      
+      <li>
+        <a href="visualize.html" class="pipeline-row">
+          <span class="pipeline-index">05</span>
+          <span class="pipeline-body">
+            <span class="pipeline-label">Data Visualization</span>
+            <span class="pipeline-note">Distributions, correlations, and placement splits — the shape of the data, made visible.</span>
+          </span>
+          <span class="pipeline-status status-live">Live</span>
+          <span class="pipeline-chevron">→</span>
+        </a>
+      </li>
+      
+      <li>
+        <a href="preprocess.html" class="pipeline-row">
+          <span class="pipeline-index">06</span>
+          <span class="pipeline-body">
+            <span class="pipeline-label">Preprocessing</span>
+            <span class="pipeline-note">Encode the target, scale the features, and split into train and test sets.</span>
+          </span>
+          <span class="pipeline-status status-soon">Soon</span>
+          <span class="pipeline-chevron">→</span>
+        </a>
+      </li>
+      
+      <li>
+        <a href="train.html" class="pipeline-row">
+          <span class="pipeline-index">07</span>
+          <span class="pipeline-body">
+            <span class="pipeline-label">Model Training</span>
+            <span class="pipeline-note">Fit a classifier on the training set and tune it against the pipeline defined so far.</span>
+          </span>
+          <span class="pipeline-status status-soon">Soon</span>
+          <span class="pipeline-chevron">→</span>
+        </a>
+      </li>
+      
+      <li>
+        <a href="evaluate.html" class="pipeline-row">
+          <span class="pipeline-index">08</span>
+          <span class="pipeline-body">
+            <span class="pipeline-label">Model Evaluation</span>
+            <span class="pipeline-note">Accuracy, precision/recall, confusion matrix, and feature importance on held-out data.</span>
+          </span>
+          <span class="pipeline-status status-soon">Soon</span>
+          <span class="pipeline-chevron">→</span>
+        </a>
+      </li>
+      
+      <li>
+        <a href="predict.html" class="pipeline-row">
+          <span class="pipeline-index">09</span>
+          <span class="pipeline-body">
+            <span class="pipeline-label">Predict Placement</span>
+            <span class="pipeline-note">Enter a student&#39;s scores and get a placement call from the trained model.</span>
+          </span>
+          <span class="pipeline-status status-soon">Soon</span>
+          <span class="pipeline-chevron">→</span>
+        </a>
+      </li>
+      
+    </ol>
+  </section>
+
+
+      </main>
+
+      <footer class="site-footer">
+        <div class="footer-row">
+          <span>Placement Predict System</span>
+          <span>5 of 9 stages live</span>
+        </div>
+      </footer>
+    </div>
+
+  </div>
+
+  <script src="static/js/script.js"></script>
+  
+</body>
+</html>

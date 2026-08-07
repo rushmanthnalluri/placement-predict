@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Placement Predict System{% endblock %}</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23D9A63F'/%3E%3Ctext x='16' y='21.5' font-family='monospace' font-size='13' font-weight='bold' text-anchor='middle' fill='%2316130A'%3EPP%3C/text%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <div class="app-shell">
+
+    <aside class="pipeline-sidebar">
+      <a class="sidebar-brand" href="{{ url_for('home') }}">
+        <span class="brand-mark">PP</span>
+        <span class="brand-text">
+          <span class="brand-line-1">Placement Predict</span>
+          <span class="brand-line-2">ML Pipeline</span>
+        </span>
+      </a>
+
+      <p class="nav-caption">Pipeline</p>
+      <nav class="pipeline-stepper" aria-label="ML pipeline stages">
+        <ol>
+          {% for step in pipeline_steps %}
+          <li class="{{ 'is-active' if step.id == active_step else '' }}">
+            <a href="{{ url_for(step.endpoint) }}"
+               {% if step.id == active_step %}aria-current="page"{% endif %}>
+              <span class="step-num">{{ step.step }}</span>
+              <span class="step-label">{{ step.label }}</span>
+              {% if not step.live %}<span class="step-soon">Soon</span>{% endif %}
+            </a>
+          </li>
+          {% endfor %}
+        </ol>
+      </nav>
+
+      <div class="sidebar-footer">
+        <a href="{{ url_for('home') }}" class="sidebar-overview-link">← Overview</a>
+        <span>{{ active_dataset_name }}</span>
+      </div>
+    </aside>
+
+    <div class="app-body">
+      <main id="main" tabindex="-1">
+        {% block content %}{% endblock %}
+      </main>
+
+      <footer class="site-footer">
+        <div class="footer-row">
+          <span>Placement Predict System</span>
+          <span>{{ pipeline_steps|selectattr('live')|list|length }} of {{ pipeline_steps|length }} stages live</span>
+        </div>
+      </footer>
+    </div>
+
+  </div>
+
+  <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

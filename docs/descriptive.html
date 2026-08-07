@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Descriptive Statistics · Placement Predict System</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23D9A63F'/%3E%3Ctext x='16' y='21.5' font-family='monospace' font-size='13' font-weight='bold' text-anchor='middle' fill='%2316130A'%3EPP%3C/text%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="static/css/style.css">
+</head>
+<body>
+
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <div class="app-shell">
+
+    <aside class="pipeline-sidebar">
+      <a class="sidebar-brand" href="index.html">
+        <span class="brand-mark">PP</span>
+        <span class="brand-text">
+          <span class="brand-line-1">Placement Predict</span>
+          <span class="brand-line-2">ML Pipeline</span>
+        </span>
+      </a>
+
+      <p class="nav-caption">Pipeline</p>
+      <nav class="pipeline-stepper" aria-label="ML pipeline stages">
+        <ol>
+          
+          <li class="">
+            <a href="upload.html"
+               >
+              <span class="step-num">01</span>
+              <span class="step-label">Upload Dataset</span>
+              
+            </a>
+          </li>
+          
+          <li class="">
+            <a href="features.html"
+               >
+              <span class="step-num">02</span>
+              <span class="step-label">Analyse Features</span>
+              
+            </a>
+          </li>
+          
+          <li class="is-active">
+            <a href="descriptive.html"
+               aria-current="page">
+              <span class="step-num">03</span>
+              <span class="step-label">Descriptive Statistics</span>
+              
+            </a>
+          </li>
+          
+          <li class="">
+            <a href="missing.html"
+               >
+              <span class="step-num">04</span>
+              <span class="step-label">Missing Value Analysis</span>
+              
+            </a>
+          </li>
+          
+          <li class="">
+            <a href="visualize.html"
+               >
+              <span class="step-num">05</span>
+              <span class="step-label">Data Visualization</span>
+              
+            </a>
+          </li>
+          
+          <li class="">
+            <a href="preprocess.html"
+               >
+              <span class="step-num">06</span>
+              <span class="step-label">Preprocessing</span>
+              <span class="step-soon">Soon</span>
+            </a>
+          </li>
+          
+          <li class="">
+            <a href="train.html"
+               >
+              <span class="step-num">07</span>
+              <span class="step-label">Model Training</span>
+              <span class="step-soon">Soon</span>
+            </a>
+          </li>
+          
+          <li class="">
+            <a href="evaluate.html"
+               >
+              <span class="step-num">08</span>
+              <span class="step-label">Model Evaluation</span>
+              <span class="step-soon">Soon</span>
+            </a>
+          </li>
+          
+          <li class="">
+            <a href="predict.html"
+               >
+              <span class="step-num">09</span>
+              <span class="step-label">Predict Placement</span>
+              <span class="step-soon">Soon</span>
+            </a>
+          </li>
+          
+        </ol>
+      </nav>
+
+      <div class="sidebar-footer">
+        <a href="index.html" class="sidebar-overview-link">← Overview</a>
+        <span>placement_predict_50k.csv</span>
+      </div>
+    </aside>
+
+    <div class="app-body">
+      <main id="main" tabindex="-1">
+        
+  <section class="page-head">
+    <p class="page-kicker">Stage 03 · Records</p>
+    <h1>Descriptive Statistics</h1>
+    <p class="page-desc">Mean, median, spread, and range across twenty numeric fields, then split by placement outcome.</p>
+    <p class="page-meta">Dataset · placement_predict_50k.csv (bundled default)</p>
+  </section>
+
+  
+
+  <div class="divider" aria-hidden="true"></div>
+
+  <section class="section">
+    <div class="section-head">
+      <h2 class="section-title">All numeric fields — centre, spread, and range</h2>
+    </div>
+    <div class="table-scroll" style="max-height: 68vh;">
+      <table class="table table-sticky">
+        <thead>
+          <tr>
+            <th class="sticky-col">Field</th>
+            
+            <th>count</th>
+            
+            <th>mean</th>
+            
+            <th>std</th>
+            
+            <th>min</th>
+            
+            <th>25%</th>
+            
+            <th>50%</th>
+            
+            <th>75%</th>
+            
+            <th>max</th>
+            
+          </tr>
+        </thead>
+        <tbody>
+          
+          
+          <tr>
+            <td class="sticky-col mono strong">SGPA_Sem1</td>
+            <td class="num dim">50,000</td>
+            <td class="num accent">7.21</td>
+            <td class="num">1.52</td>
+            <td class="num dim">4.0</td>
+            <td class="num dim">6.09</td>
+            <td class="num">7.19</td>
+            <td class="num dim">8.34</td>
+            <td class="num dim">10.0</td>
+          </tr>
+          
+          
+          <tr>
+            <td class="sticky-col mono strong">SGPA_Sem2</td>
+            <td class="num dim">50,000</td>
+            <td class="num accent">7.22</td>
+            <td class="num">1.53</td>
+            <td class="num dim">4.0</td>
+            <td class="num dim">6.09</td>
+            <td class="num">7.21</td>
+            <td class="num dim">8.36</td>
+            <td class="num dim">10.0</td>
+          </tr>
+          
+          
+          <tr>
+            <td class="sticky-col mono strong">SGPA_Sem3</td>
+            <td class="num dim">50,000</td>
+            <td class="num accent">7.24</td>
+            <td class="num">1.55</td>
+            <td class="num dim">4.0</td>
+            <td class="num dim">6.08</td>
+            <td class="num">7.22</td>
+            <td class="num dim">8.4</td>
+            <td class="num dim">10.0</td>
+          </tr>
+          
+          
+          <tr>
+            <td class="sticky-col mono strong">SGPA_Sem4</td>
+            <td class="num dim">50,000</td>
+            <td class="num accent">7.25</td>
+            <td class="num">1.57</td>
+            <td class="num dim">4.0</td>
+            <td class="num dim">6.07</td>
+            <td class="num">7.24</td>
+            <td class="num dim">8.43</td>
+            <td class="num dim">10.0</td>
+          </tr>
+          
+          
+          <tr>
+            <td class="sticky-col mono strong">SGPA_Sem5</td>
+            <td class="num dim">50,000</td>
+            <td class="num accent">7.26</td>
+            <td class="num">1.59</td>
+            <td class="num dim">4.0</td>
+            <td class="num dim">6.07</td>
+            <td class="num">7.26</td>
+            <td class="num dim">8.46</td>
+            <td class="num dim">10.0</td>
+          </tr>
+          
+          
+          <tr>
+            <td class="sticky-col mono strong">SGPA_Sem6</td>
+            <td class="num dim">50,000</td>
+            <td class="num accent">7.27</td>
+            <td class="num">1.6</td>
+            <td class="num dim">4.0</td>
+            <td class="num dim">6.08</td>
+            <td class="num">7.28</td>
+            <td class="num dim">8.5</td>
+            <td class="num dim">10.0</td>
+          </tr>
+          
+          
+          <tr>
+            <td class="sticky-col mono strong">SGPA_Sem7</td>
+            <td class="num dim">50,000</td>
+            <td class="num accent">7.28</td>
+            <td class="num">1.62</td>
+            <td class="num dim">4.0</td>
+            <td class="num dim">6.06</td>
+            <td class="num">7.3</td>
+            <td class="num dim">8.52</td>
+            <td class="num dim">10.0</td>
+          </tr>
+          
+          
+          <tr>
+            <td class="sticky-col mono strong">SGPA_Sem8</td>
+            <td class="num dim">50,000</td>
+            <td class="num accent">7.29</td>
+            <td class="num">1.64</td>
+            <td class="num dim">4.0</td>
+            <td class="num dim">6.06</td>
+            <td class="num">7.31</td>
+            <td class="num dim">8.56</td>
+            <td class="num dim">10.0</td>
+          </tr>
+          
+          
+          <tr>
+            <td class="sticky-col mono strong">CGPA</td>
+            <td class="num dim">50,000</td>
+            <td class="num accent">7.25</td>
+            <td class="num">1.62</td>
+            <td class="num dim">4.0</td>
+            <td class="num dim">6.04</td>
+            <td class="num">7.25</td>
+            <td class="num dim">8.48</td>
+            <td class="num dim">10.0</td>
+          </tr>
+          
+          
+          <tr>
+            <td class="sticky-col mono strong">AttendancePercent</td>
+            <td class="num dim">50,000</td>
+            <td class="num accent">76.71</td>
+            <td class="num">12.47</td>
+            <td class="num dim">50.0</td>
+            <td class="num dim">67.6</td>
+            <td class="num">77.2</td>
+            <td class="num dim">85.9</td>
+            <td class="num dim">100.0</td>
+          </tr>
+          
+          
+          <tr>
+            <td class="sticky-col mono strong">Internships</td>
+            <td class="num dim">50,000</td>
+            <td class="num accent">1.13</td>
+            <td class="num">0.81</td>
+            <td class="num dim">0.0</td>
+            <td class="num dim">1.0</td>
+            <td class="num">1.0</td>
+            <td class="num dim">2.0</td>
+            <td class="num dim">3.0</td>
+          </tr>
+          
+          
+          <tr>
+            <td class="sticky-col mono strong">Projects</td>
+            <td class="num dim">50,000</td>
+            <td class="num accent">2.11</td>
+            <td class="num">1.21</td>
+            <td class="num dim">0.0</td>
+            <td class="num dim">1.0</td>
+            <td class="num">2.0</td>
+            <td class="num dim">3.0</td>
+            <td class="num dim">5.0</td>
+          </tr>
+          
+          
+          <tr>
+            <td class="sticky-col mono strong">Workshops</td>
+            <td class="num dim">45,512</td>
+            <td class="num accent">1.8</td>
+            <td class="num">1.04</td>
+            <td class="num dim">0.0</td>
+            <td class="num dim">1.0</td>
+            <td class="num">2.0</td>
+            <td class="num dim">3.0</td>
+            <td class="num dim">4.0</td>
+          </tr>
+          
+          
+          <tr>
+            <td class="sticky-col mono strong">Certifications</td>
+            <td class="num dim">50,000</td>
+            <td class="num accent">1.93</td>
+            <td class="num">1.18</td>
+            <td class="num dim">0.0</td>
+            <td class="num dim">1.0</td>
+            <td class="num">2.0</td>
+            <td class="num dim">3.0</td>
+            <td class="num dim">5.0</td>
+          </tr>
+          
+          
+          <tr>
+            <td class="sticky-col mono strong">Publications</td>
+            <td class="num dim">50,000</td>
+            <td class="num accent">0.74</td>
+            <td class="num">0.72</td>
+            <td class="num dim">0.0</td>
+            <td class="num dim">0.0</td>
+            <td class="num">1.0</td>
+            <td class="num dim">1.0</td>
+            <td class="num dim">3.0</td>
+          </tr>
+          
+          
+          <tr>
+            <td class="sticky-col mono strong">AptitudeTestScore</td>
+            <td class="num dim">45,971</td>
+            <td class="num accent">68.86</td>
+            <td class="num">15.37</td>
+            <td class="num dim">30.0</td>
+            <td class="num dim">58.5</td>
+            <td class="num">69.9</td>
+            <td class="num dim">79.7</td>
+            <td class="num dim">100.0</td>
+          </tr>
+          
+          
+          <tr>
+            <td class="sticky-col mono strong">SoftSkillsRating</td>
+            <td class="num dim">46,474</td>
+            <td class="num accent">3.15</td>
+            <td class="num">0.98</td>
+            <td class="num dim">1.0</td>
+            <td class="num dim">2.4</td>
+            <td class="num">3.2</td>
+            <td class="num dim">3.9</td>
+            <td class="num dim">5.0</td>
+          </tr>
+          
+          
+          <tr>
+            <td class="sticky-col mono strong">CodingTestScore</td>
+            <td class="num dim">47,024</td>
+            <td class="num accent">57.41</td>
+            <td class="num">20.98</td>
+            <td class="num dim">0.0</td>
+            <td class="num dim">45.9</td>
+            <td class="num">57.7</td>
+            <td class="num dim">73.3</td>
+            <td class="num dim">100.0</td>
+          </tr>
+          
+          
+          <tr>
+            <td class="sticky-col mono strong">MockInterviewScore</td>
+            <td class="num dim">45,043</td>
+            <td class="num accent">55.41</td>
+            <td class="num">17.52</td>
+            <td class="num dim">15.9</td>
+            <td class="num dim">44.2</td>
+            <td class="num">54.7</td>
+            <td class="num dim">69.2</td>
+            <td class="num dim">100.0</td>
+          </tr>
+          
+          
+          <tr>
+            <td class="sticky-col mono strong">ExtraCurricular</td>
+            <td class="num dim">50,000</td>
+            <td class="num accent">0.53</td>
+            <td class="num">0.5</td>
+            <td class="num dim">0.0</td>
+            <td class="num dim">0.0</td>
+            <td class="num">1.0</td>
+            <td class="num dim">1.0</td>
+            <td class="num dim">1.0</td>
+          </tr>
+          
+        </tbody>
+      </table>
+    </div>
+    <p class="note">Counts below 50,000 reflect missing values in the raw file — see
+      <a href="missing.html" style="color: var(--accent);">Missing Value Analysis</a>.</p>
+  </section>
+
+  <div class="divider" aria-hidden="true"></div>
+
+  <section class="section">
+    <div class="section-head">
+      <h2 class="section-title">Split by outcome — placed vs. not placed</h2>
+    </div>
+    <p class="section-sub">Mean of each core factor within each outcome group. The gap between
+      the two bars is the story the model will learn.</p>
+    <div class="vs-legend">
+      <span class="vs-key"><span class="vs-swatch vs-swatch-not"></span>Not placed</span>
+      <span class="vs-key"><span class="vs-swatch vs-swatch-placed"></span>Placed</span>
+    </div>
+    <div class="vs-rows">
+      
+      
+      <div class="vs-row">
+        <span class="vs-name">CGPA</span>
+        <div class="vs-bars">
+          <div class="vs-bar-line">
+            <div class="vs-bar vs-bar-not" style="--w: 72.4%"></div>
+            <span class="vs-val">5.79</span>
+          </div>
+          <div class="vs-bar-line">
+            <div class="vs-bar vs-bar-placed" style="--w: 100.0%"></div>
+            <span class="vs-val">8.0</span>
+          </div>
+        </div>
+        <span class="vs-delta ">+2.21</span>
+      </div>
+      
+      
+      <div class="vs-row">
+        <span class="vs-name">AttendancePercent</span>
+        <div class="vs-bars">
+          <div class="vs-bar-line">
+            <div class="vs-bar vs-bar-not" style="--w: 82.2%"></div>
+            <span class="vs-val">67.14</span>
+          </div>
+          <div class="vs-bar-line">
+            <div class="vs-bar vs-bar-placed" style="--w: 100.0%"></div>
+            <span class="vs-val">81.7</span>
+          </div>
+        </div>
+        <span class="vs-delta ">+14.56</span>
+      </div>
+      
+      
+      <div class="vs-row">
+        <span class="vs-name">Internships</span>
+        <div class="vs-bars">
+          <div class="vs-bar-line">
+            <div class="vs-bar vs-bar-not" style="--w: 37.5%"></div>
+            <span class="vs-val">0.54</span>
+          </div>
+          <div class="vs-bar-line">
+            <div class="vs-bar vs-bar-placed" style="--w: 100.0%"></div>
+            <span class="vs-val">1.44</span>
+          </div>
+        </div>
+        <span class="vs-delta ">+0.9</span>
+      </div>
+      
+      
+      <div class="vs-row">
+        <span class="vs-name">Projects</span>
+        <div class="vs-bars">
+          <div class="vs-bar-line">
+            <div class="vs-bar vs-bar-not" style="--w: 43.5%"></div>
+            <span class="vs-val">1.14</span>
+          </div>
+          <div class="vs-bar-line">
+            <div class="vs-bar vs-bar-placed" style="--w: 100.0%"></div>
+            <span class="vs-val">2.62</span>
+          </div>
+        </div>
+        <span class="vs-delta ">+1.48</span>
+      </div>
+      
+      
+      <div class="vs-row">
+        <span class="vs-name">Workshops</span>
+        <div class="vs-bars">
+          <div class="vs-bar-line">
+            <div class="vs-bar vs-bar-not" style="--w: 43.3%"></div>
+            <span class="vs-val">0.97</span>
+          </div>
+          <div class="vs-bar-line">
+            <div class="vs-bar vs-bar-placed" style="--w: 100.0%"></div>
+            <span class="vs-val">2.24</span>
+          </div>
+        </div>
+        <span class="vs-delta ">+1.27</span>
+      </div>
+      
+      
+      <div class="vs-row">
+        <span class="vs-name">Certifications</span>
+        <div class="vs-bars">
+          <div class="vs-bar-line">
+            <div class="vs-bar vs-bar-not" style="--w: 38.9%"></div>
+            <span class="vs-val">0.95</span>
+          </div>
+          <div class="vs-bar-line">
+            <div class="vs-bar vs-bar-placed" style="--w: 100.0%"></div>
+            <span class="vs-val">2.44</span>
+          </div>
+        </div>
+        <span class="vs-delta ">+1.49</span>
+      </div>
+      
+      
+      <div class="vs-row">
+        <span class="vs-name">Publications</span>
+        <div class="vs-bars">
+          <div class="vs-bar-line">
+            <div class="vs-bar vs-bar-not" style="--w: 27.6%"></div>
+            <span class="vs-val">0.27</span>
+          </div>
+          <div class="vs-bar-line">
+            <div class="vs-bar vs-bar-placed" style="--w: 100.0%"></div>
+            <span class="vs-val">0.98</span>
+          </div>
+        </div>
+        <span class="vs-delta ">+0.71</span>
+      </div>
+      
+      
+      <div class="vs-row">
+        <span class="vs-name">AptitudeTestScore</span>
+        <div class="vs-bars">
+          <div class="vs-bar-line">
+            <div class="vs-bar vs-bar-not" style="--w: 75.1%"></div>
+            <span class="vs-val">56.54</span>
+          </div>
+          <div class="vs-bar-line">
+            <div class="vs-bar vs-bar-placed" style="--w: 100.0%"></div>
+            <span class="vs-val">75.26</span>
+          </div>
+        </div>
+        <span class="vs-delta ">+18.72</span>
+      </div>
+      
+      
+      <div class="vs-row">
+        <span class="vs-name">SoftSkillsRating</span>
+        <div class="vs-bars">
+          <div class="vs-bar-line">
+            <div class="vs-bar vs-bar-not" style="--w: 63.9%"></div>
+            <span class="vs-val">2.3</span>
+          </div>
+          <div class="vs-bar-line">
+            <div class="vs-bar vs-bar-placed" style="--w: 100.0%"></div>
+            <span class="vs-val">3.6</span>
+          </div>
+        </div>
+        <span class="vs-delta ">+1.29</span>
+      </div>
+      
+      
+      <div class="vs-row">
+        <span class="vs-name">CodingTestScore</span>
+        <div class="vs-bars">
+          <div class="vs-bar-line">
+            <div class="vs-bar vs-bar-not" style="--w: 59.4%"></div>
+            <span class="vs-val">39.6</span>
+          </div>
+          <div class="vs-bar-line">
+            <div class="vs-bar vs-bar-placed" style="--w: 100.0%"></div>
+            <span class="vs-val">66.69</span>
+          </div>
+        </div>
+        <span class="vs-delta ">+27.09</span>
+      </div>
+      
+      
+      <div class="vs-row">
+        <span class="vs-name">MockInterviewScore</span>
+        <div class="vs-bars">
+          <div class="vs-bar-line">
+            <div class="vs-bar vs-bar-not" style="--w: 61.4%"></div>
+            <span class="vs-val">39.19</span>
+          </div>
+          <div class="vs-bar-line">
+            <div class="vs-bar vs-bar-placed" style="--w: 100.0%"></div>
+            <span class="vs-val">63.86</span>
+          </div>
+        </div>
+        <span class="vs-delta ">+24.67</span>
+      </div>
+      
+      
+      <div class="vs-row">
+        <span class="vs-name">ExtraCurricular</span>
+        <div class="vs-bars">
+          <div class="vs-bar-line">
+            <div class="vs-bar vs-bar-not" style="--w: 59.7%"></div>
+            <span class="vs-val">0.37</span>
+          </div>
+          <div class="vs-bar-line">
+            <div class="vs-bar vs-bar-placed" style="--w: 100.0%"></div>
+            <span class="vs-val">0.62</span>
+          </div>
+        </div>
+        <span class="vs-delta ">+0.25</span>
+      </div>
+      
+    </div>
+  </section>
+  
+
+  
+<nav class="stage-pager" aria-label="Pipeline stages">
+  
+  <a href="features.html" class="pager-link">
+    <span class="pager-dir">← Stage 02</span>
+    <span class="pager-label">Analyse Features</span>
+  </a>
+  
+  
+  <a href="missing.html" class="pager-link pager-next">
+    <span class="pager-dir">Stage 04 →</span>
+    <span class="pager-label">Missing Value Analysis</span>
+  </a>
+  
+</nav>
+
+
+      </main>
+
+      <footer class="site-footer">
+        <div class="footer-row">
+          <span>Placement Predict System</span>
+          <span>5 of 9 stages live</span>
+        </div>
+      </footer>
+    </div>
+
+  </div>
+
+  <script src="static/js/script.js"></script>
+  
+</body>
+</html>

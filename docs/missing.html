@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Missing Value Analysis · Placement Predict System</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23D9A63F'/%3E%3Ctext x='16' y='21.5' font-family='monospace' font-size='13' font-weight='bold' text-anchor='middle' fill='%2316130A'%3EPP%3C/text%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="static/css/style.css">
+</head>
+<body>
+
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <div class="app-shell">
+
+    <aside class="pipeline-sidebar">
+      <a class="sidebar-brand" href="index.html">
+        <span class="brand-mark">PP</span>
+        <span class="brand-text">
+          <span class="brand-line-1">Placement Predict</span>
+          <span class="brand-line-2">ML Pipeline</span>
+        </span>
+      </a>
+
+      <p class="nav-caption">Pipeline</p>
+      <nav class="pipeline-stepper" aria-label="ML pipeline stages">
+        <ol>
+          
+          <li class="">
+            <a href="upload.html"
+               >
+              <span class="step-num">01</span>
+              <span class="step-label">Upload Dataset</span>
+              
+            </a>
+          </li>
+          
+          <li class="">
+            <a href="features.html"
+               >
+              <span class="step-num">02</span>
+              <span class="step-label">Analyse Features</span>
+              
+            </a>
+          </li>
+          
+          <li class="">
+            <a href="descriptive.html"
+               >
+              <span class="step-num">03</span>
+              <span class="step-label">Descriptive Statistics</span>
+              
+            </a>
+          </li>
+          
+          <li class="is-active">
+            <a href="missing.html"
+               aria-current="page">
+              <span class="step-num">04</span>
+              <span class="step-label">Missing Value Analysis</span>
+              
+            </a>
+          </li>
+          
+          <li class="">
+            <a href="visualize.html"
+               >
+              <span class="step-num">05</span>
+              <span class="step-label">Data Visualization</span>
+              
+            </a>
+          </li>
+          
+          <li class="">
+            <a href="preprocess.html"
+               >
+              <span class="step-num">06</span>
+              <span class="step-label">Preprocessing</span>
+              <span class="step-soon">Soon</span>
+            </a>
+          </li>
+          
+          <li class="">
+            <a href="train.html"
+               >
+              <span class="step-num">07</span>
+              <span class="step-label">Model Training</span>
+              <span class="step-soon">Soon</span>
+            </a>
+          </li>
+          
+          <li class="">
+            <a href="evaluate.html"
+               >
+              <span class="step-num">08</span>
+              <span class="step-label">Model Evaluation</span>
+              <span class="step-soon">Soon</span>
+            </a>
+          </li>
+          
+          <li class="">
+            <a href="predict.html"
+               >
+              <span class="step-num">09</span>
+              <span class="step-label">Predict Placement</span>
+              <span class="step-soon">Soon</span>
+            </a>
+          </li>
+          
+        </ol>
+      </nav>
+
+      <div class="sidebar-footer">
+        <a href="index.html" class="sidebar-overview-link">← Overview</a>
+        <span>placement_predict_50k.csv</span>
+      </div>
+    </aside>
+
+    <div class="app-body">
+      <main id="main" tabindex="-1">
+        
+  <section class="page-head">
+    <p class="page-kicker">Stage 04 · Records</p>
+    <h1>Missing Value Analysis</h1>
+    <p class="page-desc">Five skill and activity columns have gaps — measured here, then repaired with mean imputation.</p>
+    <p class="page-meta">Dataset · placement_predict_50k.csv (bundled default)</p>
+  </section>
+
+  
+
+  <div class="divider" aria-hidden="true"></div>
+
+  <section class="section">
+    <div class="metrics">
+      <div class="metric">
+        <span class="metric-value">1,550,000</span>
+        <span class="metric-label">Total cells</span>
+      </div>
+      <div class="metric">
+        <span class="metric-value" style="color: var(--danger);">19,976</span>
+        <span class="metric-label">Missing cells</span>
+      </div>
+      <div class="metric">
+        <span class="metric-value">98.7%</span>
+        <span class="metric-label">Complete</span>
+      </div>
+      <div class="metric">
+        <span class="metric-value">5</span>
+        <span class="metric-label">Columns affected</span>
+      </div>
+    </div>
+
+    <div class="chart-card" style="margin-top: 36px;">
+      <div class="chart-card-head">
+        <h3>Missing values per column</h3>
+        <span class="chart-tag">raw file · cells</span>
+      </div>
+      <div class="chart-wrap chart-wrap-tall">
+        <canvas data-chart="missing" role="img"
+                aria-label="Bar chart of missing values per column"></canvas>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider" aria-hidden="true"></div>
+
+  <section class="section">
+    <div class="section-head">
+      <h2 class="section-title">Repair — mean imputation</h2>
+    </div>
+    <p class="section-sub">Following the notebook, each gap is filled with the column's mean.
+      Every chart downstream is computed on the repaired frame.</p>
+    <div class="table-scroll">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Column</th>
+            <th>Missing</th>
+            <th>% of rows</th>
+            <th>Imputed mean</th>
+            <th>Coverage</th>
+          </tr>
+        </thead>
+        <tbody>
+          
+          <tr>
+            <td class="mono strong">Workshops</td>
+            <td class="num">4,488</td>
+            <td class="num dim">9.0%</td>
+            <td class="num accent">1.8</td>
+            <td>
+              <span class="coverage">
+                <span class="coverage-track"><span class="coverage-fill" style="--w: 91.0%"></span></span>
+                <span class="coverage-pct">91.0% → 100%</span>
+              </span>
+            </td>
+          </tr>
+          
+          <tr>
+            <td class="mono strong">AptitudeTestScore</td>
+            <td class="num">4,029</td>
+            <td class="num dim">8.1%</td>
+            <td class="num accent">68.86</td>
+            <td>
+              <span class="coverage">
+                <span class="coverage-track"><span class="coverage-fill" style="--w: 91.9%"></span></span>
+                <span class="coverage-pct">91.9% → 100%</span>
+              </span>
+            </td>
+          </tr>
+          
+          <tr>
+            <td class="mono strong">SoftSkillsRating</td>
+            <td class="num">3,526</td>
+            <td class="num dim">7.1%</td>
+            <td class="num accent">3.15</td>
+            <td>
+              <span class="coverage">
+                <span class="coverage-track"><span class="coverage-fill" style="--w: 92.9%"></span></span>
+                <span class="coverage-pct">92.9% → 100%</span>
+              </span>
+            </td>
+          </tr>
+          
+          <tr>
+            <td class="mono strong">CodingTestScore</td>
+            <td class="num">2,976</td>
+            <td class="num dim">6.0%</td>
+            <td class="num accent">57.41</td>
+            <td>
+              <span class="coverage">
+                <span class="coverage-track"><span class="coverage-fill" style="--w: 94.0%"></span></span>
+                <span class="coverage-pct">94.0% → 100%</span>
+              </span>
+            </td>
+          </tr>
+          
+          <tr>
+            <td class="mono strong">MockInterviewScore</td>
+            <td class="num">4,957</td>
+            <td class="num dim">9.9%</td>
+            <td class="num accent">55.41</td>
+            <td>
+              <span class="coverage">
+                <span class="coverage-track"><span class="coverage-fill" style="--w: 90.1%"></span></span>
+                <span class="coverage-pct">90.1% → 100%</span>
+              </span>
+            </td>
+          </tr>
+          
+        </tbody>
+      </table>
+    </div>
+    <p class="note">All other 26 columns arrive complete — no action needed.</p>
+  </section>
+  
+
+  
+<nav class="stage-pager" aria-label="Pipeline stages">
+  
+  <a href="descriptive.html" class="pager-link">
+    <span class="pager-dir">← Stage 03</span>
+    <span class="pager-label">Descriptive Statistics</span>
+  </a>
+  
+  
+  <a href="visualize.html" class="pager-link pager-next">
+    <span class="pager-dir">Stage 05 →</span>
+    <span class="pager-label">Data Visualization</span>
+  </a>
+  
+</nav>
+
+
+      </main>
+
+      <footer class="site-footer">
+        <div class="footer-row">
+          <span>Placement Predict System</span>
+          <span>5 of 9 stages live</span>
+        </div>
+      </footer>
+    </div>
+
+  </div>
+
+  <script src="static/js/script.js"></script>
+  
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script>
+  window.EDA = {
+    missing: {"affected": [{"count": 4488, "impute_mean": 1.8, "name": "Workshops", "non_null_pct": 91.0, "pct": 9.0}, {"count": 4029, "impute_mean": 68.86, "name": "AptitudeTestScore", "non_null_pct": 91.9, "pct": 8.1}, {"count": 3526, "impute_mean": 3.15, "name": "SoftSkillsRating", "non_null_pct": 92.9, "pct": 7.1}, {"count": 2976, "impute_mean": 57.41, "name": "CodingTestScore", "non_null_pct": 94.0, "pct": 6.0}, {"count": 4957, "impute_mean": 55.41, "name": "MockInterviewScore", "non_null_pct": 90.1, "pct": 9.9}], "chart_labels": ["Workshops", "AptitudeTestScore", "SoftSkillsRating", "CodingTestScore", "MockInterviewScore"], "chart_values": [4488, 4029, 3526, 2976, 4957], "completeness": 98.7, "total": 19976, "total_cells": 1550000}
+  };
+</script>
+<script src="static/js/charts.js"></script>
+
+
+</body>
+</html>

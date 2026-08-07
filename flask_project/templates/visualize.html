@@ -1,0 +1,219 @@
+{% extends "base.html" %}
+{% block title %}{{ step.label }} · Placement Predict System{% endblock %}
+
+{% macro bp_box(bx, cx, cls) %}
+  {# one box-and-whisker at center-x cx; n.* are 0-1 normalized heights #}
+  <line x1="{{ cx }}" y1="{{ (165 - bx.n.min * 145) | round(1) }}" x2="{{ cx }}" y2="{{ (165 - bx.n.max * 145) | round(1) }}" class="bp-whisker"></line>
+  <line x1="{{ cx - 9 }}" y1="{{ (165 - bx.n.min * 145) | round(1) }}" x2="{{ cx + 9 }}" y2="{{ (165 - bx.n.min * 145) | round(1) }}" class="bp-whisker"></line>
+  <line x1="{{ cx - 9 }}" y1="{{ (165 - bx.n.max * 145) | round(1) }}" x2="{{ cx + 9 }}" y2="{{ (165 - bx.n.max * 145) | round(1) }}" class="bp-whisker"></line>
+  <rect x="{{ cx - 17 }}" y="{{ (165 - bx.n.q3 * 145) | round(1) }}" width="34"
+        height="{{ [(bx.n.q3 - bx.n.q1) * 145, 1.5] | max | round(1) }}" class="bp-box {{ cls }}"></rect>
+  <line x1="{{ cx - 17 }}" y1="{{ (165 - bx.n.median * 145) | round(1) }}" x2="{{ cx + 17 }}" y2="{{ (165 - bx.n.median * 145) | round(1) }}" class="bp-median"></line>
+  <circle cx="{{ cx }}" cy="{{ (165 - bx.n.mean * 145) | round(1) }}" r="2.5" class="bp-mean"></circle>
+{% endmacro %}
+
+{% block content %}
+  <section class="page-head">
+    <p class="page-kicker">{{ step.eyebrow }}</p>
+    <h1>{{ step.label }}</h1>
+    <p class="page-desc">{{ step.note }}</p>
+    <p class="page-meta">Dataset · {{ dataset_name }}{{ ' (bundled default)' if is_default else '' }}</p>
+  </section>
+
+  {% if not bundle.schema_ok %}
+  <div class="divider" aria-hidden="true"></div>
+  <section class="upload-section">
+    <div class="alert">
+      <strong>Dataset schema not supported</strong>
+      This stage expects the placement schema, so the EDA charts cannot be
+      drawn for the uploaded file.
+      <div class="alert-actions"><a href="{{ url_for('upload_dataset') }}">Review the upload</a></div>
+    </div>
+  </section>
+  {% else %}
+
+  <nav class="viz-nav" aria-label="Chart sections">
+    <a href="#distributions">Distributions</a>
+    <a href="#standardized">Standardized</a>
+    <a href="#correlations">Correlations</a>
+    <a href="#splits">Status splits</a>
+    <a href="#categories">Categories</a>
+  </nav>
+
+  {# ------------------------------------------------ distributions ----- #}
+  <section class="viz-section" id="distributions">
+    <div class="section-head">
+      <h2 class="section-title">Distributions — repaired frame, 10 key fields</h2>
+    </div>
+    <div class="chart-grid">
+      {% for col, hist in bundle.histograms.items() %}
+      <div class="chart-card">
+        <div class="chart-card-head">
+          <h3>{{ col }}</h3>
+          <span class="chart-tag">μ {{ hist.mean }} · σ {{ hist.std }}</span>
+        </div>
+        <div class="chart-wrap">
+          <canvas data-chart="hist" data-key="{{ col }}" role="img"
+                  aria-label="Histogram of {{ col }}, mean {{ hist.mean }}, standard deviation {{ hist.std }}"></canvas>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <div class="divider" aria-hidden="true"></div>
+
+  {# ------------------------------------------------ standardized ------ #}
+  <section class="viz-section" id="standardized">
+    <div class="section-head">
+      <h2 class="section-title">Z-score standardized skill scores</h2>
+    </div>
+    <p class="section-sub">The four test scores, re-centred at mean 0 and scaled to unit
+      variance — comparable on one axis, ready for modelling.</p>
+    <div class="chart-grid">
+      {% for col, hist in bundle.standardized.items() %}
+      <div class="chart-card">
+        <div class="chart-card-head">
+          <h3>{{ col }} <span class="std-badge">z</span></h3>
+          <span class="chart-tag">μ {{ hist.mean }} · σ {{ hist.std }}</span>
+        </div>
+        <div class="chart-wrap">
+          <canvas data-chart="std" data-key="{{ col }}" role="img"
+                  aria-label="Standardized distribution of {{ col }}, mean {{ hist.mean }}, standard deviation {{ hist.std }}"></canvas>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <div class="divider" aria-hidden="true"></div>
+
+  {# ------------------------------------------------ correlations ------ #}
+  <section class="viz-section" id="correlations">
+    <div class="section-head">
+      <h2 class="section-title">Correlation matrix — every numeric field</h2>
+    </div>
+    <div class="heat-scroll">
+      <div class="heat-grid" style="--n: {{ bundle.heatmap.labels | length }}">
+        <div></div>
+        {% for c in bundle.heatmap.labels %}
+        <div class="heat-col-label"><span>{{ c }}</span></div>
+        {% endfor %}
+        {% for r in bundle.heatmap.labels %}
+        <div class="heat-row-label">{{ r }}</div>
+        {% for cell in bundle.heatmap.matrix[loop.index0] %}
+        <div class="heat-cell {{ 'heat-strong' if cell.strong else '' }}"
+             style="background: {{ cell.color }}"
+             title="{{ r }} × {{ bundle.heatmap.labels[loop.index0] }}: {{ cell.v }}">{{ cell.v }}</div>
+        {% endfor %}
+        {% endfor %}
+      </div>
+      <div class="heat-legend">
+        <span>0</span>
+        <span class="heat-legend-bar"></span>
+        <span>+1</span>
+      </div>
+    </div>
+
+    <div class="chart-card chart-card-wide" style="margin-top: 36px;">
+      <div class="chart-card-head">
+        <h3>Influence on PlacementStatus</h3>
+        <span class="chart-tag">correlation coefficient</span>
+      </div>
+      <div class="chart-wrap chart-wrap-tall">
+        <canvas data-chart="influence" role="img"
+                aria-label="Horizontal bar chart of each feature's correlation with placement status"></canvas>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider" aria-hidden="true"></div>
+
+  {# ------------------------------------------------ status splits ----- #}
+  <section class="viz-section" id="splits">
+    <div class="section-head">
+      <h2 class="section-title">By placement status — box &amp; whisker</h2>
+    </div>
+    <div class="vs-legend">
+      <span class="vs-key"><span class="vs-swatch vs-swatch-not"></span>Not placed</span>
+      <span class="vs-key"><span class="vs-swatch vs-swatch-placed"></span>Placed</span>
+      <span class="vs-key"><span class="vs-swatch vs-swatch-mean"></span>mean</span>
+    </div>
+    <div class="chart-grid">
+      {% for col, box in bundle.boxes.items() %}
+      <div class="chart-card">
+        <div class="chart-card-head">
+          <h3>{{ col }}</h3>
+          <span class="chart-tag">{{ box.lo }} – {{ box.hi }}</span>
+        </div>
+        <svg viewBox="0 0 240 190" class="bp-svg" role="img" aria-label="{{ col }} by placement status">
+          <line x1="34" y1="165" x2="226" y2="165" class="bp-axis"></line>
+          <text x="28" y="168" class="bp-tick" text-anchor="end">{{ box.lo }}</text>
+          <text x="28" y="96" class="bp-tick" text-anchor="end">{{ ((box.lo + box.hi) / 2) | round(1) }}</text>
+          <text x="28" y="24" class="bp-tick" text-anchor="end">{{ box.hi }}</text>
+          {{ bp_box(box.not_placed, 95, 'bp-not') }}
+          {{ bp_box(box.placed, 175, 'bp-placed') }}
+          <text x="95" y="184" class="bp-cat" text-anchor="middle">Not placed</text>
+          <text x="175" y="184" class="bp-cat" text-anchor="middle">Placed</text>
+        </svg>
+        <div class="bp-foot">
+          <span>med {{ box.not_placed.median }} → {{ box.placed.median }}</span>
+          <span>{{ box.not_placed.outliers + box.placed.outliers }} outliers</span>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <div class="divider" aria-hidden="true"></div>
+
+  {# ------------------------------------------------ categories -------- #}
+  <section class="viz-section" id="categories" style="padding-bottom: 56px;">
+    <div class="section-head">
+      <h2 class="section-title">Placement rate by category</h2>
+    </div>
+    <div class="chart-grid">
+      {% for col, rows in bundle.categories.items() %}
+      <div class="chart-card">
+        <div class="chart-card-head">
+          <h3>{{ col }}</h3>
+          <span class="chart-tag">% placed</span>
+        </div>
+        <div class="chart-wrap">
+          <canvas data-chart="cat" data-key="{{ col }}" role="img"
+                  aria-label="Bar chart of placement rate by {{ col }}"></canvas>
+        </div>
+      </div>
+      {% endfor %}
+      <div class="chart-card">
+        <div class="chart-card-head">
+          <h3>Gender × outcome</h3>
+          <span class="chart-tag">counts</span>
+        </div>
+        <div class="chart-wrap">
+          <canvas data-chart="gender" role="img"
+                  aria-label="Grouped bar chart of placed and not-placed counts by gender"></canvas>
+        </div>
+      </div>
+    </div>
+  </section>
+  {% endif %}
+
+  {% include "_pager.html" %}
+{% endblock %}
+
+{% block scripts %}
+{% if bundle.schema_ok %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script>
+  window.EDA = {
+    histograms: {{ bundle.histograms | tojson }},
+    standardized: {{ bundle.standardized | tojson }},
+    influence: {{ bundle.influence | tojson }},
+    categories: {{ bundle.categories | tojson }},
+    gender_split: {{ bundle.gender_split | tojson }}
+  };
+</script>
+<script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+{% endif %}
+{% endblock %}

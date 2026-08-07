@@ -1,0 +1,16 @@
+{% if prev_step or next_step %}
+<nav class="stage-pager" aria-label="Pipeline stages">
+  {% if prev_step %}
+  <a href="{{ url_for(prev_step.endpoint) }}" class="pager-link">
+    <span class="pager-dir">← Stage {{ prev_step.step }}</span>
+    <span class="pager-label">{{ prev_step.label }}</span>
+  </a>
+  {% else %}<span></span>{% endif %}
+  {% if next_step %}
+  <a href="{{ url_for(next_step.endpoint) }}" class="pager-link pager-next">
+    <span class="pager-dir">Stage {{ next_step.step }} →</span>
+    <span class="pager-label">{{ next_step.label }}</span>
+  </a>
+  {% endif %}
+</nav>
+{% endif %}

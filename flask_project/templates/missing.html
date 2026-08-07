@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% block title %}{{ step.label }} · Placement Predict System{% endblock %}
+
+{% block content %}
+  <section class="page-head">
+    <p class="page-kicker">{{ step.eyebrow }}</p>
+    <h1>{{ step.label }}</h1>
+    <p class="page-desc">{{ step.note }}</p>
+    <p class="page-meta">Dataset · {{ dataset_name }}{{ ' (bundled default)' if is_default else '' }}</p>
+  </section>
+
+  {% if not bundle.schema_ok %}
+  <div class="divider" aria-hidden="true"></div>
+  <section class="upload-section">
+    <div class="alert">
+      <strong>Dataset schema not supported</strong>
+      This stage expects the placement schema, so missing-value analysis
+      cannot run on the uploaded file.
+      <div class="alert-actions"><a href="{{ url_for('upload_dataset') }}">Review the upload</a></div>
+    </div>
+  </section>
+  {% else %}
+
+  <div class="divider" aria-hidden="true"></div>
+
+  <section class="section">
+    <div class="metrics">
+      <div class="metric">
+        <span class="metric-value">{{ "{:,}".format(bundle.missing.total_cells) }}</span>
+        <span class="metric-label">Total cells</span>
+      </div>
+      <div class="metric">
+        <span class="metric-value" style="color: var(--danger);">{{ "{:,}".format(bundle.missing.total) }}</span>
+        <span class="metric-label">Missing cells</span>
+      </div>
+      <div class="metric">
+        <span class="metric-value">{{ bundle.missing.completeness }}%</span>
+        <span class="metric-label">Complete</span>
+      </div>
+      <div class="metric">
+        <span class="metric-value">{{ bundle.missing.affected | length }}</span>
+        <span class="metric-label">Columns affected</span>
+      </div>
+    </div>
+
+    <div class="chart-card" style="margin-top: 36px;">
+      <div class="chart-card-head">
+        <h3>Missing values per column</h3>
+        <span class="chart-tag">raw file · cells</span>
+      </div>
+      <div class="chart-wrap chart-wrap-tall">
+        <canvas data-chart="missing" role="img"
+                aria-label="Bar chart of missing values per column"></canvas>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider" aria-hidden="true"></div>
+
+  <section class="section">
+    <div class="section-head">
+      <h2 class="section-title">Repair — mean imputation</h2>
+    </div>
+    <p class="section-sub">Following the notebook, each gap is filled with the column's mean.
+      Every chart downstream is computed on the repaired frame.</p>
+    <div class="table-scroll">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Column</th>
+            <th>Missing</th>
+            <th>% of rows</th>
+            <th>Imputed mean</th>
+            <th>Coverage</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for col in bundle.missing.affected %}
+          <tr>
+            <td class="mono strong">{{ col.name }}</td>
+            <td class="num">{{ "{:,}".format(col.count) }}</td>
+            <td class="num dim">{{ col.pct }}%</td>
+            <td class="num accent">{{ col.impute_mean }}</td>
+            <td>
+              <span class="coverage">
+                <span class="coverage-track"><span class="coverage-fill" style="--w: {{ col.non_null_pct }}%"></span></span>
+                <span class="coverage-pct">{{ col.non_null_pct }}% → 100%</span>
+              </span>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <p class="note">All other {{ bundle.n_cols - bundle.missing.affected | length }} columns arrive complete — no action needed.</p>
+  </section>
+  {% endif %}
+
+  {% include "_pager.html" %}
+{% endblock %}
+
+{% block scripts %}
+{% if bundle.schema_ok %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script>
+  window.EDA = {
+    missing: {{ bundle.missing | tojson }}
+  };
+</script>
+<script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+{% endif %}
+{% endblock %}

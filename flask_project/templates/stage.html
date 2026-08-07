@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}{{ step.label }} · Placement Predict System{% endblock %}
+
+{% block content %}
+  <section class="page-head">
+    <p class="page-kicker">{{ step.eyebrow }}</p>
+    <h1>{{ step.label }}</h1>
+    <p class="page-desc">{{ step.note }}</p>
+  </section>
+
+  <div class="divider" aria-hidden="true"></div>
+
+  <section class="stage-note">
+    <span class="badge">Stage {{ step.step }} · Planned</span>
+    <p>This stage is not wired up yet. The exploratory stages behind it are
+      live on the dataset — once modelling work begins, this page will hold
+      its real output: tables, charts, or a form, depending on what the step
+      needs.</p>
+  </section>
+
+  {% include "_pager.html" %}
+{% endblock %}

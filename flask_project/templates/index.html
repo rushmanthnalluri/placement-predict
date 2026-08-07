@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+{% block title %}Overview · Placement Predict System{% endblock %}
+
+{% block content %}
+
+  <section class="home-head">
+    <div>
+      <p class="page-kicker">Overview</p>
+      <h1>Placement Predict System</h1>
+      <p class="page-desc">
+        A nine-stage machine-learning pipeline over a record of
+        <strong>{{ "{:,}".format(overview.rows) }}</strong> graduating students —
+        grades, skills, internships, and outcomes — from raw upload to a
+        trained placement call. The exploratory stages are live on the data now.
+      </p>
+      <div class="page-actions">
+        <a href="{{ url_for('upload_dataset') }}" class="btn btn-primary">Start the pipeline</a>
+        <a href="{{ url_for('visualize_data') }}" class="btn btn-secondary">Explore the data</a>
+      </div>
+    </div>
+
+    <aside class="panel" aria-label="Active dataset">
+      <div class="panel-head">
+        <span class="panel-title">Active dataset</span>
+        <span class="badge {{ '' if is_default else 'badge-accent' }}">{{ 'Default' if is_default else 'Uploaded' }}</span>
+      </div>
+      <div class="panel-body">
+        <span class="dataset-file">{{ dataset_name }}</span>
+        <dl class="dataset-facts">
+          <div class="dataset-fact"><dt>Records</dt><dd>{{ "{:,}".format(overview.rows) }}</dd></div>
+          <div class="dataset-fact"><dt>Fields</dt><dd>{{ overview.columns }}</dd></div>
+          <div class="dataset-fact"><dt>Placement rate</dt><dd>{{ overview.placement_rate }}%</dd></div>
+          <div class="dataset-fact"><dt>Completeness</dt><dd>{{ overview.completeness }}%</dd></div>
+        </dl>
+        <a href="{{ url_for('upload_dataset') }}" class="section-link">Upload a different file →</a>
+      </div>
+    </aside>
+  </section>
+
+  <div class="divider" aria-hidden="true"></div>
+
+  <section class="section">
+    <div class="section-head">
+      <h2 class="section-title">Dataset snapshot</h2>
+      <span class="mono dim" style="font-size: 10.5px;">{{ "{:,}".format(overview.anomalies) }} anomalous records flagged{% if dropped_rows %} · {{ dropped_rows }} corrupt record removed{% endif %}</span>
+    </div>
+
+    <div class="metrics">
+      <div class="metric">
+        <span class="metric-value">{{ "{:,}".format(overview.rows) }}</span>
+        <span class="metric-label">Student records</span>
+      </div>
+      <div class="metric">
+        <span class="metric-value">{{ overview.avg_cgpa }}</span>
+        <span class="metric-label">Average CGPA</span>
+      </div>
+      <div class="metric">
+        <span class="metric-value">{{ overview.avg_attendance }}%</span>
+        <span class="metric-label">Average attendance</span>
+      </div>
+      <div class="metric">
+        <span class="metric-value">{{ overview.placement_rate }}%</span>
+        <span class="metric-label">Placement rate</span>
+      </div>
+    </div>
+
+    <div class="outcome" style="margin-top: 32px;" role="img"
+         aria-label="{{ overview.placement_rate }} percent of students placed">
+      <div class="outcome-track">
+        <div class="outcome-placed" style="width: {{ overview.placement_rate }}%"></div>
+        <div class="outcome-not"></div>
+      </div>
+      <div class="outcome-legend">
+        <span class="outcome-key"><span class="outcome-swatch outcome-swatch-placed"></span>
+          Placed · <span class="mono">{{ "{:,}".format(overview.placed) }}</span></span>
+        <span class="outcome-key"><span class="outcome-swatch outcome-swatch-not"></span>
+          Not placed · <span class="mono">{{ "{:,}".format(overview.not_placed) }}</span></span>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider" aria-hidden="true"></div>
+
+  <section class="section">
+    <div class="section-head">
+      <h2 class="section-title">What drives the offer</h2>
+      <a href="{{ url_for('visualize_data') }}" class="section-link">Full analysis →</a>
+    </div>
+    <p class="section-sub">Correlation of each factor with the placement outcome, after cleaning.
+      CGPA leads by a wide margin.</p>
+    <div class="driver-list">
+      {% for d in top_drivers %}
+      <div class="driver-row">
+        <span class="driver-name">{{ d.name }}</span>
+        <div class="driver-track"><div class="driver-fill" style="--w: {{ (d.value * 100) | round(1) }}%"></div></div>
+        <span class="driver-value">{{ "%.2f" | format(d.value) }}</span>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <div class="divider" aria-hidden="true"></div>
+
+  <section class="section">
+    <div class="section-head">
+      <h2 class="section-title">The record, at a glance</h2>
+      <a href="{{ url_for('analyse_features') }}" class="section-link">All 31 fields →</a>
+    </div>
+    <div class="group-index">
+      {% for group in features.groups %}
+      {% set n = features.registry | selectattr('group', 'equalto', group) | list | length %}
+      <a href="{{ url_for('analyse_features') }}#group-{{ group|lower|replace(' ', '-') }}" class="group-cell">
+        <span class="group-cell-name">{{ group }}</span>
+        <span class="group-cell-meta">
+          <span>{{ n }} field{{ 's' if n != 1 }}</span>
+          <span class="group-cell-cta">→</span>
+        </span>
+      </a>
+      {% endfor %}
+    </div>
+  </section>
+
+  <div class="divider" aria-hidden="true"></div>
+
+  <section class="section" style="padding-bottom: 64px;">
+    <div class="section-head">
+      <h2 class="section-title">The pipeline</h2>
+    </div>
+    <ol class="pipeline-list">
+      {% for step in pipeline_steps %}
+      <li>
+        <a href="{{ url_for(step.endpoint) }}" class="pipeline-row">
+          <span class="pipeline-index">{{ step.step }}</span>
+          <span class="pipeline-body">
+            <span class="pipeline-label">{{ step.label }}</span>
+            <span class="pipeline-note">{{ step.note }}</span>
+          </span>
+          <span class="pipeline-status {{ 'status-live' if step.live else 'status-soon' }}">{{ 'Live' if step.live else 'Soon' }}</span>
+          <span class="pipeline-chevron">→</span>
+        </a>
+      </li>
+      {% endfor %}
+    </ol>
+  </section>
+
+{% endblock %}

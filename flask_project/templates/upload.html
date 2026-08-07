@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+{% block title %}Upload Dataset · Placement Predict System{% endblock %}
+
+{% block content %}
+  <section class="page-head">
+    <p class="page-kicker">{{ step.eyebrow }}</p>
+    <h1>{{ step.label }}</h1>
+    <p class="page-desc">{{ step.note }}</p>
+  </section>
+
+  <div class="divider" aria-hidden="true"></div>
+
+  <section class="upload-section">
+
+    {% if error %}
+    <div class="alert alert-error" role="alert" style="margin-bottom: 20px;">
+      <strong>Upload failed</strong>
+      {{ error }}
+    </div>
+    {% endif %}
+
+    <form action="{{ url_for('upload_dataset') }}" method="post" enctype="multipart/form-data" class="upload-form" id="uploadForm">
+      <label for="datasetInput" class="upload-drop" id="uploadDrop">
+        <span class="upload-drop-title">Drop a file here, or click to browse</span>
+        <span class="upload-drop-hint">.csv · .xlsx · .xls · up to 10 MB</span>
+        <span class="upload-drop-filename" id="uploadFilename"></span>
+        <input type="file" name="dataset" id="datasetInput" accept=".csv,.xlsx,.xls">
+      </label>
+      <button type="submit" class="btn btn-primary upload-submit">Upload dataset</button>
+    </form>
+
+    {% if preview %}
+    <div class="loaded-panel">
+      <div class="loaded-header">
+        <span class="badge {{ '' if is_default else 'badge-accent' }}">{{ 'Default' if is_default else 'Uploaded' }}</span>
+        <span class="loaded-name">{{ dataset_name }}</span>
+        {% if not is_default %}
+        <form action="{{ url_for('clear_dataset') }}" method="post" class="clear-form">
+          <button type="submit" class="link-quiet">Remove file</button>
+        </form>
+        {% endif %}
+      </div>
+
+      <div class="metrics" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 32px;">
+        <div class="metric">
+          <span class="metric-value">{{ "{:,}".format(preview.rows) }}</span>
+          <span class="metric-label">Rows</span>
+        </div>
+        <div class="metric">
+          <span class="metric-value">{{ preview.columns }}</span>
+          <span class="metric-label">Columns</span>
+        </div>
+        <div class="metric">
+          <span class="metric-value" {% if preview.missing_total %}style="color: var(--danger);"{% endif %}>{{ "{:,}".format(preview.missing_total) }}</span>
+          <span class="metric-label">Missing values</span>
+        </div>
+      </div>
+      {% if is_default %}
+      <p class="note" style="margin: -16px 0 32px;">Raw file counts — one corrupt record is removed in the analysis stages.</p>
+      {% endif %}
+
+      <div class="section-head">
+        <h2 class="section-title">Columns</h2>
+      </div>
+      <div class="table-scroll" style="margin-bottom: 32px;">
+        <table class="table">
+          <thead>
+            <tr><th>Field</th><th>Type</th></tr>
+          </thead>
+          <tbody>
+            {% for col in preview.dtypes %}
+            <tr>
+              <td class="mono strong">{{ col.name }}</td>
+              <td class="num dim">{{ col.dtype }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <div class="section-head">
+        <h2 class="section-title">Preview — first {{ preview.head|length }} rows</h2>
+        <span class="mono dim" style="font-size: 10.5px;">{{ preview.column_names|length }} columns · scroll →</span>
+      </div>
+      <div class="table-scroll">
+        <table class="table">
+          <thead>
+            <tr>
+              {% for col in preview.column_names %}
+              <th>{{ col }}</th>
+              {% endfor %}
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in preview.head %}
+            <tr>
+              {% for col in preview.column_names %}
+              <td class="num dim">{{ row[col] }}</td>
+              {% endfor %}
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <a href="{{ url_for('analyse_features') }}" class="btn btn-primary" style="margin-top: 28px;">Continue to Analyse Features →</a>
+    </div>
+    {% endif %}
+
+  </section>
+
+  {% include "_pager.html" %}
+{% endblock %}

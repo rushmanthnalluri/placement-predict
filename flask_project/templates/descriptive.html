@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block title %}{{ step.label }} · Placement Predict System{% endblock %}
+
+{% block content %}
+  <section class="page-head">
+    <p class="page-kicker">{{ step.eyebrow }}</p>
+    <h1>{{ step.label }}</h1>
+    <p class="page-desc">{{ step.note }}</p>
+    <p class="page-meta">Dataset · {{ dataset_name }}{{ ' (bundled default)' if is_default else '' }}</p>
+  </section>
+
+  {% if not bundle.schema_ok %}
+  <div class="divider" aria-hidden="true"></div>
+  <section class="upload-section">
+    <div class="alert">
+      <strong>Dataset schema not supported</strong>
+      This stage expects the placement schema, so descriptive statistics
+      cannot be computed for the uploaded file.
+      <div class="alert-actions"><a href="{{ url_for('upload_dataset') }}">Review the upload</a></div>
+    </div>
+  </section>
+  {% else %}
+
+  <div class="divider" aria-hidden="true"></div>
+
+  <section class="section">
+    <div class="section-head">
+      <h2 class="section-title">All numeric fields — centre, spread, and range</h2>
+    </div>
+    <div class="table-scroll" style="max-height: 68vh;">
+      <table class="table table-sticky">
+        <thead>
+          <tr>
+            <th class="sticky-col">Field</th>
+            {% for stat in bundle.descriptive.stats %}
+            <th>{{ stat }}</th>
+            {% endfor %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for col in bundle.descriptive.columns %}
+          {% set row = bundle.descriptive.table[col] %}
+          <tr>
+            <td class="sticky-col mono strong">{{ col }}</td>
+            <td class="num dim">{{ "{:,}".format(row['count']) }}</td>
+            <td class="num accent">{{ row['mean'] }}</td>
+            <td class="num">{{ row['std'] }}</td>
+            <td class="num dim">{{ row['min'] }}</td>
+            <td class="num dim">{{ row['25%'] }}</td>
+            <td class="num">{{ row['50%'] }}</td>
+            <td class="num dim">{{ row['75%'] }}</td>
+            <td class="num dim">{{ row['max'] }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <p class="note">Counts below 50,000 reflect missing values in the raw file — see
+      <a href="{{ url_for('missing_values') }}" style="color: var(--accent);">Missing Value Analysis</a>.</p>
+  </section>
+
+  <div class="divider" aria-hidden="true"></div>
+
+  <section class="section">
+    <div class="section-head">
+      <h2 class="section-title">Split by outcome — placed vs. not placed</h2>
+    </div>
+    <p class="section-sub">Mean of each core factor within each outcome group. The gap between
+      the two bars is the story the model will learn.</p>
+    <div class="vs-legend">
+      <span class="vs-key"><span class="vs-swatch vs-swatch-not"></span>Not placed</span>
+      <span class="vs-key"><span class="vs-swatch vs-swatch-placed"></span>Placed</span>
+    </div>
+    <div class="vs-rows">
+      {% for item in bundle.by_status %}
+      {% set hi = [item.placed, item.not_placed] | max %}
+      <div class="vs-row">
+        <span class="vs-name">{{ item.name }}</span>
+        <div class="vs-bars">
+          <div class="vs-bar-line">
+            <div class="vs-bar vs-bar-not" style="--w: {{ (item.not_placed / hi * 100) | round(1) }}%"></div>
+            <span class="vs-val">{{ item.not_placed }}</span>
+          </div>
+          <div class="vs-bar-line">
+            <div class="vs-bar vs-bar-placed" style="--w: {{ (item.placed / hi * 100) | round(1) }}%"></div>
+            <span class="vs-val">{{ item.placed }}</span>
+          </div>
+        </div>
+        <span class="vs-delta {{ 'vs-delta-neg' if item.delta < 0 else '' }}">{{ '+' if item.delta >= 0 else '' }}{{ item.delta }}</span>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  {% include "_pager.html" %}
+{% endblock %}

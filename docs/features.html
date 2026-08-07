@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Analyse Features · Placement Predict System</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23D9A63F'/%3E%3Ctext x='16' y='21.5' font-family='monospace' font-size='13' font-weight='bold' text-anchor='middle' fill='%2316130A'%3EPP%3C/text%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="static/css/style.css">
+</head>
+<body>
+
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <div class="app-shell">
+
+    <aside class="pipeline-sidebar">
+      <a class="sidebar-brand" href="index.html">
+        <span class="brand-mark">PP</span>
+        <span class="brand-text">
+          <span class="brand-line-1">Placement Predict</span>
+          <span class="brand-line-2">ML Pipeline</span>
+        </span>
+      </a>
+
+      <p class="nav-caption">Pipeline</p>
+      <nav class="pipeline-stepper" aria-label="ML pipeline stages">
+        <ol>
+          
+          <li class="">
+            <a href="upload.html"
+               >
+              <span class="step-num">01</span>
+              <span class="step-label">Upload Dataset</span>
+              
+            </a>
+          </li>
+          
+          <li class="is-active">
+            <a href="features.html"
+               aria-current="page">
+              <span class="step-num">02</span>
+              <span class="step-label">Analyse Features</span>
+              
+            </a>
+          </li>
+          
+          <li class="">
+            <a href="descriptive.html"
+               >
+              <span class="step-num">03</span>
+              <span class="step-label">Descriptive Statistics</span>
+              
+            </a>
+          </li>
+          
+          <li class="">
+            <a href="missing.html"
+               >
+              <span class="step-num">04</span>
+              <span class="step-label">Missing Value Analysis</span>
+              
+            </a>
+          </li>
+          
+          <li class="">
+            <a href="visualize.html"
+               >
+              <span class="step-num">05</span>
+              <span class="step-label">Data Visualization</span>
+              
+            </a>
+          </li>
+          
+          <li class="">
+            <a href="preprocess.html"
+               >
+              <span class="step-num">06</span>
+              <span class="step-label">Preprocessing</span>
+              <span class="step-soon">Soon</span>
+            </a>
+          </li>
+          
+          <li class="">
+            <a href="train.html"
+               >
+              <span class="step-num">07</span>
+              <span class="step-label">Model Training</span>
+              <span class="step-soon">Soon</span>
+            </a>
+          </li>
+          
+          <li class="">
+            <a href="evaluate.html"
+               >
+              <span class="step-num">08</span>
+              <span class="step-label">Model Evaluation</span>
+              <span class="step-soon">Soon</span>
+            </a>
+          </li>
+          
+          <li class="">
+            <a href="predict.html"
+               >
+              <span class="step-num">09</span>
+              <span class="step-label">Predict Placement</span>
+              <span class="step-soon">Soon</span>
+            </a>
+          </li>
+          
+        </ol>
+      </nav>
+
+      <div class="sidebar-footer">
+        <a href="index.html" class="sidebar-overview-link">← Overview</a>
+        <span>placement_predict_50k.csv</span>
+      </div>
+    </aside>
+
+    <div class="app-body">
+      <main id="main" tabindex="-1">
+        
+  <section class="page-head">
+    <p class="page-kicker">Stage 02 · Records</p>
+    <h1>Analyse Features</h1>
+    <p class="page-desc">Every column in the record — its type, role, coverage, and sample values — before any analysis begins.</p>
+    <p class="page-meta">Dataset · placement_predict_50k.csv (bundled default)</p>
+  </section>
+
+  
+
+  <div class="divider" aria-hidden="true"></div>
+
+  <section class="section" style="padding-bottom: 8px;">
+    <div class="metrics" style="grid-template-columns: repeat(3, 1fr);">
+      <div class="metric">
+        <span class="metric-value">31</span>
+        <span class="metric-label">Fields per record</span>
+      </div>
+      <div class="metric">
+        <span class="metric-value">23</span>
+        <span class="metric-label">Numeric</span>
+      </div>
+      <div class="metric">
+        <span class="metric-value">8</span>
+        <span class="metric-label">Categorical</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" style="padding-top: 12px;">
+    
+    <div class="registry-group" id="group-identity">
+      <div class="registry-group-head">
+        <h2>Identity</h2>
+        
+        <span class="registry-count">1 field</span>
+      </div>
+      <div class="table-scroll" style="border: none; border-radius: 0;">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Field</th>
+              <th>Type</th>
+              <th>Role</th>
+              <th>Coverage</th>
+              <th>Unique</th>
+              <th class="registry-optional">Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            
+            <tr>
+              <td class="mono strong">StudentID</td>
+              <td class="mono num dim">int64</td>
+              <td><span class="role-tag ">identifier</span></td>
+              <td>
+                <span class="coverage">
+                  <span class="coverage-track"><span class="coverage-fill " style="--w: 100.0%"></span></span>
+                  <span class="coverage-pct">100.0%</span>
+                </span>
+              </td>
+              <td class="num dim">50000</td>
+              <td class="registry-optional dim" style="white-space: normal; font-size: 12.5px;">unique record key, not a feature · <span class="samples">e.g. 1 · 2 · 3</span></td>
+            </tr>
+            
+          </tbody>
+        </table>
+      </div>
+    </div>
+    
+    <div class="registry-group" id="group-demographics">
+      <div class="registry-group-head">
+        <h2>Demographics</h2>
+        
+        <span class="registry-count">6 fields</span>
+      </div>
+      <div class="table-scroll" style="border: none; border-radius: 0;">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Field</th>
+              <th>Type</th>
+              <th>Role</th>
+              <th>Coverage</th>
+              <th>Unique</th>
+              <th class="registry-optional">Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            
+            <tr>
+              <td class="mono strong">Gender</td>
+              <td class="mono num dim">str</td>
+              <td><span class="role-tag ">feature</span></td>
+              <td>
+                <span class="coverage">
+                  <span class="coverage-track"><span class="coverage-fill " style="--w: 100.0%"></span></span>
+                  <span class="coverage-pct">100.0%</span>
+                </span>
+              </td>
+              <td class="num dim">2</td>
+              <td class="registry-optional dim" style="white-space: normal; font-size: 12.5px;">Male / Female · <span class="samples">e.g. Male · Female</span></td>
+            </tr>
+            
+            <tr>
+              <td class="mono strong">City</td>
+              <td class="mono num dim">str</td>
+              <td><span class="role-tag ">feature</span></td>
+              <td>
+                <span class="coverage">
+                  <span class="coverage-track"><span class="coverage-fill " style="--w: 100.0%"></span></span>
+                  <span class="coverage-pct">100.0%</span>
+                </span>
+              </td>
+              <td class="num dim">10</td>
+              <td class="registry-optional dim" style="white-space: normal; font-size: 12.5px;">home city of the student · <span class="samples">e.g. Ahmedabad · Mumbai · Kolkata</span></td>
+            </tr>
+            
+            <tr>
+              <td class="mono strong">CollegeTier</td>
+              <td class="mono num dim">str</td>
+              <td><span class="role-tag ">feature</span></td>
+              <td>
+                <span class="coverage">
+                  <span class="coverage-track"><span class="coverage-fill " style="--w: 100.0%"></span></span>
+                  <span class="coverage-pct">100.0%</span>
+                </span>
+              </td>
+              <td class="num dim">3</td>
+              <td class="registry-optional dim" style="white-space: normal; font-size: 12.5px;">Tier1 / Tier2 / Tier3 institution band · <span class="samples">e.g. Tier2 · Tier1 · Tier3</span></td>
+            </tr>
+            
+            <tr>
+              <td class="mono strong">Stream</td>
+              <td class="mono num dim">str</td>
+              <td><span class="role-tag ">feature</span></td>
+              <td>
+                <span class="coverage">
+                  <span class="coverage-track"><span class="coverage-fill " style="--w: 100.0%"></span></span>
+                  <span class="coverage-pct">100.0%</span>
+                </span>
+              </td>
+              <td class="num dim">6</td>
+              <td class="registry-optional dim" style="white-space: normal; font-size: 12.5px;">degree branch — CS, IT, ECE, EE, Mechanical, Civil · <span class="samples">e.g. ECE · IT · CS</span></td>
+            </tr>
+            
+            <tr>
+              <td class="mono strong">Specialisation</td>
+              <td class="mono num dim">str</td>
+              <td><span class="role-tag ">feature</span></td>
+              <td>
+                <span class="coverage">
+                  <span class="coverage-track"><span class="coverage-fill " style="--w: 100.0%"></span></span>
+                  <span class="coverage-pct">100.0%</span>
+                </span>
+              </td>
+              <td class="num dim">4</td>
+              <td class="registry-optional dim" style="white-space: normal; font-size: 12.5px;">focus area within the stream · <span class="samples">e.g. Networking · DataScience · AI</span></td>
+            </tr>
+            
+            <tr>
+              <td class="mono strong">Hostel</td>
+              <td class="mono num dim">str</td>
+              <td><span class="role-tag ">feature</span></td>
+              <td>
+                <span class="coverage">
+                  <span class="coverage-track"><span class="coverage-fill " style="--w: 100.0%"></span></span>
+                  <span class="coverage-pct">100.0%</span>
+                </span>
+              </td>
+              <td class="num dim">2</td>
+              <td class="registry-optional dim" style="white-space: normal; font-size: 12.5px;">whether the student lives on campus · <span class="samples">e.g. No · Yes</span></td>
+            </tr>
+            
+          </tbody>
+        </table>
+      </div>
+    </div>
+    
+    <div class="registry-group" id="group-academic">
+      <div class="registry-group-head">
+        <h2>Academic</h2>
+        
+        <span class="registry-count">12 fields</span>
+      </div>
+      <div class="table-scroll" style="border: none; border-radius: 0;">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Field</th>
+              <th>Type</th>
+              <th>Role</th>
+              <th>Coverage</th>
+              <th>Unique</th>
+              <th class="registry-optional">Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            
+            <tr>
+              <td class="mono strong">HistoryOfBacklogs</td>
+              <td class="mono num dim">str</td>
+              <td><span class="role-tag ">feature</span></td>
+              <td>
+                <span class="coverage">
+                  <span class="coverage-track"><span class="coverage-fill " style="--w: 100.0%"></span></span>
+                  <span class="coverage-pct">100.0%</span>
+                </span>
+              </td>
+              <td class="num dim">2</td>
+              <td class="registry-optional dim" style="white-space: normal; font-size: 12.5px;">any failed semester on record · <span class="samples">e.g. No · Yes</span></td>
+            </tr>
+            
+            <tr>
+              <td class="mono strong">SGPA_Sem1</td>
+              <td class="mono num dim">float64</td>
+              <td><span class="role-tag ">feature</span></td>
+              <td>
+                <span class="coverage">
+                  <span class="coverage-track"><span class="coverage-fill " style="--w: 100.0%"></span></span>
+                  <span class="coverage-pct">100.0%</span>
+                </span>
+              </td>
+              <td class="num dim">601</td>
+              <td class="registry-optional dim" style="white-space: normal; font-size: 12.5px;">semester 1 grade point average · <span class="samples">e.g. 6.02 · 5.84 · 4.91</span></td>
+            </tr>
+            
+            <tr>
+              <td class="mono strong">SGPA_Sem2</td>
+              <td class="mono num dim">float64</td>
+              <td><span class="role-tag ">feature</span></td>
+              <td>
+                <span class="coverage">
+                  <span class="coverage-track"><span class="coverage-fill " style="--w: 100.0%"></span></span>
+                  <span class="coverage-pct">100.0%</span>
+                </span>
+              </td>
+              <td class="num dim">601</td>
+              <td class="registry-optional dim" style="white-space: normal; font-size: 12.5px;">semester 2 grade point average · <span class="samples">e.g. 6.54 · 5.12 · 5.29</span></td>
+            </tr>
+            
+            <tr>
+              <td class="mono strong">SGPA_Sem3</td>
+              <td class="mono num dim">float64</td>
+              <td><span class="role-tag ">feature</span></td>
+              <td>
+                <span class="coverage">
+                  <span class="coverage-track"><span class="coverage-fill " style="--w: 100.0%"></span></span>
+                  <span class="coverage-pct">100.0%</span>
+                </span>
+              </td>
+              <td class="num dim">601</td>
+              <td class="registry-optional dim" style="white-space: normal; font-size: 12.5px;">semester 3 grade point average · <span class="samples">e.g. 6.52 · 5.34 · 5.49</span></td>
+            </tr>
+            
+            <tr>
+              <td class="mono strong">SGPA_Sem4</td>
+              <td class="mono num dim">float64</td>
+              <td><span class="role-tag ">feature</span></td>
+              <td>
+                <span class="coverage">
+                  <span class="coverage-track"><span class="coverage-fill " style="--w: 100.0%"></span></span>
+                  <span class="coverage-pct">100.0%</span>
+                </span>
+              </td>
+              <td class="num dim">601</td>
+              <td class="registry-optional dim" style="white-space: normal; font-size: 12.5px;">semester 4 grade point average · <span class="samples">e.g. 6.0 · 5.18 · 5.73</span></td>
+            </tr>
+            
+            <tr>
+              <td class="mono strong">SGPA_Sem5</td>
+              <td class="mono num dim">float64</td>
+              <td><span class="role-tag ">feature</span></td>
+              <td>
+                <span class="coverage">
+                  <span class="coverage-track"><span class="coverage-fill " style="--w: 100.0%"></span></span>
+                  <span class="coverage-pct">100.0%</span>
+                </span>
+              </td>
+              <td class="num dim">601</td>
+              <td class="registry-optional dim" style="white-space: normal; font-size: 12.5px;">semester 5 grade point average · <span class="samples">e.g. 6.47 · 5.03 · 5.33</span></td>
+            </tr>
+            
+            <tr>
+              <td class="mono strong">SGPA_Sem6</td>
+              <td class="mono num dim">float64</td>
+              <td><span class="role-tag ">feature</span></td>
+              <td>
+                <span class="coverage">
+                  <span class="coverage-track"><span class="coverage-fill " style="--w: 100.0%"></span></span>
+                  <span class="coverage-pct">100.0%</span>
+                </span>
+              </td>
+              <td class="num dim">601</td>
+              <td class="registry-optional dim" style="white-space: normal; font-size: 12.5px;">semester 6 grade point average · <span class="samples">e.g. 5.91 · 4.93 · 5.88</span></td>
+            </tr>
+            
+            <tr>
+              <td class="mono strong">SGPA_Sem7</td>
+              <td class="mono num dim">float64</td>
+              <td><span class="role-tag ">feature</span></td>
+              <td>
+                <span class="coverage">
+                  <span class="coverage-track"><span class="coverage-fill " style="--w: 100.0%"></span></span>
+                  <span class="coverage-pct">100.0%</span>
+                </span>
+              </td>
+              <td class="num dim">601</td>
+              <td class="registry-optional dim" style="white-space: normal; font-size: 12.5px;">semester 7 grade point average · <span class="samples">e.g. 6.49 · 5.4 · 5.82</span></td>
+            </tr>
+            
+            <tr>
+              <td class="mono strong">SGPA_Sem8</td>
+              <td class="mono num dim">float64</td>
+              <td><span class="role-tag ">feature</span></td>
+              <td>
+                <span class="coverage">
+                  <span class="coverage-track"><span class="coverage-fill " style="--w: 100.0%"></span></span>
+                  <span class="coverage-pct">100.0%</span>
+                </span>
+              </td>
+              <td class="num dim">601</td>
+              <td class="registry-optional dim" style="white-space: normal; font-size: 12.5px;">semester 8 grade point average · <span class="samples">e.g. 5.5 · 5.13 · 5.67</span></td>
+            </tr>
+            
+            <tr>
+              <td class="mono strong">CGPA</td>
+              <td class="mono num dim">float64</td>
+              <td><span class="role-tag ">feature</span></td>
+              <td>
+                <span class="coverage">
+                  <span class="coverage-track"><span class="coverage-fill " style="--w: 100.0%"></span></span>
+                  <span class="coverage-pct">100.0%</span>
+                </span>
+              </td>
+              <td class="num dim">601</td>
+              <td class="registry-optional dim" style="white-space: normal; font-size: 12.5px;">cumulative grade point average, 0–10 · <span class="samples">e.g. 6.29 · 5.23 · 5.52</span></td>
+            </tr>
+            
+            <tr>
+              <td class="mono strong">AttendancePercent</td>
+              <td class="mono num dim">float64</td>
+              <td><span class="role-tag ">feature</span></td>
+              <td>
+                <span class="coverage">
+                  <span class="coverage-track"><span class="coverage-fill " style="--w: 100.0%"></span></span>
+                  <span class="coverage-pct">100.0%</span>
+                </span>
+              </td>
+              <td class="num dim">1376</td>
+              <td class="registry-optional dim" style="white-space: normal; font-size: 12.5px;">overall attendance, percent · <span class="samples">e.g. 73.3 · 54.5 · 77.6</span></td>
+            </tr>
+            
+            <tr>
+              <td class="mono strong">CGPA_Tier</td>
+              <td class="mono num dim">str</td>
+              <td><span class="role-tag ">derived</span></td>
+              <td>
+                <span class="coverage">
+                  <span class="coverage-track"><span class="coverage-fill " style="--w: 100.0%"></span></span>
+                  <span class="coverage-pct">100.0%</span>
+                </span>
+              </td>
+              <td class="num dim">3</td>
+              <td class="registry-optional dim" style="white-space: normal; font-size: 12.5px;">Low / Mid / High banding of CGPA · <span class="samples">e.g. Low · Mid · High</span></td>
+            </tr>
+            
+          </tbody>
+        </table>
+      </div>
+    </div>
+    
+    <div class="registry-group" id="group-experience">
+      <div class="registry-group-head">
+        <h2>Experience</h2>
+        
+        <span class="registry-count">6 fields</span>
+      </div>
+      <div class="table-scroll" style="border: none; border-radius: 0;">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Field</th>
+              <th>Type</th>
+              <th>Role</th>
+              <th>Coverage</th>
+              <th>Unique</th>
+              <th class="registry-optional">Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            
+            <tr>
+              <td class="mono strong">Internships</td>
+              <td class="mono num dim">int64</td>
+              <td><span class="role-tag ">feature</span></td>
+              <td>
+                <span class="coverage">
+                  <span class="coverage-track"><span class="coverage-fill " style="--w: 100.0%"></span></span>
+                  <span class="coverage-pct">100.0%</span>
+                </span>
+              </td>
+              <td class="num dim">4</td>
+              <td class="registry-optional dim" style="white-space: normal; font-size: 12.5px;">count of internships completed · <span class="samples">e.g. 1 · 0 · 2</span></td>
+            </tr>
+            
+            <tr>
+              <td class="mono strong">Projects</td>
+              <td class="mono num dim">int64</td>
+              <td><span class="role-tag ">feature</span></td>
+              <td>
+                <span class="coverage">
+                  <span class="coverage-track"><span class="coverage-fill " style="--w: 100.0%"></span></span>
+                  <span class="coverage-pct">100.0%</span>
+                </span>
+              </td>
+              <td class="num dim">6</td>
+              <td class="registry-optional dim" style="white-space: normal; font-size: 12.5px;">count of academic / personal projects · <span class="samples">e.g. 2 · 1 · 3</span></td>
+            </tr>
+            
+            <tr>
+              <td class="mono strong">Workshops</td>
+              <td class="mono num dim">float64</td>
+              <td><span class="role-tag ">feature</span></td>
+              <td>
+                <span class="coverage">
+                  <span class="coverage-track"><span class="coverage-fill coverage-low" style="--w: 91.0%"></span></span>
+                  <span class="coverage-pct">91.0%</span>
+                </span>
+              </td>
+              <td class="num dim">5</td>
+              <td class="registry-optional dim" style="white-space: normal; font-size: 12.5px;">workshops attended — has missing values · <span class="samples">e.g. 0.0 · 1.0 · 2.0</span></td>
+            </tr>
+            
+            <tr>
+              <td class="mono strong">Certifications</td>
+              <td class="mono num dim">int64</td>
+              <td><span class="role-tag ">feature</span></td>
+              <td>
+                <span class="coverage">
+                  <span class="coverage-track"><span class="coverage-fill " style="--w: 100.0%"></span></span>
+                  <span class="coverage-pct">100.0%</span>
+                </span>
+              </td>
+              <td class="num dim">6</td>
+              <td class="registry-optional dim" style="white-space: normal; font-size: 12.5px;">external certifications earned · <span class="samples">e.g. 2 · 1 · 4</span></td>
+            </tr>
+            
+            <tr>
+              <td class="mono strong">Publications</td>
+              <td class="mono num dim">int64</td>
+              <td><span class="role-tag ">feature</span></td>
+              <td>
+                <span class="coverage">
+                  <span class="coverage-track"><span class="coverage-fill " style="--w: 100.0%"></span></span>
+                  <span class="coverage-pct">100.0%</span>
+                </span>
+              </td>
+              <td class="num dim">4</td>
+              <td class="registry-optional dim" style="white-space: normal; font-size: 12.5px;">papers published · <span class="samples">e.g. 0 · 1 · 2</span></td>
+            </tr>
+            
+            <tr>
+              <td class="mono strong">ExtraCurricular</td>
+              <td class="mono num dim">int64</td>
+              <td><span class="role-tag ">feature</span></td>
+              <td>
+                <span class="coverage">
+                  <span class="coverage-track"><span class="coverage-fill " style="--w: 100.0%"></span></span>
+                  <span class="coverage-pct">100.0%</span>
+                </span>
+              </td>
+              <td class="num dim">2</td>
+              <td class="registry-optional dim" style="white-space: normal; font-size: 12.5px;">count of extra-curricular activities · <span class="samples">e.g. 0 · 1</span></td>
+            </tr>
+            
+          </tbody>
+        </table>
+      </div>
+    </div>
+    
+    <div class="registry-group" id="group-skill-scores">
+      <div class="registry-group-head">
+        <h2>Skill scores</h2>
+        
+        <span class="registry-count">4 fields</span>
+      </div>
+      <div class="table-scroll" style="border: none; border-radius: 0;">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Field</th>
+              <th>Type</th>
+              <th>Role</th>
+              <th>Coverage</th>
+              <th>Unique</th>
+              <th class="registry-optional">Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            
+            <tr>
+              <td class="mono strong">AptitudeTestScore</td>
+              <td class="mono num dim">float64</td>
+              <td><span class="role-tag ">feature</span></td>
+              <td>
+                <span class="coverage">
+                  <span class="coverage-track"><span class="coverage-fill coverage-low" style="--w: 91.9%"></span></span>
+                  <span class="coverage-pct">91.9%</span>
+                </span>
+              </td>
+              <td class="num dim">701</td>
+              <td class="registry-optional dim" style="white-space: normal; font-size: 12.5px;">aptitude test, 0–100 — has missing values · <span class="samples">e.g. 66.7 · 48.2 · 73.8</span></td>
+            </tr>
+            
+            <tr>
+              <td class="mono strong">SoftSkillsRating</td>
+              <td class="mono num dim">float64</td>
+              <td><span class="role-tag ">feature</span></td>
+              <td>
+                <span class="coverage">
+                  <span class="coverage-track"><span class="coverage-fill coverage-low" style="--w: 92.9%"></span></span>
+                  <span class="coverage-pct">92.9%</span>
+                </span>
+              </td>
+              <td class="num dim">41</td>
+              <td class="registry-optional dim" style="white-space: normal; font-size: 12.5px;">soft-skills rating, 0–5 — has missing values · <span class="samples">e.g. 2.2 · 2.4 · 2.8</span></td>
+            </tr>
+            
+            <tr>
+              <td class="mono strong">CodingTestScore</td>
+              <td class="mono num dim">float64</td>
+              <td><span class="role-tag ">feature</span></td>
+              <td>
+                <span class="coverage">
+                  <span class="coverage-track"><span class="coverage-fill coverage-low" style="--w: 94.0%"></span></span>
+                  <span class="coverage-pct">94.0%</span>
+                </span>
+              </td>
+              <td class="num dim">937</td>
+              <td class="registry-optional dim" style="white-space: normal; font-size: 12.5px;">coding test, 0–100 — has missing values · <span class="samples">e.g. 49.4 · 26.7 · 67.7</span></td>
+            </tr>
+            
+            <tr>
+              <td class="mono strong">MockInterviewScore</td>
+              <td class="mono num dim">float64</td>
+              <td><span class="role-tag ">feature</span></td>
+              <td>
+                <span class="coverage">
+                  <span class="coverage-track"><span class="coverage-fill coverage-low" style="--w: 90.1%"></span></span>
+                  <span class="coverage-pct">90.1%</span>
+                </span>
+              </td>
+              <td class="num dim">820</td>
+              <td class="registry-optional dim" style="white-space: normal; font-size: 12.5px;">mock interview, 0–100 — has missing values · <span class="samples">e.g. 47.8 · 25.8 · 41.5</span></td>
+            </tr>
+            
+          </tbody>
+        </table>
+      </div>
+    </div>
+    
+    <div class="registry-group" id="group-outcome">
+      <div class="registry-group-head">
+        <h2>Outcome</h2>
+        
+        <span class="registry-count">2 fields</span>
+      </div>
+      <div class="table-scroll" style="border: none; border-radius: 0;">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Field</th>
+              <th>Type</th>
+              <th>Role</th>
+              <th>Coverage</th>
+              <th>Unique</th>
+              <th class="registry-optional">Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            
+            <tr>
+              <td class="mono strong">PlacementStatus</td>
+              <td class="mono num dim">int64</td>
+              <td><span class="role-tag role-target">target</span></td>
+              <td>
+                <span class="coverage">
+                  <span class="coverage-track"><span class="coverage-fill " style="--w: 100.0%"></span></span>
+                  <span class="coverage-pct">100.0%</span>
+                </span>
+              </td>
+              <td class="num dim">2</td>
+              <td class="registry-optional dim" style="white-space: normal; font-size: 12.5px;">1 = Placed, 0 = Not placed · <span class="samples">e.g. 0 · 1</span></td>
+            </tr>
+            
+            <tr>
+              <td class="mono strong">IsAnomaly</td>
+              <td class="mono num dim">int64</td>
+              <td><span class="role-tag ">flag</span></td>
+              <td>
+                <span class="coverage">
+                  <span class="coverage-track"><span class="coverage-fill " style="--w: 100.0%"></span></span>
+                  <span class="coverage-pct">100.0%</span>
+                </span>
+              </td>
+              <td class="num dim">2</td>
+              <td class="registry-optional dim" style="white-space: normal; font-size: 12.5px;">1 marks synthetic / anomalous records · <span class="samples">e.g. 0 · 1</span></td>
+            </tr>
+            
+          </tbody>
+        </table>
+      </div>
+    </div>
+    
+  </section>
+  
+
+  
+<nav class="stage-pager" aria-label="Pipeline stages">
+  
+  <a href="upload.html" class="pager-link">
+    <span class="pager-dir">← Stage 01</span>
+    <span class="pager-label">Upload Dataset</span>
+  </a>
+  
+  
+  <a href="descriptive.html" class="pager-link pager-next">
+    <span class="pager-dir">Stage 03 →</span>
+    <span class="pager-label">Descriptive Statistics</span>
+  </a>
+  
+</nav>
+
+
+      </main>
+
+      <footer class="site-footer">
+        <div class="footer-row">
+          <span>Placement Predict System</span>
+          <span>5 of 9 stages live</span>
+        </div>
+      </footer>
+    </div>
+
+  </div>
+
+  <script src="static/js/script.js"></script>
+  
+</body>
+</html>
