@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}{{ code }} · Placement Predict System{% endblock %}
+
+{% block content %}
+  <section class="page-head">
+    <p class="page-kicker">Error {{ code }}</p>
+    <h1>{{ title }}</h1>
+    <p class="page-desc">{{ message }}</p>
+    <div class="page-actions">
+      <a href="{{ url_for('home') }}" class="btn btn-primary">Back to overview</a>
+      <a href="{{ url_for('upload_dataset') }}" class="btn btn-secondary">Upload page</a>
+    </div>
+  </section>
+{% endblock %}

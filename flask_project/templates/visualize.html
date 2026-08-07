@@ -104,7 +104,7 @@
         {% for cell in bundle.heatmap.matrix[loop.index0] %}
         <div class="heat-cell {{ 'heat-strong' if cell.strong else '' }}"
              style="background: {{ cell.color }}"
-             title="{{ r }} × {{ bundle.heatmap.labels[loop.index0] }}: {{ cell.v }}">{{ cell.v }}</div>
+             {% if cell.v is not none %}title="{{ r }} × {{ bundle.heatmap.labels[loop.index0] }}: {{ cell.v }}"{% endif %}>{{ cell.v if cell.v is not none else '' }}</div>
         {% endfor %}
         {% endfor %}
       </div>
@@ -151,14 +151,18 @@
           <text x="28" y="168" class="bp-tick" text-anchor="end">{{ box.lo }}</text>
           <text x="28" y="96" class="bp-tick" text-anchor="end">{{ ((box.lo + box.hi) / 2) | round(1) }}</text>
           <text x="28" y="24" class="bp-tick" text-anchor="end">{{ box.hi }}</text>
+          {% if box.not_placed %}
           {{ bp_box(box.not_placed, 95, 'bp-not') }}
-          {{ bp_box(box.placed, 175, 'bp-placed') }}
           <text x="95" y="184" class="bp-cat" text-anchor="middle">Not placed</text>
+          {% endif %}
+          {% if box.placed %}
+          {{ bp_box(box.placed, 175, 'bp-placed') }}
           <text x="175" y="184" class="bp-cat" text-anchor="middle">Placed</text>
+          {% endif %}
         </svg>
         <div class="bp-foot">
-          <span>med {{ box.not_placed.median }} → {{ box.placed.median }}</span>
-          <span>{{ box.not_placed.outliers + box.placed.outliers }} outliers</span>
+          <span>{% if box.not_placed and box.placed %}med {{ box.not_placed.median }} → {{ box.placed.median }}{% else %}med {{ (box.placed or box.not_placed).median }}{% endif %}</span>
+          <span>{{ (box.not_placed.outliers if box.not_placed else 0) + (box.placed.outliers if box.placed else 0) }} outliers</span>
         </div>
       </div>
       {% endfor %}

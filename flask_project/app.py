@@ -209,12 +209,14 @@ def _build_preview(df, max_rows=MAX_PREVIEW_ROWS):
 @app.route("/")
 def home():
     bundle, dataset_name, is_default = _active_bundle()
+    schema_ok = bundle.get("schema_ok", False)
     return render_template(
         "index.html",
-        overview=bundle["overview"],
-        top_drivers=bundle.get("top_drivers", []),
-        features=bundle["features"],
-        dropped_rows=bundle.get("dropped_rows", 0),
+        schema_ok=schema_ok,
+        overview=bundle.get("overview") if schema_ok else None,
+        top_drivers=bundle.get("top_drivers", []) if schema_ok else [],
+        features=bundle.get("features") if schema_ok else None,
+        dropped_rows=bundle.get("dropped_rows", 0) if schema_ok else 0,
         dataset_name=dataset_name,
         is_default=is_default,
         active_step=None,
@@ -332,7 +334,10 @@ def _model_stage_view(step_id, template):
     model_bundle = None
     if bundle["schema_ok"]:
         path, _, _ = _active_dataset()
-        model_bundle = model.get_model_bundle(path)
+        try:
+            model_bundle = model.get_model_bundle(path)
+        except Exception as exc:  # noqa: BLE001 - never 500 a stage page
+            model_bundle = {"schema_ok": True, "ok": False, "error": str(exc)}
     return render_template(
         template,
         step=step,
@@ -368,12 +373,19 @@ def predict_placement():
     prev_step, next_step = _step_pager("predict")
     path, _, _ = _active_dataset()
 
-    mb = model.get_model_bundle(path) if bundle["schema_ok"] else None
+    mb = None
+    if bundle["schema_ok"]:
+        try:
+            mb = model.get_model_bundle(path)
+        except Exception as exc:  # noqa: BLE001 - never 500 the page
+            mb = {"schema_ok": True, "ok": False, "error": str(exc)}
+    model_ready = bool(mb and mb.get("ok"))
+
     result = None
     errors = []
     values = {}
 
-    if request.method == "POST" and mb:
+    if request.method == "POST" and model_ready:
         for meta in mb["form_meta"]:
             name = meta["name"]
             raw = request.form.get(name, "").strip()
@@ -406,6 +418,7 @@ def predict_placement():
         active_step="predict",
         bundle=bundle,
         mb=mb,
+        model_ready=model_ready,
         dataset_name=dataset_name,
         is_default=is_default,
         prev_step=prev_step,
@@ -449,6 +462,42 @@ for _step in PIPELINE_STEPS:
         endpoint=_step["endpoint"],
         view_func=_make_stage_view(_step),
     )
+
+
+@app.errorhandler(404)
+def not_found(err):
+    return render_template(
+        "error.html",
+        code=404,
+        title="Page not found",
+        message="That URL doesn't exist in this app. The nine pipeline stages "
+        "are listed on the left — pick one to continue.",
+        active_step=None,
+    ), 404
+
+
+@app.errorhandler(413)
+def too_large(err):
+    return render_template(
+        "error.html",
+        code=413,
+        title="File too large",
+        message="Uploads are capped at 10 MB. Trim the file or convert it to "
+        "CSV (which compresses far better than Excel) and try again.",
+        active_step="upload",
+    ), 413
+
+
+@app.errorhandler(500)
+def server_error(err):
+    return render_template(
+        "error.html",
+        code=500,
+        title="Something broke on our side",
+        message="An unexpected error occurred. Your dataset is unaffected — "
+        "head back to the overview and pick up where you left off.",
+        active_step=None,
+    ), 500
 
 
 if __name__ == "__main__":

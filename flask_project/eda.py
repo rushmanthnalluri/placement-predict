@@ -141,6 +141,8 @@ def _i(value):
 def _histogram(series, max_bins=24):
     """Equal-width histogram; integer-aligned bins for low-cardinality counts."""
     s = series.dropna().astype(float)
+    if len(s) == 0:
+        return {"labels": [], "counts": [], "smooth": [], "mean": 0, "std": 0, "min": 0, "max": 0}
     lo, hi = float(s.min()), float(s.max())
     nunique = int(s.nunique())
     if nunique <= 12:
@@ -164,8 +166,11 @@ def _histogram(series, max_bins=24):
 
 
 def _box_stats(series):
-    """Box-and-whisker stats with 1.5·IQR fences (whiskers at innermost points)."""
+    """Box-and-whisker stats with 1.5·IQR fences (whiskers at innermost points).
+    Returns None when the group has no values (e.g. a one-class upload)."""
     s = series.dropna().astype(float)
+    if len(s) == 0:
+        return None
     q1, med, q3 = np.percentile(s, [25, 50, 75])
     iqr = q3 - q1
     lo_fence, hi_fence = q1 - 1.5 * iqr, q3 + 1.5 * iqr
@@ -302,7 +307,12 @@ def _build_bundle(df):
         if col not in df:
             continue
         means = df.groupby(TARGET)[col].mean()
-        not_placed, is_placed = float(means.get(0, np.nan)), float(means.get(1, np.nan))
+        not_placed = float(means.get(0, np.nan))
+        is_placed = float(means.get(1, np.nan))
+        if np.isnan(not_placed) or np.isnan(is_placed):
+            # one-class upload: show the only group's mean on both sides
+            only = float(df[col].mean())
+            not_placed = is_placed = only
         by_status.append({
             "name": col,
             "not_placed": _f(not_placed),
@@ -380,10 +390,10 @@ def _build_bundle(df):
     )
     bundle["influence"] = {
         "labels": [str(c) for c in infl.index],
-        "values": [_f(v, 3) for v in infl.values],
+        "values": [0 if pd.isna(v) else _f(v, 3) for v in infl.values],
     }
     bundle["top_drivers"] = [
-        {"name": str(name), "value": _f(val, 2)}
+        {"name": str(name), "value": 0 if pd.isna(val) else _f(val, 2)}
         for name, val in infl.head(5).items()
     ]
 
@@ -394,16 +404,19 @@ def _build_bundle(df):
             continue
         b0 = _box_stats(dfi.loc[dfi[TARGET] == 0, col])
         b1 = _box_stats(dfi.loc[dfi[TARGET] == 1, col])
-        lo = min(b0["min"], b1["min"])
-        hi = max(b0["max"], b1["max"])
+        present = [b for b in (b0, b1) if b]
+        if not present:
+            continue
+        lo = min(b["min"] for b in present)
+        hi = max(b["max"] for b in present)
         span = (hi - lo) or 1.0
 
         def _norm(b):
             return {k: round((b[k] - lo) / span, 4) for k in ("min", "q1", "median", "q3", "max", "mean")}
 
         boxes[col] = {
-            "not_placed": {**b0, "n": _norm(b0)},
-            "placed": {**b1, "n": _norm(b1)},
+            "not_placed": {**b0, "n": _norm(b0)} if b0 else None,
+            "placed": {**b1, "n": _norm(b1)} if b1 else None,
             "lo": _f(lo),
             "hi": _f(hi),
         }
@@ -415,11 +428,15 @@ def _build_bundle(df):
     }
 
     gender_rows = df[df["Gender"].apply(lambda v: isinstance(v, str))]
-    g = gender_rows.groupby(["Gender", TARGET]).size().unstack(fill_value=0)
+    g = (
+        gender_rows.groupby(["Gender", TARGET]).size()
+        .unstack(fill_value=0)
+        .reindex(columns=[0, 1], fill_value=0)
+    )
     bundle["gender_split"] = {
         "labels": [str(x) for x in g.index],
-        "not_placed": [_i(v) for v in g.get(0, pd.Series(dtype=int)).values],
-        "placed": [_i(v) for v in g.get(1, pd.Series(dtype=int)).values],
+        "not_placed": [_i(v) for v in g[0].values],
+        "placed": [_i(v) for v in g[1].values],
     }
 
     return bundle

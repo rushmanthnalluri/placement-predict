@@ -6,7 +6,7 @@
     <p class="page-kicker">{{ step.eyebrow }}</p>
     <h1>{{ step.label }}</h1>
     <p class="page-desc">{{ step.note }}</p>
-    <p class="page-meta">Champion · {{ mb.best if mb else '—' }} · ROC-AUC {{ result.roc_auc if result else (mb.models | selectattr('name', 'equalto', mb.best) | first).metrics.roc_auc if mb else '—' }}</p>
+    <p class="page-meta">{% if mb and mb.ok %}Champion · {{ mb.best }} · ROC-AUC {{ (mb.models | selectattr('name', 'equalto', mb.best) | first).metrics.roc_auc }}{% else %}Dataset · {{ dataset_name }}{{ ' (bundled default)' if is_default else '' }}{% endif %}</p>
   </section>
 
   {% if not bundle.schema_ok %}
@@ -17,6 +17,15 @@
       The uploaded file does not match the placement schema, so there is no
       trained model to predict with.
       <div class="alert-actions"><a href="{{ url_for('upload_dataset') }}">Review the upload</a></div>
+    </div>
+  </section>
+  {% elif not model_ready %}
+  <div class="divider" aria-hidden="true"></div>
+  <section class="upload-section">
+    <div class="alert">
+      <strong>Cannot predict from this dataset</strong>
+      {{ mb.error if mb else 'The active dataset could not be prepared.' }}
+      <div class="alert-actions"><a href="{{ url_for('upload_dataset') }}">Upload a different file</a></div>
     </div>
   </section>
   {% else %}

@@ -74,7 +74,7 @@ def _subsample_curve(fpr, tpr, points=80):
 def _train_all(path):
     df = eda.load_dataframe(path)
     if not eda.schema_ok(df):
-        return {"schema_ok": False}
+        return {"schema_ok": False, "ok": False}
 
     # same cleaning as the EDA bundle: drop the corrupt sentinel row
     if "StudentID" in df.columns:
@@ -85,6 +85,35 @@ def _train_all(path):
     impute_means = X.mean()
     X = X.fillna(impute_means)
 
+    # degenerate uploads get a clear reason instead of a traceback
+    if y.nunique() < 2:
+        only = "Placed" if int(y.iloc[0]) == 1 else "Not placed"
+        return {
+            "schema_ok": True, "ok": False,
+            "error": f"Every row in this dataset has the same outcome ({only}). "
+                     "A classifier needs both placed and not-placed examples to "
+                     "learn the difference.",
+        }
+    if len(df) < 50:
+        return {
+            "schema_ok": True, "ok": False,
+            "error": f"Only {len(df)} usable rows — too few to train and evaluate "
+                     "honestly. Upload at least a few hundred rows.",
+        }
+    return _fit_and_evaluate(path, df, X, y, impute_means)
+
+
+def _fit_and_evaluate(path, df, X, y, impute_means):
+    try:
+        return _fit_and_evaluate_inner(path, df, X, y, impute_means)
+    except Exception as exc:  # noqa: BLE001 - surface training failures as a page, not a 500
+        return {
+            "schema_ok": True, "ok": False,
+            "error": f"Training failed on this dataset: {exc}",
+        }
+
+
+def _fit_and_evaluate_inner(path, df, X, y, impute_means):
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=0.2, stratify=y, random_state=SEED,
     )
@@ -154,6 +183,7 @@ def _train_all(path):
 
     bundle = {
         "schema_ok": True,
+        "ok": True,
         "features": FEATURES,
         "seed": SEED,
         "split": {

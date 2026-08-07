@@ -6,7 +6,7 @@
     <p class="page-kicker">{{ step.eyebrow }}</p>
     <h1>{{ step.label }}</h1>
     <p class="page-desc">{{ step.note }}</p>
-    <p class="page-meta">Dataset · {{ dataset_name }}{{ ' (bundled default)' if is_default else '' }} · trained on {{ "{:,}".format(mb.split.train) if mb else '—' }} rows</p>
+    <p class="page-meta">Dataset · {{ dataset_name }}{{ ' (bundled default)' if is_default else '' }}{% if mb and mb.ok %} · trained on {{ "{:,}".format(mb.split.train) }} rows{% endif %}</p>
   </section>
 
   {% if not bundle.schema_ok %}
@@ -17,6 +17,15 @@
       This stage expects the placement schema, so no models can be trained on
       the uploaded file.
       <div class="alert-actions"><a href="{{ url_for('upload_dataset') }}">Review the upload</a></div>
+    </div>
+  </section>
+  {% elif not mb or not mb.ok %}
+  <div class="divider" aria-hidden="true"></div>
+  <section class="upload-section">
+    <div class="alert">
+      <strong>Cannot train on this dataset</strong>
+      {{ mb.error if mb else 'The active dataset could not be prepared.' }}
+      <div class="alert-actions"><a href="{{ url_for('upload_dataset') }}">Upload a different file</a></div>
     </div>
   </section>
   {% else %}

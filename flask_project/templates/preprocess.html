@@ -19,6 +19,15 @@
       <div class="alert-actions"><a href="{{ url_for('upload_dataset') }}">Review the upload</a></div>
     </div>
   </section>
+  {% elif not mb or not mb.ok %}
+  <div class="divider" aria-hidden="true"></div>
+  <section class="upload-section">
+    <div class="alert">
+      <strong>Cannot preprocess this dataset</strong>
+      {{ mb.error if mb else 'The active dataset could not be prepared.' }}
+      <div class="alert-actions"><a href="{{ url_for('upload_dataset') }}">Upload a different file</a></div>
+    </div>
+  </section>
   {% else %}
 
   <div class="divider" aria-hidden="true"></div>

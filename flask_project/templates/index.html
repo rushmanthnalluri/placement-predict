@@ -9,9 +9,9 @@
       <h1>Placement Predict System</h1>
       <p class="page-desc">
         A nine-stage machine-learning pipeline over a record of
-        <strong>{{ "{:,}".format(overview.rows) }}</strong> graduating students —
+        {% if schema_ok %}<strong>{{ "{:,}".format(overview.rows) }}</strong>{% else %}<strong>50,000</strong>{% endif %} graduating students —
         grades, skills, internships, and outcomes — from raw upload to a
-        trained placement call. The exploratory stages are live on the data now.
+        trained placement call. Every stage is live on the data now.
       </p>
       <div class="page-actions">
         <a href="{{ url_for('upload_dataset') }}" class="btn btn-primary">Start the pipeline</a>
@@ -26,17 +26,36 @@
       </div>
       <div class="panel-body">
         <span class="dataset-file">{{ dataset_name }}</span>
+        {% if schema_ok %}
         <dl class="dataset-facts">
           <div class="dataset-fact"><dt>Records</dt><dd>{{ "{:,}".format(overview.rows) }}</dd></div>
           <div class="dataset-fact"><dt>Fields</dt><dd>{{ overview.columns }}</dd></div>
           <div class="dataset-fact"><dt>Placement rate</dt><dd>{{ overview.placement_rate }}%</dd></div>
           <div class="dataset-fact"><dt>Completeness</dt><dd>{{ overview.completeness }}%</dd></div>
         </dl>
+        {% else %}
+        <p class="note" style="margin: 10px 0 12px;">This file doesn't match the placement
+          schema — the analysis stages are paused until you upload a compatible file.</p>
+        {% endif %}
         <a href="{{ url_for('upload_dataset') }}" class="section-link">Upload a different file →</a>
       </div>
     </aside>
   </section>
 
+  {% if not schema_ok %}
+  <div class="divider" aria-hidden="true"></div>
+  <section class="section">
+    <div class="alert">
+      <strong>Dataset schema not supported</strong>
+      The uploaded file has different columns than the placement schema
+      (CGPA, skill scores, PlacementStatus, …), so there is nothing to analyse
+      yet. Remove it to fall back to the bundled 50,000-student cohort.
+      <div class="alert-actions"><a href="{{ url_for('upload_dataset') }}">Review the upload</a></div>
+    </div>
+  </section>
+  {% endif %}
+
+  {% if schema_ok %}
   <div class="divider" aria-hidden="true"></div>
 
   <section class="section">
@@ -119,6 +138,7 @@
       {% endfor %}
     </div>
   </section>
+  {% endif %}
 
   <div class="divider" aria-hidden="true"></div>
 
