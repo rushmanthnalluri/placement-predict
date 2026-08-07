@@ -15,6 +15,9 @@ import threading
 import time
 from collections import OrderedDict
 
+import hashlib
+
+import joblib
 import numpy as np
 import pandas as pd
 from sklearn.base import clone
@@ -55,6 +58,64 @@ _bundle_cache = OrderedDict()
 _fitted_cache = OrderedDict()
 _cache_lock = threading.Lock()
 
+# Bump whenever the training recipe changes — stale artifacts are ignored.
+ARTIFACT_VERSION = 1
+
+
+def _dataset_sha(path):
+    h = hashlib.sha256()
+    with open(path, "rb") as fh:
+        for chunk in iter(lambda: fh.read(1 << 20), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+
+def _artifact_path(path):
+    return os.path.join(os.path.dirname(path), "model_artifact.joblib")
+
+
+def save_artifact(path):
+    """Train on the dataset at `path` and persist bundle + champion model so
+    production never trains at request time. Used by train_artifact.py at
+    image/deploy build time."""
+    bundle = get_model_bundle(path)  # trains if needed; fills the fitted cache
+    if not bundle.get("ok"):
+        raise RuntimeError(f"cannot build artifact: {bundle.get('error')}")
+    with _cache_lock:
+        fitted = _fitted_cache.get(_cache_key(path))
+    if fitted is None:
+        raise RuntimeError("no fitted model in cache after training")
+    model_obj, scaler, means = fitted
+    joblib.dump(
+        {
+            "version": ARTIFACT_VERSION,
+            "dataset_sha": _dataset_sha(path),
+            "bundle": bundle,
+            "champion": model_obj,
+            "scaler": scaler,
+            "impute_means": means,
+        },
+        _artifact_path(path),
+    )
+
+
+def _load_artifact(path):
+    """A validated precomputed bundle + fitted champion for `path`, or None.
+    Validates the recipe version and the dataset's content hash, so a stale
+    artifact can never silently serve the wrong model."""
+    ap = _artifact_path(path)
+    if not os.path.exists(ap):
+        return None
+    try:
+        payload = joblib.load(ap)
+    except Exception:  # noqa: BLE001 - a corrupt artifact just retrains
+        return None
+    if payload.get("version") != ARTIFACT_VERSION:
+        return None
+    if payload.get("dataset_sha") != _dataset_sha(path):
+        return None
+    return payload
+
 
 def _cache_key(path):
     st = os.stat(path)
@@ -69,9 +130,17 @@ def get_model_bundle(path):
             while len(_bundle_cache) >= _CACHE_MAX:
                 old_key, _ = _bundle_cache.popitem(last=False)
                 _fitted_cache.pop(old_key, None)
-            # built under the lock: a concurrent cold burst waits for the
-            # first training run instead of launching one per thread
-            _bundle_cache[key] = _train_all(path)
+            # a precomputed artifact (built at deploy time) loads in ~ms;
+            # otherwise train, under the lock, so a concurrent cold burst
+            # waits for the first run instead of launching one per thread
+            payload = _load_artifact(path)
+            if payload is not None:
+                _bundle_cache[key] = payload["bundle"]
+                _fitted_cache[key] = (
+                    payload["champion"], payload["scaler"], payload["impute_means"],
+                )
+            else:
+                _bundle_cache[key] = _train_all(path)
         else:
             _bundle_cache.move_to_end(key)
         return _bundle_cache[key]
@@ -196,10 +265,13 @@ def _fit_and_evaluate(path, df, X, y):
     ]
     # CV on a stratified subsample of train — selection signal is unchanged,
     # but the selection pass costs seconds instead of minutes on a small host
-    cv_rows = min(CV_ROWS, len(X_train))
-    X_cv, _, y_cv, _ = train_test_split(
-        X_train, y_train, train_size=cv_rows, stratify=y_train, random_state=SEED,
-    )
+    if len(X_train) > CV_ROWS:
+        X_cv, _, y_cv, _ = train_test_split(
+            X_train, y_train, train_size=CV_ROWS, stratify=y_train, random_state=SEED,
+        )
+    else:
+        X_cv, y_cv = X_train, y_train
+    cv_rows = len(X_cv)
     cv = StratifiedKFold(n_splits=CV_FOLDS, shuffle=True, random_state=SEED)
 
     models = []

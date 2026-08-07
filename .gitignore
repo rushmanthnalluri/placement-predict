@@ -6,3 +6,4 @@ __pycache__/
 .pytest_cache/
 .env
 flask_project/data/uploads/
+flask_project/data/model_artifact.joblib

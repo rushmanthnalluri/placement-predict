@@ -60,10 +60,9 @@ exactly once — to produce this table.
 - **Graceful failure**: off-schema uploads, single-class datasets, and tiny
   files each get a clear explanation instead of a crash.
 - **Performance**: a 6.5 MB dataset is parsed once, cached, and every chart is
-  computed from cached aggregates; models train in ~9 s on first use
-  (3-fold CV for selection plus the three final fits), cached after. An
-  optional boot-time warm-up (`WARM_MODEL=1`) is available for hosts with
-  memory headroom.
+  computed from cached aggregates; the model is **pre-trained at build time**
+  and shipped as a validated 0.3 MB artifact, so model pages load instantly —
+  uploads retrain in ~9 s once, cached after.
 - **Accessibility & responsive**: keyboard-navigable throughout, AA contrast,
   reduced-motion support, works from phone to desktop.
 

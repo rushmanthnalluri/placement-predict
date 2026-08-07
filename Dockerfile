@@ -9,6 +9,10 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY flask_project/ flask_project/
 
+# Pretrain the bundled dataset at build time — the runtime never trains on
+# request, so cold starts and free-tier hosts stay fast and OOM-safe.
+RUN python flask_project/train_artifact.py
+
 # Run as an unprivileged user.
 RUN useradd --create-home appuser && chown -R appuser:appuser /srv
 USER appuser
