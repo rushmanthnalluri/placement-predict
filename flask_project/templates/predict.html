@@ -96,3 +96,15 @@
 
   {% include "_pager.html" %}
 {% endblock %}
+
+{% block scripts %}
+{% if mb and mb.ok %}
+<script>
+  // The logistic baseline as JSON. The Flask app predicts server-side with
+  // the champion model; the static Pages build (where the form is inert)
+  // uses this in script.js to predict in the browser.
+  window.LR_MODEL = {{ mb.lr_export | tojson }};
+  window.FORM_META = {{ mb.form_meta | tojson }};
+</script>
+{% endif %}
+{% endblock %}

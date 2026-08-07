@@ -169,6 +169,19 @@ def _fit_and_evaluate_inner(path, df, X, y, impute_means):
     rf_clf = fitted["Random Forest"][0]
     imp = pd.Series(rf_clf.feature_importances_, index=FEATURES).sort_values(ascending=False)
 
+    # the logistic baseline, exported so the static Pages build can predict
+    # in the browser (z-scored dot product + sigmoid — no server needed)
+    lr_clf = fitted["Logistic Regression"][0]
+    lr_auc = next(m["metrics"]["roc_auc"] for m in models if m["name"] == "Logistic Regression")
+    lr_export = {
+        "features": FEATURES,
+        "coef": [round(float(c), 6) for c in lr_clf.coef_.ravel()],
+        "intercept": round(float(lr_clf.intercept_[0]), 6),
+        "mean": {c: round(float(v), 6) for c, v in zip(FEATURES, scaler.mean_)},
+        "std": {c: round(float(v), 6) for c, v in zip(FEATURES, scaler.scale_)},
+        "auc": lr_auc,
+    }
+
     # input constraints + sensible defaults for the prediction form
     form_meta = []
     for col in FEATURES:
@@ -204,6 +217,7 @@ def _fit_and_evaluate_inner(path, df, X, y, impute_means):
             "labels": [str(k) for k in imp.index],
             "values": [round(float(v), 4) for v in imp.values],
         },
+        "lr_export": lr_export,
         "form_meta": form_meta,
     }
 
