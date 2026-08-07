@@ -189,7 +189,9 @@ def _fit_and_evaluate(path, df, X, y):
     candidates = [
         ("Logistic Regression", LogisticRegression(max_iter=2000), True),
         ("Random Forest", RandomForestClassifier(
-            n_estimators=150, n_jobs=-1, random_state=SEED), False),
+            # bounded worker count: each loky worker copies the training
+            # frame, and free-tier hosts are memory-capped
+            n_estimators=150, n_jobs=2, random_state=SEED), False),
         ("Gradient Boosting", HistGradientBoostingClassifier(random_state=SEED), False),
     ]
     # CV on a stratified subsample of train — selection signal is unchanged,
