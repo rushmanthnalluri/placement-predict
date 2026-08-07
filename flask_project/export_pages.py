@@ -26,7 +26,11 @@ ROUTES = {
     "/train": "train.html",
     "/evaluate": "evaluate.html",
     "/predict": "predict.html",
+    # GitHub Pages serves a custom 404.html at the site root
+    "/this-page-does-not-exist": "404.html",
 }
+
+EXPECTED_STATUS = {"/this-page-does-not-exist": 404}
 
 
 def _rewrite(html):
@@ -59,7 +63,8 @@ def main():
     client = app.test_client()
     for route, filename in ROUTES.items():
         response = client.get(route)
-        if response.status_code != 200:
+        expected = EXPECTED_STATUS.get(route, 200)
+        if response.status_code != expected:
             raise RuntimeError(f"{route} returned {response.status_code}")
         html = _rewrite(response.get_data(as_text=True))
         with open(os.path.join(DOCS, filename), "w", encoding="utf-8") as fh:
