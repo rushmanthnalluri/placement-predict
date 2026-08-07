@@ -9,8 +9,8 @@ An end-to-end machine-learning pipeline that predicts whether an engineering
 student will be placed — from raw data upload to a deployed prediction form —
 built as a nine-stage web application over a 50,000-record dataset.
 
+**Live app (interactive):** https://placement-predict-p2z1.onrender.com — uploads, training, and prediction all work here.
 **Live demo (static showcase):** https://rushmanthnalluri.github.io/placement-predict/
-**Live app (interactive):** deploy in two minutes — see [Deploy it](#deploy-it-one-dockerfile-any-host) below.
 
 ![Overview](screenshots/home.png)
 
