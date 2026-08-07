@@ -3,7 +3,7 @@ import secrets
 from uuid import uuid4
 
 import pandas as pd
-from flask import Flask, redirect, render_template, request, session, url_for
+from flask import Flask, jsonify, redirect, render_template, request, session, url_for
 from werkzeug.exceptions import HTTPException
 from werkzeug.utils import secure_filename
 
@@ -490,6 +490,83 @@ LIVE_STAGES = {
     "upload", "features", "descriptive", "missing", "visualize",
     "preprocess", "train", "evaluate", "predict",
 }
+
+
+# ---------------------------------------------------------------------------
+# JSON API — the service contract. Same validation and champion model as the
+# UI form; health never triggers training.
+# ---------------------------------------------------------------------------
+
+@app.route("/api/health")
+def api_health():
+    path, name, is_default = _active_dataset()
+    status = {"status": "ok", "dataset": name, "is_default_dataset": is_default}
+    status.update(model.warm_status(path))
+    return jsonify(status)
+
+
+@app.route("/api/predict", methods=["POST"])
+def api_predict():
+    if not request.is_json:
+        return jsonify({
+            "error": "Content-Type must be application/json",
+            "expected_fields": model.FEATURES,
+        }), 415
+
+    bundle, dataset_name, _ = _active_bundle()
+    if not bundle["schema_ok"]:
+        return jsonify({
+            "error": "The active dataset does not match the placement schema.",
+            "dataset": dataset_name,
+        }), 503
+
+    path, _, _ = _active_dataset()
+    try:
+        mb = model.get_model_bundle(path)
+    except Exception as exc:  # noqa: BLE001
+        mb = {"ok": False, "error": str(exc)}
+    if not mb.get("ok"):
+        return jsonify({
+            "error": "No trained model available for the active dataset.",
+            "detail": mb.get("error"),
+        }), 503
+
+    payload = request.get_json(silent=True) or {}
+    if not isinstance(payload, dict):
+        return jsonify({"error": "JSON body must be an object of feature values."}), 400
+
+    errors = []
+    values = {}
+    for meta in mb["form_meta"]:
+        name = meta["name"]
+        raw = payload.get(name)
+        if raw is None or raw == "":
+            values[name] = float(meta["default"])  # absent -> dataset median
+            continue
+        try:
+            val = float(raw)
+        except (TypeError, ValueError):
+            errors.append(f"{name}: expected a number, got {raw!r}.")
+            continue
+        if not (meta["min"] <= val <= meta["max"]):
+            errors.append(
+                f"{name}: {val:g} is outside the observed range "
+                f"{meta['min']:g}–{meta['max']:g}."
+            )
+        values[name] = val
+
+    if errors:
+        return jsonify({"error": "Validation failed", "details": errors}), 400
+
+    proba = model.predict(path, values)
+    return jsonify({
+        "placed": proba >= 0.5,
+        "probability": round(proba * 100, 1),
+        "threshold": 0.5,
+        "model": mb["best"],
+        "roc_auc": next(m["metrics"]["roc_auc"] for m in mb["models"] if m["name"] == mb["best"]),
+        "dataset": dataset_name,
+    })
 
 
 def _make_stage_view(step):

@@ -5,6 +5,8 @@ sdk: docker
 
 # Placement Predict System
 
+[![CI](https://github.com/rushmanthnalluri/placement-predict/actions/workflows/ci.yml/badge.svg)](https://github.com/rushmanthnalluri/placement-predict/actions/workflows/ci.yml)
+
 An end-to-end machine-learning pipeline that predicts whether an engineering
 student will be placed — from raw data upload to a deployed prediction form —
 built as a nine-stage web application over a 50,000-record dataset.
@@ -12,7 +14,7 @@ built as a nine-stage web application over a 50,000-record dataset.
 **Live app (interactive):** https://placement-predict-p2z1.onrender.com — uploads, training, and prediction all work here.
 **Live demo (static showcase):** https://rushmanthnalluri.github.io/placement-predict/
 
-![Overview](screenshots/home.png)
+![Demo: explore the data, then get a placement call](screenshots/demo.gif)
 
 ## What it does
 
@@ -68,7 +70,32 @@ split; the sealed test set is touched exactly once — to produce this table.
 ## Tech stack
 
 Python · Flask · pandas · scikit-learn · Chart.js — no JavaScript framework,
-no build step. A pytest suite in `tests/` covers every route × dataset state.
+no build step. A pytest suite in `tests/` covers every route × dataset state;
+CI (pytest + Docker build + pip-audit) runs on every push. Full methodology
+and limits: [MODEL_CARD.md](MODEL_CARD.md) · forensic audit trail:
+[docs/audit/](docs/audit/FINAL_AUDIT.md).
+
+## JSON API
+
+The same champion model behind the form is available as a service:
+
+```bash
+# liveness + which model is warm
+curl https://placement-predict-p2z1.onrender.com/api/health
+# → {"status":"ok","dataset":"placement_predict_50k.csv","trained":true,
+#    "model":"Gradient Boosting","roc_auc":0.9733, ...}
+
+# prediction — all 12 fields optional (absent = dataset median)
+curl -X POST https://placement-predict-p2z1.onrender.com/api/predict \
+  -H "Content-Type: application/json" \
+  -d '{"CGPA": 8.6, "MockInterviewScore": 88, "CodingTestScore": 85}'
+# → {"placed": true, "probability": 99.5, "threshold": 0.5,
+#    "model": "Gradient Boosting", "roc_auc": 0.9733, ...}
+```
+
+Errors are JSON too: `400` with per-field `details` for out-of-range or
+non-numeric values, `415` for non-JSON bodies, `503` if the active dataset
+can't be trained.
 
 ## Run it locally
 

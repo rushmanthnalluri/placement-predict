@@ -80,6 +80,23 @@ def get_fitted(path):
         return _fitted_cache.get(_cache_key(path))
 
 
+def warm_status(path):
+    """Champion info if the model bundle is already cached — never trains.
+    Used by /api/health so health checks stay cheap."""
+    with _cache_lock:
+        bundle = _bundle_cache.get(_cache_key(path))
+    if not bundle or not bundle.get("ok"):
+        return {"trained": False}
+    return {
+        "trained": True,
+        "model": bundle["best"],
+        "roc_auc": next(
+            m["metrics"]["roc_auc"] for m in bundle["models"]
+            if m["name"] == bundle["best"]
+        ),
+    }
+
+
 def _subsample_curve(fpr, tpr, points=80):
     """Thin an ROC curve to ~80 points so the JSON payload stays small."""
     if len(fpr) <= points:
