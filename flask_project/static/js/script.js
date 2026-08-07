@@ -70,6 +70,16 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  // Predict form: show the native validation popup as soon as a field is
+  // left with invalid data — don't wait for the submit click.
+  document.querySelectorAll(".predict-form .field-input").forEach((input) => {
+    input.addEventListener("blur", () => {
+      if (input.value !== "" && !input.checkValidity()) {
+        input.reportValidity();
+      }
+    });
+  });
+
   const dropZone = document.getElementById("uploadDrop");
   const fileInput = document.getElementById("datasetInput");
   const filenameLabel = document.getElementById("uploadFilename");

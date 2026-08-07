@@ -40,6 +40,21 @@ DEFAULT_DATASET = os.path.join(app.root_path, "data", "placement_predict_50k.csv
 DEFAULT_DATASET_NAME = "placement_predict_50k.csv"
 
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+
+def _clean_uploads():
+    """Remove files left by dead sessions. Sessions are signed with an
+    ephemeral key by default, so nothing from a previous run is reachable
+    anyway; a missing file just falls back to the bundled dataset."""
+    for name in os.listdir(UPLOAD_FOLDER):
+        try:
+            os.remove(os.path.join(UPLOAD_FOLDER, name))
+        except OSError:
+            pass
+
+
+_clean_uploads()
+
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 app.config["MAX_CONTENT_LENGTH"] = 10 * 1024 * 1024  # 10 MB
 app.config["SESSION_COOKIE_SAMESITE"] = "Lax"

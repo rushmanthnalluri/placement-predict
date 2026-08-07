@@ -362,8 +362,6 @@ select:focus-visible, textarea:focus-visible, [tabindex]:focus-visible,
 }
 .btn-secondary:hover { background: var(--surface); border-color: var(--text-3); }
 
-.btn-sm { padding: 6px 11px; font-size: 12px; }
-
 .link-quiet {
   background: none;
   border: none;
@@ -1262,7 +1260,6 @@ select:focus-visible, textarea:focus-visible, [tabindex]:focus-visible,
 /* ---------------------------------------------------------- utility --- */
 
 .mono { font-family: var(--font-mono); }
-.muted { color: var(--text-2); }
 .dim { color: var(--text-3); }
 
 /* spacing + one-off layout utilities (replacing inline styles) */
@@ -1351,6 +1348,7 @@ select:focus-visible, textarea:focus-visible, [tabindex]:focus-visible,
   .chart-grid { grid-template-columns: 1fr; }
   .eval-duo { grid-template-columns: 1fr; }
   .predict-grid { grid-template-columns: 1fr; }
+  .predict-fields { grid-template-columns: 1fr; }
   .predict-result { position: static; }
   .cm-grid { grid-template-columns: 96px 1fr 1fr; }
   .driver-row { grid-template-columns: 128px 1fr 46px; gap: 12px; }
