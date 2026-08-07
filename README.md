@@ -6,7 +6,7 @@ built as a nine-stage web application over a 50,000-record dataset.
 
 **Live demo (static showcase):** https://rushmanthnalluri.github.io/placement-predict/
 
-![Overview](docs/assets/home.png)
+![Overview](screenshots/home.png)
 
 ## What it does
 
@@ -35,7 +35,7 @@ real dataset on every load — nothing is hardcoded:
 
 Top drivers: CGPA (0.65), Mock Interview Score (0.63), Soft Skills Rating (0.60).
 
-![Model evaluation](docs/assets/evaluate.png)
+![Model evaluation](screenshots/evaluate.png)
 
 ## Engineering practices worth pointing at
 
@@ -52,8 +52,8 @@ Top drivers: CGPA (0.65), Mock Interview Score (0.63), Soft Skills Rating (0.60)
 - **Accessibility & responsive**: keyboard-navigable throughout, AA contrast,
   reduced-motion support, works from phone to desktop.
 
-![Data visualization](docs/assets/visualize.png)
-![Prediction form](docs/assets/predict.png)
+![Data visualization](screenshots/visualize.png)
+![Prediction form](screenshots/predict.png)
 
 ## Tech stack
 
