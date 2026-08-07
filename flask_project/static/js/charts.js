@@ -126,7 +126,7 @@
     });
   }
 
-  function buildInfluence(canvas, payload) {
+  function buildInfluence(canvas, payload, axisTitle) {
     const ctx = canvas.getContext("2d");
     new Chart(ctx, {
       type: "bar",
@@ -151,8 +151,8 @@
           x: {
             grid: { color: PALETTE.grid },
             border: { display: false },
-            suggestedMax: 0.8,
-            title: { display: true, text: "correlation with PlacementStatus", color: PALETTE.text3 },
+            beginAtZero: true,
+            title: { display: true, text: axisTitle || "correlation with PlacementStatus", color: PALETTE.text3 },
           },
           y: { grid: { display: false }, border: { display: false }, ticks: { autoSkip: false } },
         },
@@ -242,6 +242,45 @@
     });
   }
 
+  // ROC curves, one line per trained model + a dashed chance diagonal
+  function buildRoc(canvas, models) {
+    const ctx = canvas.getContext("2d");
+    const colors = [PALETTE.accent, PALETTE.slate, PALETTE.text2];
+    const datasets = models.map((m, i) => ({
+      label: `${m.name} · ${m.metrics.roc_auc}`,
+      data: m.roc.fpr.map((x, k) => ({ x, y: m.roc.tpr[k] })),
+      borderColor: colors[i % colors.length],
+      borderWidth: 1.8,
+      pointRadius: 0,
+      tension: 0.1,
+      fill: false,
+    }));
+    datasets.push({
+      label: "chance",
+      data: [{ x: 0, y: 0 }, { x: 1, y: 1 }],
+      borderColor: PALETTE.text3,
+      borderWidth: 1,
+      borderDash: [5, 5],
+      pointRadius: 0,
+      fill: false,
+    });
+    new Chart(ctx, {
+      type: "line",
+      data: { datasets },
+      options: {
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { labels: { boxWidth: 18, boxHeight: 2 } },
+          tooltip: { ...tooltip, callbacks: { title: (items) => `FPR ${items[0].parsed.x.toFixed(3)}` } },
+        },
+        scales: {
+          x: { type: "linear", min: 0, max: 1, title: { display: true, text: "false-positive rate", color: PALETTE.text3 }, grid: { color: PALETTE.grid }, border: { display: false } },
+          y: { min: 0, max: 1, title: { display: true, text: "true-positive rate", color: PALETTE.text3 }, grid: { color: PALETTE.grid }, border: { display: false } },
+        },
+      },
+    });
+  }
+
   function buildAll() {
     document.querySelectorAll("canvas[data-chart]").forEach((canvas) => {
       const kind = canvas.dataset.chart;
@@ -253,6 +292,8 @@
         else if (kind === "influence" && EDA.influence) buildInfluence(canvas, EDA.influence);
         else if (kind === "cat" && EDA.categories) buildCategory(canvas, EDA.categories[key]);
         else if (kind === "gender" && EDA.gender_split) buildGender(canvas, EDA.gender_split);
+        else if (kind === "roc" && EDA.roc) buildRoc(canvas, EDA.roc);
+        else if (kind === "importance" && EDA.importance) buildInfluence(canvas, EDA.importance, "mean decrease in impurity");
       } catch (err) {
         // a broken chart should never take the page down with it
         console.error("chart failed:", kind, key || "", err);

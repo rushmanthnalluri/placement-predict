@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+{% block title %}{{ step.label }} · Placement Predict System{% endblock %}
+
+{% block content %}
+  <section class="page-head">
+    <p class="page-kicker">{{ step.eyebrow }}</p>
+    <h1>{{ step.label }}</h1>
+    <p class="page-desc">{{ step.note }}</p>
+    <p class="page-meta">Dataset · {{ dataset_name }}{{ ' (bundled default)' if is_default else '' }} · assessed once on {{ "{:,}".format(mb.split.test) if mb else '—' }} sealed rows</p>
+  </section>
+
+  {% if not bundle.schema_ok %}
+  <div class="divider" aria-hidden="true"></div>
+  <section class="upload-section">
+    <div class="alert">
+      <strong>Dataset schema not supported</strong>
+      This stage expects the placement schema, so there is no trained model to
+      evaluate for the uploaded file.
+      <div class="alert-actions"><a href="{{ url_for('upload_dataset') }}">Review the upload</a></div>
+    </div>
+  </section>
+  {% else %}
+
+  <div class="divider" aria-hidden="true"></div>
+
+  <section class="section">
+    <div class="section-head">
+      <h2 class="section-title">The verdict — sealed test set, threshold 0.5</h2>
+    </div>
+    <div class="table-scroll">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Model</th>
+            <th>Accuracy</th>
+            <th>Precision</th>
+            <th>Recall</th>
+            <th>F1</th>
+            <th>ROC-AUC</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for m in mb.models %}
+          <tr class="{{ 'champion-row' if m.name == mb.best else '' }}">
+            <td class="strong">
+              {{ m.name }}
+              {% if m.name == mb.best %}<span class="badge badge-accent" style="margin-left: 8px;">Champion</span>{% endif %}
+            </td>
+            <td class="num">{{ m.metrics.accuracy }}</td>
+            <td class="num">{{ m.metrics.precision }}</td>
+            <td class="num">{{ m.metrics.recall }}</td>
+            <td class="num">{{ m.metrics.f1 }}</td>
+            <td class="num accent">{{ m.metrics.roc_auc }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <div class="divider" aria-hidden="true"></div>
+
+  <section class="section">
+    <div class="section-head">
+      <h2 class="section-title">ROC curves — ranking quality, all models</h2>
+    </div>
+    <div class="chart-card chart-card-wide">
+      <div class="chart-card-head">
+        <h3>True-positive rate vs false-positive rate</h3>
+        <span class="chart-tag">dashed = chance</span>
+      </div>
+      <div class="chart-wrap chart-wrap-tall">
+        <canvas data-chart="roc" role="img"
+                aria-label="ROC curves for the three trained models"></canvas>
+      </div>
+    </div>
+
+    <div class="eval-duo">
+      <div>
+        <div class="section-head" style="margin-top: 0;">
+          <h2 class="section-title">Confusion matrix — {{ mb.best }}</h2>
+        </div>
+        <div class="cm-grid" role="img"
+             aria-label="Confusion matrix: {{ mb.confusion.tp }} true positives, {{ mb.confusion.fp }} false positives, {{ mb.confusion.fn }} false negatives, {{ mb.confusion.tn }} true negatives">
+          <span></span>
+          <span class="cm-axis">Predicted placed</span>
+          <span class="cm-axis">Predicted not</span>
+          <span class="cm-axis cm-axis-row">Actually placed</span>
+          <span class="cm-cell cm-tp"><strong>{{ "{:,}".format(mb.confusion.tp) }}</strong><span>true positive</span></span>
+          <span class="cm-cell cm-fn"><strong>{{ "{:,}".format(mb.confusion.fn) }}</strong><span>false negative</span></span>
+          <span class="cm-axis cm-axis-row">Actually not</span>
+          <span class="cm-cell cm-fp"><strong>{{ "{:,}".format(mb.confusion.fp) }}</strong><span>false positive</span></span>
+          <span class="cm-cell cm-tn"><strong>{{ "{:,}".format(mb.confusion.tn) }}</strong><span>true negative</span></span>
+        </div>
+      </div>
+
+      <div>
+        <div class="section-head" style="margin-top: 0;">
+          <h2 class="section-title">Feature importance — Random Forest</h2>
+        </div>
+        <div class="chart-card">
+          <div class="chart-wrap" style="height: 340px;">
+            <canvas data-chart="importance" role="img"
+                    aria-label="Feature importance bar chart from the random forest"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="note">The sealed set was touched exactly once — this page. Scores here are the
+      model's honest estimate of production performance; no tuning was done against them.</p>
+  </section>
+  {% endif %}
+
+  {% include "_pager.html" %}
+{% endblock %}
+
+{% block scripts %}
+{% if bundle.schema_ok %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script>
+  window.EDA = {
+    roc: {{ mb.models | tojson }},
+    importance: {{ mb.importance | tojson }}
+  };
+</script>
+<script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+{% endif %}
+{% endblock %}

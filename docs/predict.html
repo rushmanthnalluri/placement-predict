@@ -79,7 +79,7 @@
                >
               <span class="step-num">06</span>
               <span class="step-label">Preprocessing</span>
-              <span class="step-soon">Soon</span>
+              
             </a>
           </li>
           
@@ -88,7 +88,7 @@
                >
               <span class="step-num">07</span>
               <span class="step-label">Model Training</span>
-              <span class="step-soon">Soon</span>
+              
             </a>
           </li>
           
@@ -97,7 +97,7 @@
                >
               <span class="step-num">08</span>
               <span class="step-label">Model Evaluation</span>
-              <span class="step-soon">Soon</span>
+              
             </a>
           </li>
           
@@ -106,7 +106,7 @@
                aria-current="page">
               <span class="step-num">09</span>
               <span class="step-label">Predict Placement</span>
-              <span class="step-soon">Soon</span>
+              
             </a>
           </li>
           
@@ -125,18 +125,154 @@
   <section class="page-head">
     <p class="page-kicker">Stage 09 · Assessment</p>
     <h1>Predict Placement</h1>
-    <p class="page-desc">Enter a student&#39;s scores and get a placement call from the trained model.</p>
+    <p class="page-desc">Enter a student&#39;s profile and get a placement call, with a calibrated probability, from the champion model.</p>
+    <p class="page-meta">Champion · Gradient Boosting · ROC-AUC 0.9733</p>
   </section>
+
+  
 
   <div class="divider" aria-hidden="true"></div>
 
-  <section class="stage-note">
-    <span class="badge">Stage 09 · Planned</span>
-    <p>This stage is not wired up yet. The exploratory stages behind it are
-      live on the dataset — once modelling work begins, this page will hold
-      its real output: tables, charts, or a form, depending on what the step
-      needs.</p>
+  <section class="section">
+    
+
+    <div class="predict-grid">
+      <form onsubmit="return false" action="predict.html" method="post" class="predict-form">
+        
+        <fieldset class="predict-fieldset">
+          <legend>Academic</legend>
+          <div class="predict-fields">
+            
+            <label class="field">
+              <span class="field-label">CGPA</span>
+              <input type="number" name="CGPA" class="field-input"
+                     min="4.0" max="10.0" step="0.1"
+                     value="7.25" inputmode="decimal">
+              <span class="field-hint">4.0–10.0 · median 7.25</span>
+            </label>
+            
+            <label class="field">
+              <span class="field-label">AttendancePercent</span>
+              <input type="number" name="AttendancePercent" class="field-input"
+                     min="50.0" max="100.0" step="0.1"
+                     value="77.2" inputmode="decimal">
+              <span class="field-hint">50.0–100.0 · median 77.2</span>
+            </label>
+            
+          </div>
+        </fieldset>
+        
+        <fieldset class="predict-fieldset">
+          <legend>Experience</legend>
+          <div class="predict-fields">
+            
+            <label class="field">
+              <span class="field-label">Internships</span>
+              <input type="number" name="Internships" class="field-input"
+                     min="0.0" max="3.0" step="1"
+                     value="1.0" inputmode="decimal">
+              <span class="field-hint">0.0–3.0 · median 1.0</span>
+            </label>
+            
+            <label class="field">
+              <span class="field-label">Projects</span>
+              <input type="number" name="Projects" class="field-input"
+                     min="0.0" max="5.0" step="1"
+                     value="2.0" inputmode="decimal">
+              <span class="field-hint">0.0–5.0 · median 2.0</span>
+            </label>
+            
+            <label class="field">
+              <span class="field-label">Workshops</span>
+              <input type="number" name="Workshops" class="field-input"
+                     min="0.0" max="4.0" step="0.1"
+                     value="2.0" inputmode="decimal">
+              <span class="field-hint">0.0–4.0 · median 2.0</span>
+            </label>
+            
+            <label class="field">
+              <span class="field-label">Certifications</span>
+              <input type="number" name="Certifications" class="field-input"
+                     min="0.0" max="5.0" step="1"
+                     value="2.0" inputmode="decimal">
+              <span class="field-hint">0.0–5.0 · median 2.0</span>
+            </label>
+            
+            <label class="field">
+              <span class="field-label">Publications</span>
+              <input type="number" name="Publications" class="field-input"
+                     min="0.0" max="3.0" step="1"
+                     value="1.0" inputmode="decimal">
+              <span class="field-hint">0.0–3.0 · median 1.0</span>
+            </label>
+            
+            <label class="field">
+              <span class="field-label">ExtraCurricular</span>
+              <input type="number" name="ExtraCurricular" class="field-input"
+                     min="0.0" max="1.0" step="1"
+                     value="1.0" inputmode="decimal">
+              <span class="field-hint">0.0–1.0 · median 1.0</span>
+            </label>
+            
+          </div>
+        </fieldset>
+        
+        <fieldset class="predict-fieldset">
+          <legend>Skill scores</legend>
+          <div class="predict-fields">
+            
+            <label class="field">
+              <span class="field-label">AptitudeTestScore</span>
+              <input type="number" name="AptitudeTestScore" class="field-input"
+                     min="30.0" max="100.0" step="0.1"
+                     value="69.9" inputmode="decimal">
+              <span class="field-hint">30.0–100.0 · median 69.9</span>
+            </label>
+            
+            <label class="field">
+              <span class="field-label">SoftSkillsRating</span>
+              <input type="number" name="SoftSkillsRating" class="field-input"
+                     min="1.0" max="5.0" step="0.1"
+                     value="3.2" inputmode="decimal">
+              <span class="field-hint">1.0–5.0 · median 3.2</span>
+            </label>
+            
+            <label class="field">
+              <span class="field-label">CodingTestScore</span>
+              <input type="number" name="CodingTestScore" class="field-input"
+                     min="0.0" max="100.0" step="0.1"
+                     value="57.7" inputmode="decimal">
+              <span class="field-hint">0.0–100.0 · median 57.7</span>
+            </label>
+            
+            <label class="field">
+              <span class="field-label">MockInterviewScore</span>
+              <input type="number" name="MockInterviewScore" class="field-input"
+                     min="15.9" max="100.0" step="0.1"
+                     value="54.7" inputmode="decimal">
+              <span class="field-hint">15.9–100.0 · median 54.7</span>
+            </label>
+            
+          </div>
+        </fieldset>
+        
+        <button type="button" class="btn btn-primary">Predict placement</button>
+        <p class="note" style="margin-top: 10px;">Blank inputs fall back to the dataset median.</p>
+      </form>
+
+      <aside class="predict-result" aria-live="polite">
+        
+        <div class="result-panel result-idle">
+          <span class="result-kicker">Awaiting input</span>
+          <span class="result-verdict result-verdict-idle">—</span>
+          <p class="note" style="margin: 0;">Fill the profile on the left and the champion
+            model's placement call appears here, with its probability.</p>
+        </div>
+        
+      </aside>
+    </div>
   </section>
+  
 
   
 <nav class="stage-pager" aria-label="Pipeline stages">
@@ -155,7 +291,7 @@
       <footer class="site-footer">
         <div class="footer-row">
           <span>Placement Predict System</span>
-          <span>5 of 9 stages live</span>
+          <span>9 of 9 stages live</span>
         </div>
       </footer>
     </div>

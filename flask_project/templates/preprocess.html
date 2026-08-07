@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% block title %}{{ step.label }} · Placement Predict System{% endblock %}
+
+{% block content %}
+  <section class="page-head">
+    <p class="page-kicker">{{ step.eyebrow }}</p>
+    <h1>{{ step.label }}</h1>
+    <p class="page-desc">{{ step.note }}</p>
+    <p class="page-meta">Dataset · {{ dataset_name }}{{ ' (bundled default)' if is_default else '' }}</p>
+  </section>
+
+  {% if not bundle.schema_ok %}
+  <div class="divider" aria-hidden="true"></div>
+  <section class="upload-section">
+    <div class="alert">
+      <strong>Dataset schema not supported</strong>
+      This stage expects the placement schema, so preprocessing cannot run on
+      the uploaded file.
+      <div class="alert-actions"><a href="{{ url_for('upload_dataset') }}">Review the upload</a></div>
+    </div>
+  </section>
+  {% else %}
+
+  <div class="divider" aria-hidden="true"></div>
+
+  <section class="section">
+    <div class="section-head">
+      <h2 class="section-title">The split — sealed before anything is fit</h2>
+    </div>
+    <p class="section-sub">Stratified on the target, seed {{ mb.seed }}. The test set is quarantined
+      now and opened exactly once — on the evaluation page.</p>
+    <div class="metrics">
+      <div class="metric">
+        <span class="metric-value">{{ "{:,}".format(mb.split.train) }}</span>
+        <span class="metric-label">Training rows</span>
+      </div>
+      <div class="metric">
+        <span class="metric-value">{{ "{:,}".format(mb.split.test) }}</span>
+        <span class="metric-label">Sealed test rows</span>
+      </div>
+      <div class="metric">
+        <span class="metric-value">{{ mb.split.train_rate }}%</span>
+        <span class="metric-label">Placed rate · train</span>
+      </div>
+      <div class="metric">
+        <span class="metric-value">{{ mb.split.test_rate }}%</span>
+        <span class="metric-label">Placed rate · test</span>
+      </div>
+    </div>
+    <p class="note">Matching rates confirm the stratification held — no fold is accidentally
+      easier or harder than the population.</p>
+  </section>
+
+  <div class="divider" aria-hidden="true"></div>
+
+  <section class="section">
+    <div class="section-head">
+      <h2 class="section-title">Feature set — {{ mb.features | length }} inputs, one target</h2>
+    </div>
+    <p class="section-sub">The twelve numeric features from the EDA, with
+      <span class="mono">PlacementStatus</span> as the target (already 0/1 — no encoding needed).
+      Missing values are filled with the <em>training</em> means, and the linear model gets
+      z-score-standardised inputs; the tree models read the raw imputed values.</p>
+    <div class="table-scroll" style="max-height: 60vh;">
+      <table class="table table-sticky">
+        <thead>
+          <tr>
+            <th>Feature</th>
+            <th>Imputed mean</th>
+            <th>Train mean</th>
+            <th>Train std</th>
+            <th>Transform</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for col in mb.features %}
+          <tr>
+            <td class="mono strong">{{ col }}</td>
+            <td class="num accent">{{ mb.impute_means[col] }}</td>
+            <td class="num">{{ mb.scaler.mean[col] }}</td>
+            <td class="num dim">{{ mb.scaler.std[col] }}</td>
+            <td class="dim">impute → z-score</td>
+          </tr>
+          {% endfor %}
+          <tr>
+            <td class="mono strong">{{ 'PlacementStatus' }}</td>
+            <td class="num dim">—</td>
+            <td class="num dim">—</td>
+            <td class="num dim">—</td>
+            <td><span class="role-tag role-target">target</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="note">Scaling statistics are computed on the training split only, then frozen —
+      the test rows never influence the transforms applied to them.</p>
+  </section>
+  {% endif %}
+
+  {% include "_pager.html" %}
+{% endblock %}

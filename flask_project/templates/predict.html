@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block title %}{{ step.label }} · Placement Predict System{% endblock %}
+
+{% block content %}
+  <section class="page-head">
+    <p class="page-kicker">{{ step.eyebrow }}</p>
+    <h1>{{ step.label }}</h1>
+    <p class="page-desc">{{ step.note }}</p>
+    <p class="page-meta">Champion · {{ mb.best if mb else '—' }} · ROC-AUC {{ result.roc_auc if result else (mb.models | selectattr('name', 'equalto', mb.best) | first).metrics.roc_auc if mb else '—' }}</p>
+  </section>
+
+  {% if not bundle.schema_ok %}
+  <div class="divider" aria-hidden="true"></div>
+  <section class="upload-section">
+    <div class="alert">
+      <strong>Dataset schema not supported</strong>
+      The uploaded file does not match the placement schema, so there is no
+      trained model to predict with.
+      <div class="alert-actions"><a href="{{ url_for('upload_dataset') }}">Review the upload</a></div>
+    </div>
+  </section>
+  {% else %}
+
+  <div class="divider" aria-hidden="true"></div>
+
+  <section class="section">
+    {% if errors %}
+    <div class="alert alert-error" role="alert" style="margin-bottom: 24px;">
+      <strong>Check the highlighted inputs</strong>
+      {% for e in errors %}{{ e }}<br>{% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="predict-grid">
+      <form action="{{ url_for('predict_placement') }}" method="post" class="predict-form">
+        {% for group_name, cols in [
+            ("Academic", ["CGPA", "AttendancePercent"]),
+            ("Experience", ["Internships", "Projects", "Workshops", "Certifications", "Publications", "ExtraCurricular"]),
+            ("Skill scores", ["AptitudeTestScore", "SoftSkillsRating", "CodingTestScore", "MockInterviewScore"])
+        ] %}
+        <fieldset class="predict-fieldset">
+          <legend>{{ group_name }}</legend>
+          <div class="predict-fields">
+            {% for meta in mb.form_meta if meta.name in cols %}
+            <label class="field">
+              <span class="field-label">{{ meta.name }}</span>
+              <input type="number" name="{{ meta.name }}" class="field-input"
+                     min="{{ meta.min }}" max="{{ meta.max }}" step="{{ meta.step }}"
+                     value="{{ values.get(meta.name, meta.default) }}" inputmode="decimal">
+              <span class="field-hint">{{ meta.min }}–{{ meta.max }} · median {{ meta.default }}</span>
+            </label>
+            {% endfor %}
+          </div>
+        </fieldset>
+        {% endfor %}
+        <button type="submit" class="btn btn-primary">Predict placement</button>
+        <p class="note" style="margin-top: 10px;">Blank inputs fall back to the dataset median.</p>
+      </form>
+
+      <aside class="predict-result" aria-live="polite">
+        {% if result %}
+        <div class="result-panel {{ 'result-placed' if result.placed else 'result-not' }}">
+          <span class="result-kicker">{{ result.model }}</span>
+          <span class="result-verdict">{{ 'Placed' if result.placed else 'Not placed' }}</span>
+          <div class="result-track" role="img" aria-label="Placement probability {{ result.probability }} percent">
+            <div class="result-fill" style="width: {{ result.probability }}%"></div>
+          </div>
+          <div class="result-meta">
+            <span class="mono">{{ result.probability }}% probability</span>
+            <span class="mono dim">threshold 50%</span>
+          </div>
+        </div>
+        <p class="note">A probability near the threshold is a genuinely uncertain call — treat
+          it as "needs a second look", not as a verdict.</p>
+        {% else %}
+        <div class="result-panel result-idle">
+          <span class="result-kicker">Awaiting input</span>
+          <span class="result-verdict result-verdict-idle">—</span>
+          <p class="note" style="margin: 0;">Fill the profile on the left and the champion
+            model's placement call appears here, with its probability.</p>
+        </div>
+        {% endif %}
+      </aside>
+    </div>
+  </section>
+  {% endif %}
+
+  {% include "_pager.html" %}
+{% endblock %}

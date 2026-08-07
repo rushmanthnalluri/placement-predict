@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}{{ step.label }} · Placement Predict System{% endblock %}
+
+{% block content %}
+  <section class="page-head">
+    <p class="page-kicker">{{ step.eyebrow }}</p>
+    <h1>{{ step.label }}</h1>
+    <p class="page-desc">{{ step.note }}</p>
+    <p class="page-meta">Dataset · {{ dataset_name }}{{ ' (bundled default)' if is_default else '' }} · trained on {{ "{:,}".format(mb.split.train) if mb else '—' }} rows</p>
+  </section>
+
+  {% if not bundle.schema_ok %}
+  <div class="divider" aria-hidden="true"></div>
+  <section class="upload-section">
+    <div class="alert">
+      <strong>Dataset schema not supported</strong>
+      This stage expects the placement schema, so no models can be trained on
+      the uploaded file.
+      <div class="alert-actions"><a href="{{ url_for('upload_dataset') }}">Review the upload</a></div>
+    </div>
+  </section>
+  {% else %}
+
+  <div class="divider" aria-hidden="true"></div>
+
+  <section class="section">
+    <div class="section-head">
+      <h2 class="section-title">The candidates</h2>
+      <span class="mono dim" style="font-size: 10.5px;">seed {{ mb.seed }} · scikit-learn</span>
+    </div>
+    <p class="section-sub">One model from each family of the classical canon, so the choice between
+      them is a measured one — not a guess.</p>
+    <div class="table-scroll">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Model</th>
+            <th>Role</th>
+            <th>Input</th>
+            <th>Key settings</th>
+            <th>Train time</th>
+            <th>Test ROC-AUC</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for m in mb.models %}
+          <tr class="{{ 'champion-row' if m.name == mb.best else '' }}">
+            <td class="strong">
+              {{ m.name }}
+              {% if m.name == mb.best %}<span class="badge badge-accent" style="margin-left: 8px;">Champion</span>{% endif %}
+            </td>
+            <td class="dim" style="white-space: normal; min-width: 220px;">{{ m.note }}</td>
+            <td class="dim">{{ 'z-scored' if m.needs_scaling else 'raw imputed' }}</td>
+            <td class="mono num dim">
+              {%- if m.name == 'Logistic Regression' -%}max_iter 2000
+              {%- elif m.name == 'Random Forest' -%}200 trees · all cores
+              {%- else -%}default depth · lr 0.1{%- endif -%}
+            </td>
+            <td class="num">{{ m.train_time }}s</td>
+            <td class="num accent">{{ m.metrics.roc_auc }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <p class="note">The champion is chosen by ROC-AUC on the sealed test set and carries into the
+      evaluation and prediction stages. Full metrics on the next page.</p>
+  </section>
+  {% endif %}
+
+  {% include "_pager.html" %}
+{% endblock %}

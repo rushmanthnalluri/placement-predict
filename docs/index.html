@@ -79,7 +79,7 @@
                >
               <span class="step-num">06</span>
               <span class="step-label">Preprocessing</span>
-              <span class="step-soon">Soon</span>
+              
             </a>
           </li>
           
@@ -88,7 +88,7 @@
                >
               <span class="step-num">07</span>
               <span class="step-label">Model Training</span>
-              <span class="step-soon">Soon</span>
+              
             </a>
           </li>
           
@@ -97,7 +97,7 @@
                >
               <span class="step-num">08</span>
               <span class="step-label">Model Evaluation</span>
-              <span class="step-soon">Soon</span>
+              
             </a>
           </li>
           
@@ -106,7 +106,7 @@
                >
               <span class="step-num">09</span>
               <span class="step-label">Predict Placement</span>
-              <span class="step-soon">Soon</span>
+              
             </a>
           </li>
           
@@ -382,9 +382,9 @@
           <span class="pipeline-index">06</span>
           <span class="pipeline-body">
             <span class="pipeline-label">Preprocessing</span>
-            <span class="pipeline-note">Encode the target, scale the features, and split into train and test sets.</span>
+            <span class="pipeline-note">Impute with training means, standardise for the linear model, and seal a stratified 80/20 split — before any model sees data.</span>
           </span>
-          <span class="pipeline-status status-soon">Soon</span>
+          <span class="pipeline-status status-live">Live</span>
           <span class="pipeline-chevron">→</span>
         </a>
       </li>
@@ -394,9 +394,9 @@
           <span class="pipeline-index">07</span>
           <span class="pipeline-body">
             <span class="pipeline-label">Model Training</span>
-            <span class="pipeline-note">Fit a classifier on the training set and tune it against the pipeline defined so far.</span>
+            <span class="pipeline-note">Three classifiers trained and timed: an interpretable logistic baseline, a random forest, and gradient boosting.</span>
           </span>
-          <span class="pipeline-status status-soon">Soon</span>
+          <span class="pipeline-status status-live">Live</span>
           <span class="pipeline-chevron">→</span>
         </a>
       </li>
@@ -406,9 +406,9 @@
           <span class="pipeline-index">08</span>
           <span class="pipeline-body">
             <span class="pipeline-label">Model Evaluation</span>
-            <span class="pipeline-note">Accuracy, precision/recall, confusion matrix, and feature importance on held-out data.</span>
+            <span class="pipeline-note">One honest look at the sealed test set — metrics, ROC curves, confusion matrix, and feature importance.</span>
           </span>
-          <span class="pipeline-status status-soon">Soon</span>
+          <span class="pipeline-status status-live">Live</span>
           <span class="pipeline-chevron">→</span>
         </a>
       </li>
@@ -418,9 +418,9 @@
           <span class="pipeline-index">09</span>
           <span class="pipeline-body">
             <span class="pipeline-label">Predict Placement</span>
-            <span class="pipeline-note">Enter a student&#39;s scores and get a placement call from the trained model.</span>
+            <span class="pipeline-note">Enter a student&#39;s profile and get a placement call, with a calibrated probability, from the champion model.</span>
           </span>
-          <span class="pipeline-status status-soon">Soon</span>
+          <span class="pipeline-status status-live">Live</span>
           <span class="pipeline-chevron">→</span>
         </a>
       </li>
@@ -434,7 +434,7 @@
       <footer class="site-footer">
         <div class="footer-row">
           <span>Placement Predict System</span>
-          <span>5 of 9 stages live</span>
+          <span>9 of 9 stages live</span>
         </div>
       </footer>
     </div>

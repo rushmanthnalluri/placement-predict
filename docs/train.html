@@ -79,7 +79,7 @@
                >
               <span class="step-num">06</span>
               <span class="step-label">Preprocessing</span>
-              <span class="step-soon">Soon</span>
+              
             </a>
           </li>
           
@@ -88,7 +88,7 @@
                aria-current="page">
               <span class="step-num">07</span>
               <span class="step-label">Model Training</span>
-              <span class="step-soon">Soon</span>
+              
             </a>
           </li>
           
@@ -97,7 +97,7 @@
                >
               <span class="step-num">08</span>
               <span class="step-label">Model Evaluation</span>
-              <span class="step-soon">Soon</span>
+              
             </a>
           </li>
           
@@ -106,7 +106,7 @@
                >
               <span class="step-num">09</span>
               <span class="step-label">Predict Placement</span>
-              <span class="step-soon">Soon</span>
+              
             </a>
           </li>
           
@@ -125,18 +125,78 @@
   <section class="page-head">
     <p class="page-kicker">Stage 07 · Modelling</p>
     <h1>Model Training</h1>
-    <p class="page-desc">Fit a classifier on the training set and tune it against the pipeline defined so far.</p>
+    <p class="page-desc">Three classifiers trained and timed: an interpretable logistic baseline, a random forest, and gradient boosting.</p>
+    <p class="page-meta">Dataset · placement_predict_50k.csv (bundled default) · trained on 40,000 rows</p>
   </section>
+
+  
 
   <div class="divider" aria-hidden="true"></div>
 
-  <section class="stage-note">
-    <span class="badge">Stage 07 · Planned</span>
-    <p>This stage is not wired up yet. The exploratory stages behind it are
-      live on the dataset — once modelling work begins, this page will hold
-      its real output: tables, charts, or a form, depending on what the step
-      needs.</p>
+  <section class="section">
+    <div class="section-head">
+      <h2 class="section-title">The candidates</h2>
+      <span class="mono dim" style="font-size: 10.5px;">seed 42 · scikit-learn</span>
+    </div>
+    <p class="section-sub">One model from each family of the classical canon, so the choice between
+      them is a measured one — not a guess.</p>
+    <div class="table-scroll">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Model</th>
+            <th>Role</th>
+            <th>Input</th>
+            <th>Key settings</th>
+            <th>Train time</th>
+            <th>Test ROC-AUC</th>
+          </tr>
+        </thead>
+        <tbody>
+          
+          <tr class="">
+            <td class="strong">
+              Logistic Regression
+              
+            </td>
+            <td class="dim" style="white-space: normal; min-width: 220px;">interpretable linear baseline — the bar to beat</td>
+            <td class="dim">z-scored</td>
+            <td class="mono num dim">max_iter 2000</td>
+            <td class="num">0.06s</td>
+            <td class="num accent">0.9595</td>
+          </tr>
+          
+          <tr class="">
+            <td class="strong">
+              Random Forest
+              
+            </td>
+            <td class="dim" style="white-space: normal; min-width: 220px;">deep decorrelated trees — averages away variance</td>
+            <td class="dim">raw imputed</td>
+            <td class="mono num dim">200 trees · all cores</td>
+            <td class="num">2.05s</td>
+            <td class="num accent">0.9716</td>
+          </tr>
+          
+          <tr class="champion-row">
+            <td class="strong">
+              Gradient Boosting
+              <span class="badge badge-accent" style="margin-left: 8px;">Champion</span>
+            </td>
+            <td class="dim" style="white-space: normal; min-width: 220px;">shallow sequential trees — corrects residual bias</td>
+            <td class="dim">raw imputed</td>
+            <td class="mono num dim">default depth · lr 0.1</td>
+            <td class="num">13.14s</td>
+            <td class="num accent">0.9733</td>
+          </tr>
+          
+        </tbody>
+      </table>
+    </div>
+    <p class="note">The champion is chosen by ROC-AUC on the sealed test set and carries into the
+      evaluation and prediction stages. Full metrics on the next page.</p>
   </section>
+  
 
   
 <nav class="stage-pager" aria-label="Pipeline stages">
@@ -160,7 +220,7 @@
       <footer class="site-footer">
         <div class="footer-row">
           <span>Placement Predict System</span>
-          <span>5 of 9 stages live</span>
+          <span>9 of 9 stages live</span>
         </div>
       </footer>
     </div>

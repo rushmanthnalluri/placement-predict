@@ -5,6 +5,7 @@ from flask import Flask, redirect, render_template, request, session, url_for
 from werkzeug.utils import secure_filename
 
 import eda
+import model
 
 app = Flask(__name__)
 
@@ -91,9 +92,9 @@ PIPELINE_STEPS = [
         "label": "Preprocessing",
         "endpoint": "preprocess_data",
         "eyebrow": "Stage 06 · Preparation",
-        "live": False,
-        "note": "Encode the target, scale the features, and split "
-        "into train and test sets.",
+        "live": True,
+        "note": "Impute with training means, standardise for the linear "
+        "model, and seal a stratified 80/20 split — before any model sees data.",
     },
     {
         "id": "train",
@@ -101,9 +102,9 @@ PIPELINE_STEPS = [
         "label": "Model Training",
         "endpoint": "train_model",
         "eyebrow": "Stage 07 · Modelling",
-        "live": False,
-        "note": "Fit a classifier on the training set and tune it "
-        "against the pipeline defined so far.",
+        "live": True,
+        "note": "Three classifiers trained and timed: an interpretable "
+        "logistic baseline, a random forest, and gradient boosting.",
     },
     {
         "id": "evaluate",
@@ -111,9 +112,9 @@ PIPELINE_STEPS = [
         "label": "Model Evaluation",
         "endpoint": "evaluate_model",
         "eyebrow": "Stage 08 · Modelling",
-        "live": False,
-        "note": "Accuracy, precision/recall, confusion matrix, and "
-        "feature importance on held-out data.",
+        "live": True,
+        "note": "One honest look at the sealed test set — metrics, ROC "
+        "curves, confusion matrix, and feature importance.",
     },
     {
         "id": "predict",
@@ -121,9 +122,9 @@ PIPELINE_STEPS = [
         "label": "Predict Placement",
         "endpoint": "predict_placement",
         "eyebrow": "Stage 09 · Assessment",
-        "live": False,
-        "note": "Enter a student's scores and get a placement call "
-        "from the trained model.",
+        "live": True,
+        "note": "Enter a student's profile and get a placement call, with "
+        "a calibrated probability, from the champion model.",
     },
 ]
 
@@ -324,7 +325,101 @@ def visualize_data():
     return _eda_stage_view("visualize", "visualize.html")
 
 
-LIVE_STAGES = {"upload", "features", "descriptive", "missing", "visualize"}
+def _model_stage_view(step_id, template):
+    step = _find_step(step_id)
+    bundle, dataset_name, is_default = _active_bundle()
+    prev_step, next_step = _step_pager(step_id)
+    model_bundle = None
+    if bundle["schema_ok"]:
+        path, _, _ = _active_dataset()
+        model_bundle = model.get_model_bundle(path)
+    return render_template(
+        template,
+        step=step,
+        active_step=step_id,
+        bundle=bundle,
+        mb=model_bundle,
+        dataset_name=dataset_name,
+        is_default=is_default,
+        prev_step=prev_step,
+        next_step=next_step,
+    )
+
+
+@app.route("/preprocess")
+def preprocess_data():
+    return _model_stage_view("preprocess", "preprocess.html")
+
+
+@app.route("/train")
+def train_model():
+    return _model_stage_view("train", "train.html")
+
+
+@app.route("/evaluate")
+def evaluate_model():
+    return _model_stage_view("evaluate", "evaluate.html")
+
+
+@app.route("/predict", methods=["GET", "POST"])
+def predict_placement():
+    step = _find_step("predict")
+    bundle, dataset_name, is_default = _active_bundle()
+    prev_step, next_step = _step_pager("predict")
+    path, _, _ = _active_dataset()
+
+    mb = model.get_model_bundle(path) if bundle["schema_ok"] else None
+    result = None
+    errors = []
+    values = {}
+
+    if request.method == "POST" and mb:
+        for meta in mb["form_meta"]:
+            name = meta["name"]
+            raw = request.form.get(name, "").strip()
+            if raw == "":
+                raw = str(meta["default"])  # blank input -> dataset median
+            try:
+                val = float(raw)
+            except ValueError:
+                errors.append(f"{name}: “{raw}” is not a number.")
+                continue
+            if not (meta["min"] <= val <= meta["max"]):
+                errors.append(
+                    f"{name}: {val:g} is outside the observed range "
+                    f"{meta['min']:g}–{meta['max']:g}."
+                )
+            values[name] = val
+        if not errors:
+            proba = model.predict(path, values)
+            result = {
+                "placed": proba >= 0.5,
+                "probability": round(proba * 100, 1),
+                "model": mb["best"],
+                "roc_auc": next(m["metrics"]["roc_auc"] for m in mb["models"] if m["name"] == mb["best"]),
+                "values": values,
+            }
+
+    return render_template(
+        "predict.html",
+        step=step,
+        active_step="predict",
+        bundle=bundle,
+        mb=mb,
+        dataset_name=dataset_name,
+        is_default=is_default,
+        prev_step=prev_step,
+        next_step=next_step,
+        result=result,
+        errors=errors,
+        values=values,
+    )
+
+
+LIVE_STAGES = {
+    "upload", "features", "descriptive", "missing", "visualize",
+    "preprocess", "train", "evaluate", "predict",
+}
 
 
 def _make_stage_view(step):
