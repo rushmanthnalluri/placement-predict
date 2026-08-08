@@ -253,6 +253,11 @@ def get_fitted(path, model_name=None):
     """(model, scaler_or_None, impute_means) for one candidate — the champion
     when `model_name` is None; None when no model could be trained.
 
+    The selector accepts everything the public API accepts: a registry key
+    ("logistic_regression"), a display name ("Logistic Regression",
+    any casing), or a best-alias ("best", "champion", …) resolved against
+    this training run.
+
     A candidate that isn't in memory yet loads from its per-model artifact
     (~1 s) or, failing that, re-trains solo on the identical sealed split.
     The result is cached either way, so model selection never costs a
@@ -261,7 +266,9 @@ def get_fitted(path, model_name=None):
     if not bundle.get("ok"):
         return None
     name = model_name or bundle["best"]
-    key = _NAME_TO_KEY.get(str(name).lower())
+    key = resolve_model_key(name)
+    if key is None and is_best_alias(name):
+        key = bundle["best_key"]
     if key is None:
         raise ValueError(f"unknown model: {name!r}")
     name = MODEL_REGISTRY[key]["name"]  # canonical casing
@@ -504,7 +511,7 @@ def _train_single(path, name):
     artifacts). Deterministic: same seed, split, and transforms as the full
     evaluation, so the solo fit matches the benchmarked one. The returned
     pipeline is the same Platt-calibrated one the evaluation serves."""
-    key = _NAME_TO_KEY.get(str(name).lower())
+    key = resolve_model_key(name)
     if key is None:
         raise ValueError(f"unknown model: {name!r}")
     spec = MODEL_REGISTRY[key]
@@ -674,9 +681,10 @@ def benchmark(path, keys=None, fresh=False):
 
 
 def predict(path, values, model_name=None):
-    """values: dict feature -> float. model_name: a display name from
-    MODEL_REGISTRY (None = the champion). Returns the placement probability
-    from the selected fitted model."""
+    """values: dict feature -> float. model_name: a registry key
+    ("logistic_regression"), a display name ("Logistic Regression"), or a
+    best-alias ("best", "champion", …) — None = the champion. Returns the
+    placement probability from the selected fitted model."""
     fitted = get_fitted(path, model_name)
     if fitted is None:
         raise RuntimeError("no trained model available for this dataset")

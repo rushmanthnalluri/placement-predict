@@ -139,6 +139,33 @@ def test_predict_with_each_model(model_bundle):
     )
 
 
+@pytest.mark.slow
+def test_predict_accepts_keys_and_best_aliases(model_bundle):
+    """The library selector takes everything the HTTP API takes: canonical
+    registry keys and best-aliases, not just display names."""
+    values = {m["name"]: m["default"] for m in model_bundle["form_meta"]}
+    for key, spec in model.MODEL_REGISTRY.items():
+        assert model.predict(app_module.DEFAULT_DATASET, values, key) == (
+            model.predict(app_module.DEFAULT_DATASET, values, spec["name"])
+        )
+    assert model.predict(app_module.DEFAULT_DATASET, values, "best") == (
+        model.predict(app_module.DEFAULT_DATASET, values)
+    )
+    assert model.predict(
+        app_module.DEFAULT_DATASET, values, "CHAMPION"
+    ) == model.predict(app_module.DEFAULT_DATASET, values, model_bundle["best"])
+
+
+@pytest.mark.slow
+def test_train_single_resolves_registry_keys():
+    """The solo re-fit path resolves the same selectors as the full run."""
+    clf, scaler, means = model._train_single(
+        app_module.DEFAULT_DATASET, "logistic_regression"
+    )
+    assert scaler is not None  # the linear model serves on z-scored input
+    assert list(means.index) == model.FEATURES
+
+
 # -- degenerate uploads: rejected with a reason, before any training ---------
 
 
