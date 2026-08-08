@@ -58,44 +58,129 @@
   {% if schema_ok %}
   <div class="divider" aria-hidden="true"></div>
 
-  <section class="section">
+  <section class="section" id="dataset-overview">
     <div class="section-head">
-      <h2 class="section-title">Dataset snapshot</h2>
+      <h2 class="section-title">Dataset overview</h2>
       <span class="mono dim mono-sm">{{ "{:,}".format(overview.anomalies) }} anomalous records flagged{% if dropped_rows %} · {{ dropped_rows }} corrupt record{{ 's' if dropped_rows != 1 }} removed{% endif %}</span>
     </div>
 
-    <div class="metrics">
+    <div class="metrics metrics-rows">
       <div class="metric">
         <span class="metric-value">{{ "{:,}".format(overview.rows) }}</span>
         <span class="metric-label">Student records</span>
       </div>
       <div class="metric">
-        <span class="metric-value">{{ overview.avg_cgpa }}</span>
-        <span class="metric-label">Average CGPA</span>
+        <span class="metric-value">{{ overview.columns }}</span>
+        <span class="metric-label">Total features</span>
       </div>
       <div class="metric">
-        <span class="metric-value">{{ overview.avg_attendance }}%</span>
-        <span class="metric-label">Average attendance</span>
+        <span class="metric-value">{{ features.n_numeric }}</span>
+        <span class="metric-label">Numerical features</span>
+      </div>
+      <div class="metric">
+        <span class="metric-value">{{ features.n_categorical }}</span>
+        <span class="metric-label">Categorical features</span>
+      </div>
+      <div class="metric">
+        <span class="metric-value">{{ "{:,}".format(overview.placed) }}</span>
+        <span class="metric-label">Placed</span>
+      </div>
+      <div class="metric">
+        <span class="metric-value">{{ "{:,}".format(overview.not_placed) }}</span>
+        <span class="metric-label">Not placed</span>
       </div>
       <div class="metric">
         <span class="metric-value">{{ overview.placement_rate }}%</span>
         <span class="metric-label">Placement rate</span>
       </div>
+      <div class="metric">
+        <span class="metric-value {{ 'text-danger' if overview.missing_total }}">{{ "{:,}".format(overview.missing_total) }}</span>
+        <span class="metric-label">Missing values</span>
+      </div>
     </div>
 
-    <div class="outcome mt-32" role="img"
-         aria-label="{{ overview.placement_rate }} percent of students placed">
-      <div class="outcome-track">
-        <div class="outcome-placed" style="width: {{ overview.placement_rate }}%"></div>
-        <div class="outcome-not"></div>
+    <div class="chart-grid mt-32">
+      <div class="chart-card">
+        <div class="chart-card-head">
+          <h3>Placement distribution</h3>
+          <span class="chart-tag">{{ overview.placement_rate }}% placed</span>
+        </div>
+        <div class="chart-wrap">
+          <canvas data-chart="donut" role="img"
+                  aria-label="Donut chart of placement distribution: {{ overview.placed }} placed, {{ overview.not_placed }} not placed"></canvas>
+        </div>
       </div>
-      <div class="outcome-legend">
-        <span class="outcome-key"><span class="outcome-swatch outcome-swatch-placed"></span>
-          Placed · <span class="mono">{{ "{:,}".format(overview.placed) }}</span></span>
-        <span class="outcome-key"><span class="outcome-swatch outcome-swatch-not"></span>
-          Not placed · <span class="mono">{{ "{:,}".format(overview.not_placed) }}</span></span>
+
+      <div class="chart-card">
+        <div class="chart-card-head">
+          <h3>Feature distribution</h3>
+          <select class="chart-select" id="distSelect" aria-label="Feature shown in the distribution chart">
+            {% for col in bundle.histograms.keys() %}
+            <option value="{{ col }}" {{ 'selected' if col == 'CGPA' }}>{{ col }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="chart-wrap">
+          <canvas id="distChart" data-chart="hist" data-key="CGPA" role="img"
+                  aria-label="Histogram of the selected feature"></canvas>
+        </div>
+      </div>
+
+      <div class="chart-card chart-card-wide">
+        <div class="chart-card-head">
+          <h3>Placement rate by feature</h3>
+          <select class="chart-select" id="rateSelect" aria-label="Feature shown in the placement-rate chart">
+            {% for col in bundle.rate_by_feature.keys() %}
+            <option value="{{ col }}" {{ 'selected' if col == 'CGPA' }}>{{ col }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="chart-wrap">
+          <canvas id="rateChart" data-chart="ratefeat" data-key="CGPA" role="img"
+                  aria-label="Bar chart of placement rate per band of the selected feature"></canvas>
+        </div>
+      </div>
+
+      <div class="chart-card chart-card-wide">
+        <div class="chart-card-head">
+          <h3>Correlation — model features &amp; outcome</h3>
+          <span class="chart-tag">hover cells for values</span>
+        </div>
+        <div class="heat-scroll">
+          <div class="heat-grid" style="--n: {{ bundle.heatmap_core.labels | length }}">
+            <div></div>
+            {% for c in bundle.heatmap_core.labels %}
+            <div class="heat-col-label"><span>{{ c }}</span></div>
+            {% endfor %}
+            {% for r in bundle.heatmap_core.labels %}
+            <div class="heat-row-label">{{ r }}</div>
+            {% for cell in bundle.heatmap_core.matrix[loop.index0] %}
+            <div class="heat-cell {{ 'heat-strong' if cell.strong else '' }}"
+                 style="background: {{ cell.color }}"
+                 {% if cell.v is not none %}title="{{ r }} × {{ bundle.heatmap_core.labels[loop.index0] }}: {{ cell.v }}"{% endif %}>{{ cell.v if cell.v is not none else '' }}</div>
+            {% endfor %}
+            {% endfor %}
+          </div>
+          <div class="heat-legend">
+            <span>0</span>
+            <span class="heat-legend-bar"></span>
+            <span>+1</span>
+          </div>
+        </div>
+        <p class="note">The full 21-field matrix (including semester SGPAs) is on the
+          <a href="{{ url_for('visualize_data') }}">Data Visualization</a> page.</p>
       </div>
     </div>
+
+    <div class="section-head mt-36">
+      <h2 class="section-title">Data insights</h2>
+      <span class="mono dim mono-sm">computed from the active dataset</span>
+    </div>
+    <ul class="insight-list">
+      {% for line in insights %}
+      <li>{{ line }}</li>
+      {% endfor %}
+    </ul>
   </section>
 
   <div class="divider" aria-hidden="true"></div>
@@ -161,4 +246,20 @@
     </ol>
   </section>
 
+{% endblock %}
+
+{% block scripts %}
+{% if schema_ok %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script>
+  // Dataset-overview payloads — every value computed server-side from the
+  // active dataset's cached bundle; nothing is hardcoded here.
+  window.EDA = {
+    overview: {{ overview | tojson }},
+    histograms: {{ bundle.histograms | tojson }},
+    rateByFeature: {{ bundle.rate_by_feature | tojson }}
+  };
+</script>
+<script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+{% endif %}
 {% endblock %}

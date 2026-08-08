@@ -154,44 +154,911 @@
   
   <div class="divider" aria-hidden="true"></div>
 
-  <section class="section">
+  <section class="section" id="dataset-overview">
     <div class="section-head">
-      <h2 class="section-title">Dataset snapshot</h2>
+      <h2 class="section-title">Dataset overview</h2>
       <span class="mono dim mono-sm">1,750 anomalous records flagged · 1 corrupt record removed</span>
     </div>
 
-    <div class="metrics">
+    <div class="metrics metrics-rows">
       <div class="metric">
         <span class="metric-value">50,000</span>
         <span class="metric-label">Student records</span>
       </div>
       <div class="metric">
-        <span class="metric-value">7.25</span>
-        <span class="metric-label">Average CGPA</span>
+        <span class="metric-value">31</span>
+        <span class="metric-label">Total features</span>
       </div>
       <div class="metric">
-        <span class="metric-value">76.7%</span>
-        <span class="metric-label">Average attendance</span>
+        <span class="metric-value">23</span>
+        <span class="metric-label">Numerical features</span>
+      </div>
+      <div class="metric">
+        <span class="metric-value">8</span>
+        <span class="metric-label">Categorical features</span>
+      </div>
+      <div class="metric">
+        <span class="metric-value">32,856</span>
+        <span class="metric-label">Placed</span>
+      </div>
+      <div class="metric">
+        <span class="metric-value">17,144</span>
+        <span class="metric-label">Not placed</span>
       </div>
       <div class="metric">
         <span class="metric-value">65.7%</span>
         <span class="metric-label">Placement rate</span>
       </div>
+      <div class="metric">
+        <span class="metric-value text-danger">19,976</span>
+        <span class="metric-label">Missing values</span>
+      </div>
     </div>
 
-    <div class="outcome mt-32" role="img"
-         aria-label="65.7 percent of students placed">
-      <div class="outcome-track">
-        <div class="outcome-placed" style="width: 65.7%"></div>
-        <div class="outcome-not"></div>
+    <div class="chart-grid mt-32">
+      <div class="chart-card">
+        <div class="chart-card-head">
+          <h3>Placement distribution</h3>
+          <span class="chart-tag">65.7% placed</span>
+        </div>
+        <div class="chart-wrap">
+          <canvas data-chart="donut" role="img"
+                  aria-label="Donut chart of placement distribution: 32856 placed, 17144 not placed"></canvas>
+        </div>
       </div>
-      <div class="outcome-legend">
-        <span class="outcome-key"><span class="outcome-swatch outcome-swatch-placed"></span>
-          Placed · <span class="mono">32,856</span></span>
-        <span class="outcome-key"><span class="outcome-swatch outcome-swatch-not"></span>
-          Not placed · <span class="mono">17,144</span></span>
+
+      <div class="chart-card">
+        <div class="chart-card-head">
+          <h3>Feature distribution</h3>
+          <select class="chart-select" id="distSelect" aria-label="Feature shown in the distribution chart">
+            
+            <option value="CGPA" selected>CGPA</option>
+            
+            <option value="AttendancePercent" >AttendancePercent</option>
+            
+            <option value="Internships" >Internships</option>
+            
+            <option value="Projects" >Projects</option>
+            
+            <option value="Workshops" >Workshops</option>
+            
+            <option value="Certifications" >Certifications</option>
+            
+            <option value="AptitudeTestScore" >AptitudeTestScore</option>
+            
+            <option value="SoftSkillsRating" >SoftSkillsRating</option>
+            
+            <option value="CodingTestScore" >CodingTestScore</option>
+            
+            <option value="MockInterviewScore" >MockInterviewScore</option>
+            
+          </select>
+        </div>
+        <div class="chart-wrap">
+          <canvas id="distChart" data-chart="hist" data-key="CGPA" role="img"
+                  aria-label="Histogram of the selected feature"></canvas>
+        </div>
+      </div>
+
+      <div class="chart-card chart-card-wide">
+        <div class="chart-card-head">
+          <h3>Placement rate by feature</h3>
+          <select class="chart-select" id="rateSelect" aria-label="Feature shown in the placement-rate chart">
+            
+            <option value="CGPA" selected>CGPA</option>
+            
+            <option value="AttendancePercent" >AttendancePercent</option>
+            
+            <option value="Internships" >Internships</option>
+            
+            <option value="Projects" >Projects</option>
+            
+            <option value="Workshops" >Workshops</option>
+            
+            <option value="Certifications" >Certifications</option>
+            
+            <option value="Publications" >Publications</option>
+            
+            <option value="AptitudeTestScore" >AptitudeTestScore</option>
+            
+            <option value="SoftSkillsRating" >SoftSkillsRating</option>
+            
+            <option value="CodingTestScore" >CodingTestScore</option>
+            
+            <option value="MockInterviewScore" >MockInterviewScore</option>
+            
+            <option value="ExtraCurricular" >ExtraCurricular</option>
+            
+          </select>
+        </div>
+        <div class="chart-wrap">
+          <canvas id="rateChart" data-chart="ratefeat" data-key="CGPA" role="img"
+                  aria-label="Bar chart of placement rate per band of the selected feature"></canvas>
+        </div>
+      </div>
+
+      <div class="chart-card chart-card-wide">
+        <div class="chart-card-head">
+          <h3>Correlation — model features &amp; outcome</h3>
+          <span class="chart-tag">hover cells for values</span>
+        </div>
+        <div class="heat-scroll">
+          <div class="heat-grid" style="--n: 13">
+            <div></div>
+            
+            <div class="heat-col-label"><span>CGPA</span></div>
+            
+            <div class="heat-col-label"><span>AttendancePercent</span></div>
+            
+            <div class="heat-col-label"><span>Internships</span></div>
+            
+            <div class="heat-col-label"><span>Projects</span></div>
+            
+            <div class="heat-col-label"><span>Workshops</span></div>
+            
+            <div class="heat-col-label"><span>Certifications</span></div>
+            
+            <div class="heat-col-label"><span>Publications</span></div>
+            
+            <div class="heat-col-label"><span>AptitudeTestScore</span></div>
+            
+            <div class="heat-col-label"><span>SoftSkillsRating</span></div>
+            
+            <div class="heat-col-label"><span>CodingTestScore</span></div>
+            
+            <div class="heat-col-label"><span>MockInterviewScore</span></div>
+            
+            <div class="heat-col-label"><span>ExtraCurricular</span></div>
+            
+            <div class="heat-col-label"><span>PlacementStatus</span></div>
+            
+            
+            <div class="heat-row-label">CGPA</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #d9a63f"
+                 title="CGPA × CGPA: 1.0">1.0</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #9b7a34"
+                 title="CGPA × AttendancePercent: 0.57">0.57</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #937432"
+                 title="CGPA × Internships: 0.52">0.52</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #9d7b34"
+                 title="CGPA × Projects: 0.58">0.58</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #957632"
+                 title="CGPA × Workshops: 0.53">0.53</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #987833"
+                 title="CGPA × Certifications: 0.55">0.55</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #896d30"
+                 title="CGPA × Publications: 0.46">0.46</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #a68236"
+                 title="CGPA × AptitudeTestScore: 0.64">0.64</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #937432"
+                 title="CGPA × SoftSkillsRating: 0.52">0.52</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #af8837"
+                 title="CGPA × CodingTestScore: 0.7">0.7</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #a07d34"
+                 title="CGPA × MockInterviewScore: 0.6">0.6</div>
+            
+            <div class="heat-cell "
+                 style="background: #5b4c28"
+                 title="CGPA × ExtraCurricular: 0.21">0.21</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #a88336"
+                 title="CGPA × PlacementStatus: 0.65">0.65</div>
+            
+            
+            <div class="heat-row-label">AttendancePercent</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #9b7a34"
+                 title="AttendancePercent × CGPA: 0.57">0.57</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #d9a63f"
+                 title="AttendancePercent × AttendancePercent: 1.0">1.0</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #907232"
+                 title="AttendancePercent × Internships: 0.5">0.5</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #9d7b34"
+                 title="AttendancePercent × Projects: 0.58">0.58</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #a17f35"
+                 title="AttendancePercent × Workshops: 0.61">0.61</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #a48135"
+                 title="AttendancePercent × Certifications: 0.63">0.63</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #927332"
+                 title="AttendancePercent × Publications: 0.51">0.51</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #a98436"
+                 title="AttendancePercent × AptitudeTestScore: 0.66">0.66</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #a07d34"
+                 title="AttendancePercent × SoftSkillsRating: 0.6">0.6</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #b28a38"
+                 title="AttendancePercent × CodingTestScore: 0.72">0.72</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #ac8637"
+                 title="AttendancePercent × MockInterviewScore: 0.68">0.68</div>
+            
+            <div class="heat-cell "
+                 style="background: #635229"
+                 title="AttendancePercent × ExtraCurricular: 0.25">0.25</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #987833"
+                 title="AttendancePercent × PlacementStatus: 0.55">0.55</div>
+            
+            
+            <div class="heat-row-label">Internships</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #937432"
+                 title="Internships × CGPA: 0.52">0.52</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #907232"
+                 title="Internships × AttendancePercent: 0.5">0.5</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #d9a63f"
+                 title="Internships × Internships: 1.0">1.0</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #a48135"
+                 title="Internships × Projects: 0.63">0.63</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #987833"
+                 title="Internships × Workshops: 0.55">0.55</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #9b7a34"
+                 title="Internships × Certifications: 0.57">0.57</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #8d7031"
+                 title="Internships × Publications: 0.48">0.48</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #9e7c34"
+                 title="Internships × AptitudeTestScore: 0.59">0.59</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #987833"
+                 title="Internships × SoftSkillsRating: 0.55">0.55</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #a68236"
+                 title="Internships × CodingTestScore: 0.64">0.64</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #a38035"
+                 title="Internships × MockInterviewScore: 0.62">0.62</div>
+            
+            <div class="heat-cell "
+                 style="background: #5d4e28"
+                 title="Internships × ExtraCurricular: 0.22">0.22</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #957632"
+                 title="Internships × PlacementStatus: 0.53">0.53</div>
+            
+            
+            <div class="heat-row-label">Projects</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #9d7b34"
+                 title="Projects × CGPA: 0.58">0.58</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #9d7b34"
+                 title="Projects × AttendancePercent: 0.58">0.58</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #a48135"
+                 title="Projects × Internships: 0.63">0.63</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #d9a63f"
+                 title="Projects × Projects: 1.0">1.0</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #a38035"
+                 title="Projects × Workshops: 0.62">0.62</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #a88336"
+                 title="Projects × Certifications: 0.65">0.65</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #967733"
+                 title="Projects × Publications: 0.54">0.54</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #ab8536"
+                 title="Projects × AptitudeTestScore: 0.67">0.67</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #a17f35"
+                 title="Projects × SoftSkillsRating: 0.61">0.61</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #b38b38"
+                 title="Projects × CodingTestScore: 0.73">0.73</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #af8837"
+                 title="Projects × MockInterviewScore: 0.7">0.7</div>
+            
+            <div class="heat-cell "
+                 style="background: #635229"
+                 title="Projects × ExtraCurricular: 0.25">0.25</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #9d7b34"
+                 title="Projects × PlacementStatus: 0.58">0.58</div>
+            
+            
+            <div class="heat-row-label">Workshops</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #957632"
+                 title="Workshops × CGPA: 0.53">0.53</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #a17f35"
+                 title="Workshops × AttendancePercent: 0.61">0.61</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #987833"
+                 title="Workshops × Internships: 0.55">0.55</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #a38035"
+                 title="Workshops × Projects: 0.62">0.62</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #d9a63f"
+                 title="Workshops × Workshops: 1.0">1.0</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #ac8637"
+                 title="Workshops × Certifications: 0.68">0.68</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #9a7933"
+                 title="Workshops × Publications: 0.56">0.56</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #a17f35"
+                 title="Workshops × AptitudeTestScore: 0.61">0.61</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #a88336"
+                 title="Workshops × SoftSkillsRating: 0.65">0.65</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #ab8536"
+                 title="Workshops × CodingTestScore: 0.67">0.67</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #b58c38"
+                 title="Workshops × MockInterviewScore: 0.74">0.74</div>
+            
+            <div class="heat-cell "
+                 style="background: #67552a"
+                 title="Workshops × ExtraCurricular: 0.27">0.27</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #9d7b34"
+                 title="Workshops × PlacementStatus: 0.58">0.58</div>
+            
+            
+            <div class="heat-row-label">Certifications</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #987833"
+                 title="Certifications × CGPA: 0.55">0.55</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #a48135"
+                 title="Certifications × AttendancePercent: 0.63">0.63</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #9b7a34"
+                 title="Certifications × Internships: 0.57">0.57</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #a88336"
+                 title="Certifications × Projects: 0.65">0.65</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #ac8637"
+                 title="Certifications × Workshops: 0.68">0.68</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #d9a63f"
+                 title="Certifications × Certifications: 1.0">1.0</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #9d7b34"
+                 title="Certifications × Publications: 0.58">0.58</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #a48135"
+                 title="Certifications × AptitudeTestScore: 0.63">0.63</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #ab8536"
+                 title="Certifications × SoftSkillsRating: 0.67">0.67</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #ae8737"
+                 title="Certifications × CodingTestScore: 0.69">0.69</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #b88e39"
+                 title="Certifications × MockInterviewScore: 0.76">0.76</div>
+            
+            <div class="heat-cell "
+                 style="background: #67552a"
+                 title="Certifications × ExtraCurricular: 0.27">0.27</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #a07d34"
+                 title="Certifications × PlacementStatus: 0.6">0.6</div>
+            
+            
+            <div class="heat-row-label">Publications</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #896d30"
+                 title="Publications × CGPA: 0.46">0.46</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #927332"
+                 title="Publications × AttendancePercent: 0.51">0.51</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #8d7031"
+                 title="Publications × Internships: 0.48">0.48</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #967733"
+                 title="Publications × Projects: 0.54">0.54</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #9a7933"
+                 title="Publications × Workshops: 0.56">0.56</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #9d7b34"
+                 title="Publications × Certifications: 0.58">0.58</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #d9a63f"
+                 title="Publications × Publications: 1.0">1.0</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #927332"
+                 title="Publications × AptitudeTestScore: 0.51">0.51</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #987833"
+                 title="Publications × SoftSkillsRating: 0.55">0.55</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #9a7933"
+                 title="Publications × CodingTestScore: 0.56">0.56</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #a48135"
+                 title="Publications × MockInterviewScore: 0.63">0.63</div>
+            
+            <div class="heat-cell "
+                 style="background: #5f4f29"
+                 title="Publications × ExtraCurricular: 0.23">0.23</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #8b6f31"
+                 title="Publications × PlacementStatus: 0.47">0.47</div>
+            
+            
+            <div class="heat-row-label">AptitudeTestScore</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #a68236"
+                 title="AptitudeTestScore × CGPA: 0.64">0.64</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #a98436"
+                 title="AptitudeTestScore × AttendancePercent: 0.66">0.66</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #9e7c34"
+                 title="AptitudeTestScore × Internships: 0.59">0.59</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #ab8536"
+                 title="AptitudeTestScore × Projects: 0.67">0.67</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #a17f35"
+                 title="AptitudeTestScore × Workshops: 0.61">0.61</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #a48135"
+                 title="AptitudeTestScore × Certifications: 0.63">0.63</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #927332"
+                 title="AptitudeTestScore × Publications: 0.51">0.51</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #d9a63f"
+                 title="AptitudeTestScore × AptitudeTestScore: 1.0">1.0</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #a07d34"
+                 title="AptitudeTestScore × SoftSkillsRating: 0.6">0.6</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #bf933a"
+                 title="AptitudeTestScore × CodingTestScore: 0.81">0.81</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #ae8737"
+                 title="AptitudeTestScore × MockInterviewScore: 0.69">0.69</div>
+            
+            <div class="heat-cell "
+                 style="background: #635229"
+                 title="AptitudeTestScore × ExtraCurricular: 0.25">0.25</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #9d7b34"
+                 title="AptitudeTestScore × PlacementStatus: 0.58">0.58</div>
+            
+            
+            <div class="heat-row-label">SoftSkillsRating</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #937432"
+                 title="SoftSkillsRating × CGPA: 0.52">0.52</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #a07d34"
+                 title="SoftSkillsRating × AttendancePercent: 0.6">0.6</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #987833"
+                 title="SoftSkillsRating × Internships: 0.55">0.55</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #a17f35"
+                 title="SoftSkillsRating × Projects: 0.61">0.61</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #a88336"
+                 title="SoftSkillsRating × Workshops: 0.65">0.65</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #ab8536"
+                 title="SoftSkillsRating × Certifications: 0.67">0.67</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #987833"
+                 title="SoftSkillsRating × Publications: 0.55">0.55</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #a07d34"
+                 title="SoftSkillsRating × AptitudeTestScore: 0.6">0.6</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #d9a63f"
+                 title="SoftSkillsRating × SoftSkillsRating: 1.0">1.0</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #a98436"
+                 title="SoftSkillsRating × CodingTestScore: 0.66">0.66</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #b38b38"
+                 title="SoftSkillsRating × MockInterviewScore: 0.73">0.73</div>
+            
+            <div class="heat-cell "
+                 style="background: #65542a"
+                 title="SoftSkillsRating × ExtraCurricular: 0.26">0.26</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #a38035"
+                 title="SoftSkillsRating × PlacementStatus: 0.62">0.62</div>
+            
+            
+            <div class="heat-row-label">CodingTestScore</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #af8837"
+                 title="CodingTestScore × CGPA: 0.7">0.7</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #b28a38"
+                 title="CodingTestScore × AttendancePercent: 0.72">0.72</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #a68236"
+                 title="CodingTestScore × Internships: 0.64">0.64</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #b38b38"
+                 title="CodingTestScore × Projects: 0.73">0.73</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #ab8536"
+                 title="CodingTestScore × Workshops: 0.67">0.67</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #ae8737"
+                 title="CodingTestScore × Certifications: 0.69">0.69</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #9a7933"
+                 title="CodingTestScore × Publications: 0.56">0.56</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #bf933a"
+                 title="CodingTestScore × AptitudeTestScore: 0.81">0.81</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #a98436"
+                 title="CodingTestScore × SoftSkillsRating: 0.66">0.66</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #d9a63f"
+                 title="CodingTestScore × CodingTestScore: 1.0">1.0</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #b68d39"
+                 title="CodingTestScore × MockInterviewScore: 0.75">0.75</div>
+            
+            <div class="heat-cell "
+                 style="background: #67552a"
+                 title="CodingTestScore × ExtraCurricular: 0.27">0.27</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #a17f35"
+                 title="CodingTestScore × PlacementStatus: 0.61">0.61</div>
+            
+            
+            <div class="heat-row-label">MockInterviewScore</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #a07d34"
+                 title="MockInterviewScore × CGPA: 0.6">0.6</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #ac8637"
+                 title="MockInterviewScore × AttendancePercent: 0.68">0.68</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #a38035"
+                 title="MockInterviewScore × Internships: 0.62">0.62</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #af8837"
+                 title="MockInterviewScore × Projects: 0.7">0.7</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #b58c38"
+                 title="MockInterviewScore × Workshops: 0.74">0.74</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #b88e39"
+                 title="MockInterviewScore × Certifications: 0.76">0.76</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #a48135"
+                 title="MockInterviewScore × Publications: 0.63">0.63</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #ae8737"
+                 title="MockInterviewScore × AptitudeTestScore: 0.69">0.69</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #b38b38"
+                 title="MockInterviewScore × SoftSkillsRating: 0.73">0.73</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #b68d39"
+                 title="MockInterviewScore × CodingTestScore: 0.75">0.75</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #d9a63f"
+                 title="MockInterviewScore × MockInterviewScore: 1.0">1.0</div>
+            
+            <div class="heat-cell "
+                 style="background: #6d592b"
+                 title="MockInterviewScore × ExtraCurricular: 0.3">0.3</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #ab8536"
+                 title="MockInterviewScore × PlacementStatus: 0.67">0.67</div>
+            
+            
+            <div class="heat-row-label">ExtraCurricular</div>
+            
+            <div class="heat-cell "
+                 style="background: #5b4c28"
+                 title="ExtraCurricular × CGPA: 0.21">0.21</div>
+            
+            <div class="heat-cell "
+                 style="background: #635229"
+                 title="ExtraCurricular × AttendancePercent: 0.25">0.25</div>
+            
+            <div class="heat-cell "
+                 style="background: #5d4e28"
+                 title="ExtraCurricular × Internships: 0.22">0.22</div>
+            
+            <div class="heat-cell "
+                 style="background: #635229"
+                 title="ExtraCurricular × Projects: 0.25">0.25</div>
+            
+            <div class="heat-cell "
+                 style="background: #67552a"
+                 title="ExtraCurricular × Workshops: 0.27">0.27</div>
+            
+            <div class="heat-cell "
+                 style="background: #67552a"
+                 title="ExtraCurricular × Certifications: 0.27">0.27</div>
+            
+            <div class="heat-cell "
+                 style="background: #5f4f29"
+                 title="ExtraCurricular × Publications: 0.23">0.23</div>
+            
+            <div class="heat-cell "
+                 style="background: #635229"
+                 title="ExtraCurricular × AptitudeTestScore: 0.25">0.25</div>
+            
+            <div class="heat-cell "
+                 style="background: #65542a"
+                 title="ExtraCurricular × SoftSkillsRating: 0.26">0.26</div>
+            
+            <div class="heat-cell "
+                 style="background: #67552a"
+                 title="ExtraCurricular × CodingTestScore: 0.27">0.27</div>
+            
+            <div class="heat-cell "
+                 style="background: #6d592b"
+                 title="ExtraCurricular × MockInterviewScore: 0.3">0.3</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #d9a63f"
+                 title="ExtraCurricular × ExtraCurricular: 1.0">1.0</div>
+            
+            <div class="heat-cell "
+                 style="background: #615129"
+                 title="ExtraCurricular × PlacementStatus: 0.24">0.24</div>
+            
+            
+            <div class="heat-row-label">PlacementStatus</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #a88336"
+                 title="PlacementStatus × CGPA: 0.65">0.65</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #987833"
+                 title="PlacementStatus × AttendancePercent: 0.55">0.55</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #957632"
+                 title="PlacementStatus × Internships: 0.53">0.53</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #9d7b34"
+                 title="PlacementStatus × Projects: 0.58">0.58</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #9d7b34"
+                 title="PlacementStatus × Workshops: 0.58">0.58</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #a07d34"
+                 title="PlacementStatus × Certifications: 0.6">0.6</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #8b6f31"
+                 title="PlacementStatus × Publications: 0.47">0.47</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #9d7b34"
+                 title="PlacementStatus × AptitudeTestScore: 0.58">0.58</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #a38035"
+                 title="PlacementStatus × SoftSkillsRating: 0.62">0.62</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #a17f35"
+                 title="PlacementStatus × CodingTestScore: 0.61">0.61</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #ab8536"
+                 title="PlacementStatus × MockInterviewScore: 0.67">0.67</div>
+            
+            <div class="heat-cell "
+                 style="background: #615129"
+                 title="PlacementStatus × ExtraCurricular: 0.24">0.24</div>
+            
+            <div class="heat-cell heat-strong"
+                 style="background: #d9a63f"
+                 title="PlacementStatus × PlacementStatus: 1.0">1.0</div>
+            
+            
+          </div>
+          <div class="heat-legend">
+            <span>0</span>
+            <span class="heat-legend-bar"></span>
+            <span>+1</span>
+          </div>
+        </div>
+        <p class="note">The full 21-field matrix (including semester SGPAs) is on the
+          <a href="visualize.html">Data Visualization</a> page.</p>
       </div>
     </div>
+
+    <div class="section-head mt-36">
+      <h2 class="section-title">Data insights</h2>
+      <span class="mono dim mono-sm">computed from the active dataset</span>
+    </div>
+    <ul class="insight-list">
+      
+      <li>The dataset contains 50,000 student records across 31 fields — 32,856 placed (65.7%), 17,144 not placed.</li>
+      
+      <li>Half of all students have a CGPA between 6.04 and 8.48 (median 7.25).</li>
+      
+      <li>CGPA is the strongest single placement signal (correlation 0.65).</li>
+      
+      <li>More internships come with a higher placement rate (r = 0.526).</li>
+      
+      <li>19,976 values are missing across 5 columns — repaired with training-split mean imputation before modelling.</li>
+      
+      <li>Gradient Boosting currently achieves the strongest benchmark performance (sealed-test ROC-AUC 0.9733).</li>
+      
+    </ul>
   </section>
 
   <div class="divider" aria-hidden="true"></div>
@@ -429,5 +1296,19 @@
 
   <script src="static/js/script.js"></script>
   
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script>
+  // Dataset-overview payloads — every value computed server-side from the
+  // active dataset's cached bundle; nothing is hardcoded here.
+  window.EDA = {
+    overview: {"anomalies": 1750, "avg_aptitude": 68.9, "avg_attendance": 76.7, "avg_cgpa": 7.25, "columns": 31, "completeness": 98.7, "missing_total": 19976, "not_placed": 17144, "placed": 32856, "placement_rate": 65.7, "rows": 50000},
+    histograms: {"AptitudeTestScore": {"counts": [313, 387, 506, 719, 1239, 1762, 1991, 1782, 1567, 1702, 2107, 2808, 3599, 7734, 3718, 3434, 3021, 2688, 2338, 1868, 1469, 1012, 862, 1374], "labels": ["30.0\u201332.9", "32.9\u201335.8", "35.8\u201338.8", "38.8\u201341.7", "41.7\u201344.6", "44.6\u201347.5", "47.5\u201350.4", "50.4\u201353.3", "53.3\u201356.2", "56.2\u201359.2", "59.2\u201362.1", "62.1\u201365.0", "65.0\u201367.9", "67.9\u201370.8", "70.8\u201373.8", "73.8\u201376.7", "76.7\u201379.6", "79.6\u201382.5", "82.5\u201385.4", "85.4\u201388.3", "88.3\u201391.2", "91.2\u201394.2", "94.2\u201397.1", "97.1\u2013100.0"], "max": 100.0, "mean": 68.86, "min": 30.0, "smooth": [253.2, 398.2, 529.5, 795.8, 1239.8, 1688.5, 1881.5, 1780.5, 1654.5, 1769.5, 2181.0, 2830.5, 4435.0, 5696.2, 4651.0, 3401.8, 3041.0, 2683.8, 2308.0, 1885.8, 1454.5, 1088.8, 1027.5, 902.5], "std": 14.73}, "AttendancePercent": {"counts": [1100, 1001, 1039, 1241, 1526, 1640, 1891, 2005, 2178, 2485, 2627, 2848, 3162, 3224, 3076, 3088, 2814, 2450, 2294, 1959, 1652, 1371, 1051, 2278], "labels": ["50.0\u201352.1", "52.1\u201354.2", "54.2\u201356.2", "56.2\u201358.3", "58.3\u201360.4", "60.4\u201362.5", "62.5\u201364.6", "64.6\u201366.7", "66.7\u201368.8", "68.8\u201370.8", "70.8\u201372.9", "72.9\u201375.0", "75.0\u201377.1", "77.1\u201379.2", "79.2\u201381.2", "81.2\u201383.3", "83.3\u201385.4", "85.4\u201387.5", "87.5\u201389.6", "89.6\u201391.7", "91.7\u201393.8", "93.8\u201395.8", "95.8\u201397.9", "97.9\u2013100.0"], "max": 100.0, "mean": 76.71, "min": 50.0, "smooth": [800.2, 1035.2, 1080.0, 1261.8, 1483.2, 1674.2, 1856.8, 2019.8, 2211.5, 2443.8, 2646.8, 2871.2, 3099.0, 3171.5, 3116.0, 3016.5, 2791.5, 2502.0, 2249.2, 1966.0, 1658.5, 1361.2, 1437.8, 1401.8], "std": 12.47}, "CGPA": {"counts": [1520, 1226, 944, 1184, 1414, 1706, 1936, 2211, 2277, 2480, 2659, 2674, 2668, 2743, 2708, 2567, 2404, 2273, 2027, 1774, 1600, 1397, 1467, 4141], "labels": ["4.0\u20134.2", "4.2\u20134.5", "4.5\u20134.8", "4.8\u20135.0", "5.0\u20135.2", "5.2\u20135.5", "5.5\u20135.8", "5.8\u20136.0", "6.0\u20136.2", "6.2\u20136.5", "6.5\u20136.8", "6.8\u20137.0", "7.0\u20137.2", "7.2\u20137.5", "7.5\u20137.8", "7.8\u20138.0", "8.0\u20138.2", "8.2\u20138.5", "8.5\u20138.8", "8.8\u20139.0", "9.0\u20139.2", "9.2\u20139.5", "9.5\u20139.8", "9.8\u201310.0"], "max": 10.0, "mean": 7.25, "min": 4.0, "smooth": [1066.5, 1229.0, 1074.5, 1181.5, 1429.5, 1690.5, 1947.2, 2158.8, 2311.2, 2474.0, 2618.0, 2668.8, 2688.2, 2715.5, 2681.5, 2561.5, 2412.0, 2244.2, 2025.2, 1793.8, 1592.8, 1465.2, 2118.0, 2437.2], "std": 1.62}, "Certifications": {"counts": [6276, 11796, 16370, 10582, 4591, 385], "labels": ["-0.5\u20130.5", "0.5\u20131.5", "1.5\u20132.5", "2.5\u20133.5", "3.5\u20134.5", "4.5\u20135.5"], "max": 5.0, "mean": 1.93, "min": 0.0, "smooth": [6087.0, 11559.5, 13779.5, 10531.2, 5037.2, 1340.2], "std": 1.18}, "CodingTestScore": {"counts": [351, 313, 142, 5, 226, 1646, 3761, 2748, 752, 460, 1308, 2927, 4541, 8070, 4144, 2896, 2431, 2549, 2766, 2550, 2011, 1384, 848, 1171], "labels": ["0.0\u20134.2", "4.2\u20138.3", "8.3\u201312.5", "12.5\u201316.7", "16.7\u201320.8", "20.8\u201325.0", "25.0\u201329.2", "29.2\u201333.3", "33.3\u201337.5", "37.5\u201341.7", "41.7\u201345.8", "45.8\u201350.0", "50.0\u201354.2", "54.2\u201358.3", "58.3\u201362.5", "62.5\u201366.7", "66.7\u201370.8", "70.8\u201375.0", "75.0\u201379.2", "79.2\u201383.3", "83.3\u201387.5", "87.5\u201391.7", "91.7\u201395.8", "95.8\u2013100.0"], "max": 100.0, "mean": 57.41, "min": 0.0, "smooth": [253.8, 279.8, 150.5, 94.5, 525.8, 1819.8, 2979.0, 2502.2, 1178.0, 745.0, 1500.8, 2925.8, 5019.8, 6206.2, 4813.5, 3091.8, 2576.8, 2573.8, 2657.8, 2469.2, 1989.0, 1406.8, 1062.8, 797.5], "std": 20.35}, "Internships": {"counts": [11073, 24158, 12078, 2691], "labels": ["-0.5\u20130.5", "0.5\u20131.5", "1.5\u20132.5", "2.5\u20133.5"], "max": 3.0, "mean": 1.13, "min": 0.0, "smooth": [11576.0, 17866.8, 12751.2, 4365.0], "std": 0.81}, "MockInterviewScore": {"counts": [28, 305, 1364, 2760, 2741, 1574, 915, 1436, 2782, 3897, 4459, 8865, 2839, 2270, 2023, 2311, 2464, 2297, 1913, 1202, 811, 427, 196, 121], "labels": ["15.9\u201319.4", "19.4\u201322.9", "22.9\u201326.4", "26.4\u201329.9", "29.9\u201333.4", "33.4\u201336.9", "36.9\u201340.4", "40.4\u201343.9", "43.9\u201347.4", "47.4\u201350.9", "50.9\u201354.4", "54.4\u201357.9", "57.9\u201361.5", "61.5\u201365.0", "65.0\u201368.5", "68.5\u201372.0", "72.0\u201375.5", "75.5\u201379.0", "79.0\u201382.5", "82.5\u201386.0", "86.0\u201389.5", "89.5\u201393.0", "93.0\u201396.5", "96.5\u2013100.0"], "max": 100.0, "mean": 55.41, "min": 15.9, "smooth": [90.2, 500.5, 1448.2, 2406.2, 2454.0, 1701.0, 1210.0, 1642.2, 2724.2, 3758.8, 5420.0, 6257.0, 4203.2, 2350.5, 2156.8, 2277.2, 2384.0, 2242.8, 1831.2, 1282.0, 812.8, 465.2, 235.0, 109.5], "std": 16.63}, "Projects": {"counts": [4073, 12054, 16467, 10612, 5318, 1476], "labels": ["-0.5\u20130.5", "0.5\u20131.5", "1.5\u20132.5", "2.5\u20133.5", "3.5\u20134.5", "4.5\u20135.5"], "max": 5.0, "mean": 2.11, "min": 0.0, "smooth": [5050.0, 11162.0, 13900.0, 10752.2, 5681.0, 2067.5], "std": 1.21}, "SoftSkillsRating": {"counts": [570, 700, 466, 1312, 1802, 1031, 2299, 2437, 1298, 2952, 3208, 1700, 6980, 3514, 1688, 3195, 2854, 1354, 2332, 2158, 965, 1597, 1274, 2314], "labels": ["1.0\u20131.2", "1.2\u20131.3", "1.3\u20131.5", "1.5\u20131.7", "1.7\u20131.8", "1.8\u20132.0", "2.0\u20132.2", "2.2\u20132.3", "2.3\u20132.5", "2.5\u20132.7", "2.7\u20132.8", "2.8\u20133.0", "3.0\u20133.2", "3.2\u20133.3", "3.3\u20133.5", "3.5\u20133.7", "3.7\u20133.8", "3.8\u20134.0", "4.0\u20134.2", "4.2\u20134.3", "4.3\u20134.5", "4.5\u20134.7", "4.7\u20134.8", "4.8\u20135.0"], "max": 5.0, "mean": 3.15, "min": 1.0, "smooth": [460.0, 609.0, 736.0, 1223.0, 1486.8, 1540.8, 2016.5, 2117.8, 1996.2, 2602.5, 2767.0, 3397.0, 4793.5, 3924.0, 2521.2, 2733.0, 2564.2, 1973.5, 2044.0, 1903.2, 1421.2, 1358.2, 1614.8, 1475.5], "std": 0.95}, "Workshops": {"counts": [4838, 13096, 20335, 9589, 2142], "labels": ["-0.5\u20130.5", "0.5\u20131.5", "1.5\u20132.5", "2.5\u20133.5", "3.5\u20134.5"], "max": 4.0, "mean": 1.8, "min": 0.0, "smooth": [5693.0, 12841.2, 15838.8, 10413.8, 3468.2], "std": 0.99}},
+    rateByFeature: {"AptitudeTestScore": {"counts": [1206, 3775, 5285, 6728, 14940, 9226, 5592, 3248], "labels": ["30.0\u201338.8", "38.8\u201347.5", "47.5\u201356.2", "56.2\u201365.0", "65.0\u201373.8", "73.8\u201382.5", "82.5\u201391.2", "91.2\u2013100.0"], "rates": [43.5, 1.7, 14.4, 62.9, 72.3, 87.2, 97.4, 91.8]}, "AttendancePercent": {"counts": [3140, 4478, 6003, 8099, 9323, 8461, 5796, 4700], "labels": ["50.0\u201356.2", "56.2\u201362.5", "62.5\u201368.8", "68.8\u201375.0", "75.0\u201381.2", "81.2\u201387.5", "87.5\u201393.8", "93.8\u2013100.0"], "rates": [21.0, 12.4, 36.9, 63.5, 76.1, 85.0, 92.8, 98.1]}, "CGPA": {"counts": [3739, 4324, 6469, 7788, 8131, 7234, 5363, 6952], "labels": ["4.0\u20134.8", "4.8\u20135.5", "5.5\u20136.2", "6.2\u20137.0", "7.0\u20137.8", "7.8\u20138.5", "8.5\u20139.2", "9.2\u201310.0"], "rates": [17.0, 8.3, 26.9, 57.0, 82.7, 96.4, 99.5, 95.6]}, "Certifications": {"counts": [6276, 11796, 16370, 10582, 4591, 385], "labels": ["0", "1", "2", "3", "4", "5"], "rates": [3.2, 46.4, 74.0, 95.4, 99.7, 99.7]}, "CodingTestScore": {"counts": [806, 1958, 7189, 4782, 16659, 7945, 7294, 3367], "labels": ["0.0\u201312.5", "12.5\u201325.0", "25.0\u201337.5", "37.5\u201350.0", "50.0\u201362.5", "62.5\u201375.0", "75.0\u201387.5", "87.5\u2013100.0"], "rates": [66.1, 0.5, 1.7, 64.2, 69.8, 89.8, 99.7, 91.7]}, "ExtraCurricular": {"counts": [23350, 26650], "labels": ["0", "1"], "rates": [53.6, 76.4]}, "Internships": {"counts": [11073, 24158, 12078, 2691], "labels": ["0", "1", "2", "3"], "rates": [20.1, 68.0, 97.7, 88.9]}, "MockInterviewScore": {"counts": [1697, 7075, 5133, 17221, 7132, 7072, 3926, 744], "labels": ["15.9\u201326.4", "26.4\u201336.9", "36.9\u201347.4", "47.4\u201357.9", "57.9\u201368.5", "68.5\u201379.0", "79.0\u201389.5", "89.5\u2013100.0"], "rates": [0.6, 2.4, 61.2, 68.1, 85.6, 99.4, 99.9, 99.7]}, "Projects": {"counts": [4073, 12054, 16467, 10612, 5318, 1476], "labels": ["0", "1", "2", "3", "4", "5"], "rates": [2.3, 32.3, 74.2, 95.7, 100.0, 79.6]}, "Publications": {"counts": [20962, 21562, 7217, 259], "labels": ["0", "1", "2", "3"], "rates": [40.1, 78.9, 99.6, 99.6]}, "SoftSkillsRating": {"counts": [2331, 4643, 6386, 8117, 12098, 6975, 5136, 4314], "labels": ["1.0\u20131.5", "1.5\u20132.0", "2.0\u20132.5", "2.5\u20133.0", "3.0\u20133.5", "3.5\u20134.0", "4.0\u20134.5", "4.5\u20135.0"], "rates": [3.1, 12.3, 36.2, 64.0, 74.9, 90.8, 97.5, 99.7]}, "Workshops": {"counts": [4838, 13096, 4488, 15847, 9589, 2142], "labels": ["0", "1", "1.80447", "2", "3", "4"], "rates": [4.4, 45.9, 65.9, 77.0, 97.3, 99.8]}}
+  };
+</script>
+<script src="static/js/charts.js"></script>
+
+
 </body>
 </html>

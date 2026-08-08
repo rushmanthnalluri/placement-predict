@@ -219,6 +219,50 @@ def _heat_color(value):
     return "#{:02x}{:02x}{:02x}".format(*rgb)
 
 
+def _heat_matrix(corr, cols):
+    """Color-mapped correlation matrix cells for the given column subset."""
+    matrix = []
+    for r in cols:
+        row = []
+        for c in cols:
+            v = corr.loc[r, c]
+            v = None if pd.isna(v) else _f(v)
+            # ink text once the amber fill is bright enough to carry it
+            strong = v is not None and (max(0.0, min(1.0, v)) ** 0.7) >= 0.45
+            row.append({"v": v, "color": _heat_color(v), "strong": strong})
+        matrix.append(row)
+    return matrix
+
+
+def _rate_bands(dfi, col):
+    """Placement rate per band for one numeric feature — per distinct value
+    when cardinality is low, else across 8 equal-width bands. Rates are
+    percents; a band with no rows reports None (a gap, not a fake zero)."""
+    s = dfi[col]
+    nunique = int(s.nunique())
+    if nunique <= 1:
+        return None
+    if nunique <= 12:
+        grp = dfi.groupby(s, observed=True)[TARGET].agg(["count", "mean"])
+        return {
+            "labels": [f"{k:g}" for k in grp.index],
+            "rates": [_f(v * 100, 1) for v in grp["mean"]],
+            "counts": [_i(v) for v in grp["count"]],
+        }
+    lo, hi = float(s.min()), float(s.max())
+    edges = np.linspace(lo, hi, 9)
+    band = pd.cut(s, bins=edges, include_lowest=True)
+    grp = dfi.groupby(band, observed=True)[TARGET].agg(["count", "mean"])
+    rates = []
+    for _, row in grp.iterrows():
+        rates.append(None if row["count"] == 0 else _f(row["mean"] * 100, 1))
+    return {
+        "labels": [f"{_f(edges[k], 1)}–{_f(edges[k + 1], 1)}" for k in range(8)],
+        "rates": rates,
+        "counts": [_i(v) for v in grp["count"]],
+    }
+
+
 def _clean_categories(df, col):
     """Value counts/rates for a categorical column, dropping anomalous rows
     (the dataset flags a handful of records with numeric 0 placeholders)."""
@@ -398,17 +442,15 @@ def _build_bundle(df):
         if c not in ("StudentID", "IsAnomaly")
     ]
     corr = df[heat_cols].corr()
-    matrix = []
-    for r in heat_cols:
-        row = []
-        for c in heat_cols:
-            v = corr.loc[r, c]
-            v = None if pd.isna(v) else _f(v)
-            # ink text once the amber fill is bright enough to carry it
-            strong = v is not None and (max(0.0, min(1.0, v)) ** 0.7) >= 0.45
-            row.append({"v": v, "color": _heat_color(v), "strong": strong})
-        matrix.append(row)
-    bundle["heatmap"] = {"labels": heat_cols, "matrix": matrix}
+    bundle["heatmap"] = {"labels": heat_cols, "matrix": _heat_matrix(corr, heat_cols)}
+
+    # compact 13-field matrix (model features + target) for the home-page
+    # dataset overview — same computation, readable at a glance
+    core_cols = [c for c in CORE_NUMERIC if c in df] + [TARGET]
+    bundle["heatmap_core"] = {
+        "labels": core_cols,
+        "matrix": _heat_matrix(df[core_cols].corr(), core_cols),
+    }
 
     # -- influence on the target -------------------------------------------------
     infl = (
@@ -425,6 +467,14 @@ def _build_bundle(df):
         {"name": str(name), "value": 0 if pd.isna(val) else _f(val, 2)}
         for name, val in infl.head(5).items()
     ]
+
+    # -- placement rate per feature band (home-page overview chart) --------------
+    bundle["rate_by_feature"] = {
+        col: _rate_bands(dfi, col) for col in CORE_NUMERIC if col in dfi
+    }
+    bundle["rate_by_feature"] = {
+        k: v for k, v in bundle["rate_by_feature"].items() if v is not None
+    }
 
     # -- boxplots split by placement status --------------------------------------
     boxes = {}

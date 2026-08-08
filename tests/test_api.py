@@ -189,6 +189,39 @@ def test_api_benchmark_get_not_allowed(client):
     assert client.get("/api/benchmark").status_code == 405
 
 
+# -- dataset overview ---------------------------------------------------------
+
+
+def test_api_dataset_summary(client):
+    resp = client.get("/api/dataset")
+    assert resp.status_code == 200
+    body = resp.get_json()
+    s = body["summary"]
+    assert s["total_records"] == 50_000          # sentinel row dropped
+    assert s["placed"] + s["not_placed"] == 50_000
+    assert s["numerical_features"] + s["categorical_features"] == s["total_features"]
+    assert 0 < s["placement_rate"] < 100
+    assert s["missing_values"] > 0
+    assert isinstance(body["insights"], list) and body["insights"]
+    # no insight may claim a model winner before training/warm-up — but the
+    # dataset facts must always be there
+    assert any("student records" in i for i in body["insights"])
+
+
+def test_api_dataset_chart_payloads(client):
+    body = client.get("/api/dataset").get_json()
+    # correlation core: model features + target, square matrix
+    corr = body["correlation"]
+    n = len(corr["labels"])
+    assert "CGPA" in corr["labels"] and "PlacementStatus" in corr["labels"]
+    assert len(corr["matrix"]) == n and all(len(row) == n for row in corr["matrix"])
+    # rate-by-feature bands carry rates + counts
+    cgpa = body["rate_by_feature"]["CGPA"]
+    assert len(cgpa["labels"]) == len(cgpa["rates"]) == len(cgpa["counts"])
+    assert all(0 <= r <= 100 for r in cgpa["rates"] if r is not None)
+    assert "CGPA" in body["distributions"]
+
+
 # -- CORS: the JSON API is public, credential-free, and callable from Pages --
 
 

@@ -293,17 +293,87 @@ def _build_preview(df, max_rows=MAX_PREVIEW_ROWS):
 # Views
 # ---------------------------------------------------------------------------
 
+def _model_bundle_if_warm(path):
+    """The model bundle only when it costs nothing — already trained, or a
+    validated artifact on disk. The home page must never trigger a cold
+    train on a fresh checkout; the model insight is simply omitted then."""
+    try:
+        status = model.warm_status(path)
+        if status.get("trained") or status.get("artifact_available"):
+            return model.get_model_bundle(path)
+    except Exception:  # noqa: BLE001 - a model problem must never break home
+        return None
+    return None
+
+
+def _dataset_insights(bundle, mb):
+    """Auto-generated plain-language findings — every number computed from
+    the active dataset's bundle, never hand-written."""
+    ov = bundle["overview"]
+    insights = [
+        f"The dataset contains {ov['rows']:,} student records across "
+        f"{ov['columns']} fields — {ov['placed']:,} placed "
+        f"({ov['placement_rate']}%), {ov['not_placed']:,} not placed.",
+    ]
+    desc = bundle.get("descriptive", {}).get("table", {})
+    cgpa = desc.get("CGPA")
+    if cgpa:
+        insights.append(
+            f"Half of all students have a CGPA between {cgpa['25%']} and "
+            f"{cgpa['75%']} (median {cgpa['50%']})."
+        )
+    drivers = bundle.get("top_drivers") or []
+    if drivers:
+        insights.append(
+            f"{drivers[0]['name']} is the strongest single placement signal "
+            f"(correlation {drivers[0]['value']})."
+        )
+    infl = dict(zip(
+        bundle.get("influence", {}).get("labels", []),
+        bundle.get("influence", {}).get("values", []),
+    ))
+    for candidate in ("Internships", "Projects", "Certifications"):
+        if infl.get(candidate, 0) > 0.05:
+            insights.append(
+                f"More {candidate.lower()} come with a higher placement rate "
+                f"(r = {infl[candidate]})."
+            )
+            break
+    missing = bundle.get("missing")
+    if missing and missing.get("total"):
+        insights.append(
+            f"{missing['total']:,} values are missing across "
+            f"{len(missing['affected'])} columns — repaired with "
+            "training-split mean imputation before modelling."
+        )
+    if mb and mb.get("ok"):
+        auc = next(
+            m["metrics"]["roc_auc"] for m in mb["models"] if m["name"] == mb["best"]
+        )
+        insights.append(
+            f"{mb['best']} currently achieves the strongest benchmark "
+            f"performance (sealed-test ROC-AUC {auc})."
+        )
+    return insights
+
+
 @app.route("/")
 def home():
     bundle, dataset_name, is_default = _active_bundle()
     schema_ok = bundle.get("schema_ok", False)
+    mb = None
+    if schema_ok:
+        path, _, _ = _active_dataset()
+        mb = _model_bundle_if_warm(path)
     return render_template(
         "index.html",
         schema_ok=schema_ok,
+        bundle=bundle,
         overview=bundle.get("overview") if schema_ok else None,
         top_drivers=bundle.get("top_drivers", []) if schema_ok else [],
         features=bundle.get("features") if schema_ok else None,
         dropped_rows=bundle.get("dropped_rows", 0) if schema_ok else 0,
+        insights=_dataset_insights(bundle, mb) if schema_ok else [],
         dataset_name=dataset_name,
         is_default=is_default,
         active_step=None,
@@ -631,6 +701,41 @@ def api_health():
     status = {"status": "ok", "dataset": name, "is_default_dataset": is_default}
     status.update(model.warm_status(path))
     return jsonify(status)
+
+
+@app.route("/api/dataset")
+def api_dataset():
+    """Dataset overview for programmatic consumers: the same cached bundle
+    numbers and auto-generated insights the home page renders."""
+    bundle, dataset_name, is_default = _active_bundle()
+    if not bundle["schema_ok"]:
+        return jsonify({
+            "error": "The active dataset does not match the placement schema.",
+            "dataset": dataset_name,
+        }), 503
+    ov = bundle["overview"]
+    feats = bundle["features"]
+    path, _, _ = _active_dataset()
+    insights = _dataset_insights(bundle, _model_bundle_if_warm(path))
+    return jsonify({
+        "dataset": dataset_name,
+        "is_default_dataset": is_default,
+        "summary": {
+            "total_records": ov["rows"],
+            "total_features": ov["columns"],
+            "numerical_features": feats["n_numeric"],
+            "categorical_features": feats["n_categorical"],
+            "placed": ov["placed"],
+            "not_placed": ov["not_placed"],
+            "placement_rate": ov["placement_rate"],
+            "missing_values": ov["missing_total"],
+            "completeness": ov["completeness"],
+        },
+        "insights": insights,
+        "distributions": bundle["histograms"],
+        "rate_by_feature": bundle["rate_by_feature"],
+        "correlation": bundle["heatmap_core"],
+    })
 
 
 @app.route("/api/predict", methods=["POST"])

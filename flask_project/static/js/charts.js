@@ -82,6 +82,8 @@
 
   // histogram bars + smoothed overlay line (mirrors the notebook's KDE)
   function buildHistogram(canvas, payload, fill, stroke) {
+    const existing = Chart.getChart(canvas);
+    if (existing) existing.destroy();
     const ctx = canvas.getContext("2d");
     new Chart(ctx, {
       data: {
@@ -397,8 +399,95 @@
     });
   }
 
+  // dataset overview: placed vs not-placed donut
+  function buildDonut(canvas, overview) {
+    const existing = Chart.getChart(canvas);
+    if (existing) existing.destroy();
+    const total = overview.placed + overview.not_placed;
+    const ctx = canvas.getContext("2d");
+    new Chart(ctx, {
+      type: "doughnut",
+      data: {
+        labels: ["Placed", "Not placed"],
+        datasets: [
+          {
+            data: [overview.placed, overview.not_placed],
+            backgroundColor: [PALETTE.accent, "#3A403B"],
+            borderColor: PALETTE.panel,
+            borderWidth: 2,
+          },
+        ],
+      },
+      options: {
+        maintainAspectRatio: false,
+        cutout: "62%",
+        plugins: {
+          legend: {
+            position: "bottom",
+            labels: { boxWidth: 9, boxHeight: 9, usePointStyle: true, pointStyle: "rectRounded" },
+          },
+          tooltip: {
+            ...tooltip,
+            callbacks: {
+              label: (c) => ` ${c.label}: ${c.parsed.toLocaleString()} (${(c.parsed / total * 100).toFixed(1)}%)`,
+            },
+          },
+        },
+      },
+    });
+  }
+
+  // dataset overview: placement rate per band of one numeric feature
+  function buildRateBars(canvas, payload) {
+    const existing = Chart.getChart(canvas);
+    if (existing) existing.destroy();
+    const ctx = canvas.getContext("2d");
+    new Chart(ctx, {
+      type: "bar",
+      data: {
+        labels: payload.labels,
+        datasets: [
+          {
+            data: payload.rates,
+            backgroundColor: PALETTE.accentFill,
+            borderColor: PALETTE.accent,
+            borderWidth: 1,
+            borderRadius: 2,
+            maxBarThickness: 34,
+          },
+        ],
+      },
+      options: {
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            ...tooltip,
+            callbacks: {
+              label: (c) => ` ${c.parsed.y}% placed · n=${payload.counts[c.dataIndex].toLocaleString()}`,
+            },
+          },
+        },
+        scales: {
+          x: { grid: { display: false }, border: { display: false }, ticks: { maxRotation: 35, autoSkip: true, maxTicksLimit: 9 } },
+          y: {
+            min: 0,
+            max: 100,
+            grid: { color: PALETTE.grid },
+            border: { display: false },
+            ticks: { callback: (v) => v + "%" },
+            title: { display: true, text: "placement rate", color: PALETTE.text3 },
+          },
+        },
+      },
+    });
+  }
+
   // dynamic re-renders (the benchmark console in script.js) go through these
-  window.PPCharts = { buildRoc, buildBenchmark, buildCalibration };
+  window.PPCharts = {
+    buildRoc, buildBenchmark, buildCalibration, buildHistogram, buildRateBars,
+    buildDonut, palette: PALETTE,
+  };
 
   function buildAll() {
     document.querySelectorAll("canvas[data-chart]").forEach((canvas) => {
@@ -406,6 +495,8 @@
       const key = canvas.dataset.key;
       try {
         if (kind === "hist" && EDA.histograms) buildHistogram(canvas, EDA.histograms[key], PALETTE.accentFill, PALETTE.accent);
+        else if (kind === "donut" && EDA.overview) buildDonut(canvas, EDA.overview);
+        else if (kind === "ratefeat" && EDA.rateByFeature && EDA.rateByFeature[key]) buildRateBars(canvas, EDA.rateByFeature[key]);
         else if (kind === "std" && EDA.standardized) buildHistogram(canvas, EDA.standardized[key], PALETTE.slateFill, PALETTE.slate);
         else if (kind === "missing" && EDA.missing) buildMissing(canvas, EDA.missing);
         else if (kind === "influence" && EDA.influence) buildInfluence(canvas, EDA.influence);

@@ -63,6 +63,37 @@ def test_home_shows_default_overview(client):
     assert "placement_predict_50k.csv" in body
 
 
+def test_home_dataset_overview_section(client):
+    body = client.get("/").get_data(as_text=True)
+    # the section, its four charts, and the stat cards
+    assert "Dataset overview" in body
+    assert 'data-chart="donut"' in body
+    assert 'data-chart="ratefeat"' in body
+    assert 'id="distSelect"' in body
+    assert 'id="rateSelect"' in body
+    assert "heat-grid" in body
+    for label in ("Student records", "Total features", "Numerical features",
+                  "Categorical features", "Placed", "Not placed",
+                  "Placement rate", "Missing values"):
+        assert label in body
+    # auto-generated insights — computed values, not hand-written prose
+    assert "Data insights" in body
+    assert "50,000 student records" in body
+    assert "CGPA between" in body          # IQR from the descriptive stats
+    assert "strongest single placement signal" in body
+    # chart payloads are embedded for the client-side renderers
+    assert "window.EDA" in body
+    assert "rateByFeature" in body
+
+
+@pytest.mark.slow
+def test_home_insight_reports_best_model(client):
+    client.get("/train")  # warm the model cache so the insight can read it
+    body = client.get("/").get_data(as_text=True)
+    assert "Gradient Boosting currently achieves the strongest benchmark" in body
+    assert "0.9733" in body
+
+
 def test_security_headers(client):
     resp = client.get("/")
     assert resp.headers["X-Content-Type-Options"] == "nosniff"

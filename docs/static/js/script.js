@@ -385,6 +385,32 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  // ------------------------------------------------------------------
+  // Home page: dataset-overview feature toggles
+  // ------------------------------------------------------------------
+  const distSelect = document.getElementById("distSelect");
+  const rateSelect = document.getElementById("rateSelect");
+  if (window.EDA && window.PPCharts) {
+    if (distSelect) {
+      distSelect.addEventListener("change", () => {
+        const canvas = document.getElementById("distChart");
+        const payload = window.EDA.histograms && window.EDA.histograms[distSelect.value];
+        if (canvas && payload) {
+          window.PPCharts.buildHistogram(
+            canvas, payload, window.PPCharts.palette.accentFill, window.PPCharts.palette.accent,
+          );
+        }
+      });
+    }
+    if (rateSelect) {
+      rateSelect.addEventListener("change", () => {
+        const canvas = document.getElementById("rateChart");
+        const payload = window.EDA.rateByFeature && window.EDA.rateByFeature[rateSelect.value];
+        if (canvas && payload) window.PPCharts.buildRateBars(canvas, payload);
+      });
+    }
+  }
+
   // Predict form: show the native validation popup as soon as a field is
   // left with invalid data — don't wait for the submit click.
   document.querySelectorAll(".predict-form .field-input").forEach((input) => {

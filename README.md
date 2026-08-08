@@ -39,7 +39,10 @@ docker build -t placement-predict . && docker run -p 7860:7860 placement-predict
 ## What it does
 
 Every stage of the ML lifecycle is a live page, computed from the real
-dataset on every load — nothing is hardcoded:
+dataset on every load — nothing is hardcoded. The home page opens with a
+**dataset overview**: eight stat cards, placement-distribution donut,
+toggleable feature-distribution and placement-rate charts, a core
+correlation heatmap, and auto-generated data insights.
 
 | # | Stage | What it shows |
 |---|-------|---------------|
@@ -111,6 +114,12 @@ curl -X POST https://placement-predict-p2z1.onrender.com/api/predict \
 curl -X POST https://placement-predict-p2z1.onrender.com/api/predict \
   -H "Content-Type: application/json" \
   -d '{"model": "random_forest", "CGPA": 8.6, "CodingTestScore": 85}'
+
+# dataset overview: summary stats, auto-generated insights, chart payloads
+curl https://placement-predict-p2z1.onrender.com/api/dataset
+# → {"summary": {"total_records": 50000, "placed": 32856, ...},
+#    "insights": [...], "distributions": {...}, "rate_by_feature": {...},
+#    "correlation": {...}}
 
 # benchmark any subset of candidates on the active dataset
 curl -X POST https://placement-predict-p2z1.onrender.com/api/benchmark \

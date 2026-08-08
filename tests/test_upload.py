@@ -49,6 +49,18 @@ def test_upload_valid_slice_activates(client, tmp_path, default_df):
     assert "300-row total" in desc
 
 
+def test_overview_follows_the_uploaded_dataset(client, tmp_path, default_df):
+    """The overview section and its API recompute from the active dataset —
+    nothing is pinned to the bundled cohort."""
+    df = default_df[default_df["StudentID"] != 0].head(300)
+    post_file(client, make_csv(tmp_path, df, "slice.csv"))
+    body = client.get("/api/dataset").get_json()
+    assert body["dataset"] == "slice.csv"
+    assert body["summary"]["total_records"] == 300
+    home = client.get("/").get_data(as_text=True)
+    assert "300 student records" in home
+
+
 def test_clear_restores_default(client, tmp_path, default_df):
     df = default_df[default_df["StudentID"] != 0].head(300)
     post_file(client, make_csv(tmp_path, df, "slice.csv"))
