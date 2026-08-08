@@ -70,7 +70,7 @@ CSV upload ──► EDA bundle (cached) ──► split 80/20 (sealed test)
               ▼                               ▼                    ▼
         Flask web app                   JSON API              Static showcase
         (9 live stages)           /api/predict · /api/health   (GitHub Pages)
-                                  /api/benchmark
+                                  /api/benchmark · /api/dataset
 ```
 
 Runtime never trains on request for the bundled dataset — the artifact loads
@@ -159,8 +159,9 @@ server-side predictions with the selected model.
 
 ## Testing & CI
 
-64 pytest tests cover every route × dataset state, the API contract, model
-artifacts, model selection, benchmarking, and degenerate-input guards:
+78 pytest tests cover every route × dataset state, the API contract, model
+artifacts, model selection, benchmarking, calibration, and degenerate-input
+guards:
 
 ```bash
 pytest -q                 # full suite (~30s)
@@ -193,7 +194,7 @@ flask_project/
 ├── data/               # bundled 50k dataset
 ├── static/             # design system CSS, Chart.js builders
 └── templates/          # Jinja templates, one per stage
-tests/                  # 64-test pytest suite
+tests/                  # 78-test pytest suite
 docs/                   # Pages site + audit trail (docs/audit/)
 MODEL_CARD.md           # intended use, methodology, limitations
 Dockerfile · render.yaml · requirements.txt

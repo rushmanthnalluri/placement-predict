@@ -353,7 +353,7 @@ document.addEventListener("DOMContentLoaded", () => {
       setBusy(benchRun, "Benchmarking…");
       status.textContent = fresh
         ? "Re-training from scratch — re-fitting and re-evaluating the selected models; tens of seconds on the free host."
-        : "Training & evaluating — a first run on a fresh dataset fits every candidate (~15–30 s on the free host); cached runs answer instantly.";
+        : "Training & evaluating — a first run on a fresh dataset fits every candidate (~40 s on the free host, calibration included); cached runs answer instantly.";
       try {
         const resp = await fetch("/api/benchmark", {
           method: "POST",

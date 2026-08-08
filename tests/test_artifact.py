@@ -1,7 +1,5 @@
 """Build-time model artifact: save/load round-trip and validation."""
 
-import os
-
 import model
 
 

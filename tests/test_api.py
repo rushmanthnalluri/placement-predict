@@ -148,6 +148,15 @@ def test_api_benchmark_fresh_reruns_pipeline(client):
 
 
 @pytest.mark.slow
+def test_api_benchmark_fresh_string_is_not_truthy(client):
+    """{"fresh": "false"} must read the cached run, not retrain."""
+    resp = client.post("/api/benchmark", json={
+        "models": ["logistic_regression"], "fresh": "false",
+    })
+    assert resp.get_json()["source"] == "cached_evaluation"
+
+
+@pytest.mark.slow
 def test_api_benchmark_subset(client):
     resp = client.post("/api/benchmark", json={
         "models": ["logistic_regression", "random_forest"],

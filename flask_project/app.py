@@ -875,7 +875,13 @@ def api_benchmark():
             }), 400
 
     path, _, _ = _active_dataset()
-    fresh = bool(payload.get("fresh", False))
+    # strict boolean: only an actual true (or an explicit truthy string)
+    # triggers a fresh run — {"fresh": "false"} must not retrain
+    raw_fresh = payload.get("fresh", False)
+    fresh = raw_fresh is True or (
+        isinstance(raw_fresh, str)
+        and raw_fresh.strip().lower() in {"1", "true", "yes"}
+    )
     result = model.benchmark(path, keys, fresh=fresh)
     if not result.get("ok"):
         return jsonify({
