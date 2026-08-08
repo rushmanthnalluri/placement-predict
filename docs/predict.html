@@ -115,8 +115,8 @@
   <section class="page-head">
     <p class="page-kicker">Stage 09 · Assessment</p>
     <h1>Predict Placement</h1>
-    <p class="page-desc">Enter a student&#39;s profile and get a placement call, with a calibrated probability, from the champion model.</p>
-    <p class="page-meta">Champion · Gradient Boosting · ROC-AUC 0.9733</p>
+    <p class="page-desc">Enter a student&#39;s profile, pick a model — or the recommended best — and get a placement call with its calibrated probability.</p>
+    <p class="page-meta">Recommended · Gradient Boosting · ROC-AUC 0.9733</p>
   </section>
 
   
@@ -258,6 +258,25 @@
           </div>
         </fieldset>
         
+
+        <fieldset class="predict-fieldset">
+          <legend>Model</legend>
+          <label class="field" for="predictModel">
+            <span class="field-label">Model</span>
+            <select name="model" id="predictModel" class="field-input select">
+              <option value="best" selected>Best model — Gradient Boosting (recommended)</option>
+              
+              <option value="logistic_regression" >Logistic Regression · ROC-AUC 0.9595</option>
+              
+              <option value="random_forest" >Random Forest · ROC-AUC 0.9716</option>
+              
+              <option value="gradient_boosting" >Gradient Boosting · ROC-AUC 0.9733</option>
+              
+            </select>
+            <span class="field-hint" id="modelStaticHint">Best model = highest cross-validated ROC-AUC of the latest training run — currently Gradient Boosting.</span>
+          </label>
+        </fieldset>
+
         <button type="button" class="btn btn-primary">Predict placement</button>
         <p class="note mt-10">Blank inputs fall back to the dataset median.</p>
       </form>
@@ -267,8 +286,9 @@
         <div class="result-panel">
           <span class="result-kicker">Awaiting input</span>
           <span class="result-verdict result-verdict-idle">—</span>
-          <p class="note note-flush">Fill the profile on the left and the champion
-            model's placement call appears here, with its probability.</p>
+          <p class="note note-flush">Fill the profile on the left and the placement call appears
+            here, with its probability. Pick a specific model, or leave the dropdown on the
+            recommended best — Gradient Boosting.</p>
         </div>
         
       </aside>
@@ -306,9 +326,9 @@
 
 <script>
   // The logistic baseline as JSON. The Flask app predicts server-side with
-  // the champion model; the static Pages build (where the form is inert)
+  // the selected model; the static Pages build (where the form is inert)
   // uses this in script.js to predict in the browser.
-  window.LR_MODEL = {"auc": 0.9595, "coef": [2.09288, 0.15377, 0.573646, 0.38693, 0.377176, 0.545805, 0.185607, -0.095997, 1.11566, -0.765947, 1.137508, 0.075034], "features": ["CGPA", "AttendancePercent", "Internships", "Projects", "Workshops", "Certifications", "Publications", "AptitudeTestScore", "SoftSkillsRating", "CodingTestScore", "MockInterviewScore", "ExtraCurricular"], "intercept": 2.117567, "mean": {"AptitudeTestScore": 68.847112, "AttendancePercent": 76.687013, "CGPA": 7.243574, "Certifications": 1.931575, "CodingTestScore": 57.374737, "ExtraCurricular": 0.5328, "Internships": 1.1248, "MockInterviewScore": 55.3973, "Projects": 2.1082, "Publications": 0.73505, "SoftSkillsRating": 3.154419, "Workshops": 1.802652}, "std": {"AptitudeTestScore": 14.746101, "AttendancePercent": 12.464175, "CGPA": 1.618047, "Certifications": 1.177558, "CodingTestScore": 20.381012, "ExtraCurricular": 0.498923, "Internships": 0.810787, "MockInterviewScore": 16.621586, "Projects": 1.206252, "Publications": 0.717497, "SoftSkillsRating": 0.946282, "Workshops": 0.986426}};
+  window.LR_MODEL = {"auc": 0.9595, "cal": {"a": -0.998313, "b": -0.000688}, "coef": [2.09288, 0.15377, 0.573646, 0.38693, 0.377176, 0.545805, 0.185607, -0.095997, 1.11566, -0.765947, 1.137508, 0.075034], "features": ["CGPA", "AttendancePercent", "Internships", "Projects", "Workshops", "Certifications", "Publications", "AptitudeTestScore", "SoftSkillsRating", "CodingTestScore", "MockInterviewScore", "ExtraCurricular"], "intercept": 2.117567, "mean": {"AptitudeTestScore": 68.847112, "AttendancePercent": 76.687013, "CGPA": 7.243574, "Certifications": 1.931575, "CodingTestScore": 57.374737, "ExtraCurricular": 0.5328, "Internships": 1.1248, "MockInterviewScore": 55.3973, "Projects": 2.1082, "Publications": 0.73505, "SoftSkillsRating": 3.154419, "Workshops": 1.802652}, "std": {"AptitudeTestScore": 14.746101, "AttendancePercent": 12.464175, "CGPA": 1.618047, "Certifications": 1.177558, "CodingTestScore": 20.381012, "ExtraCurricular": 0.498923, "Internships": 0.810787, "MockInterviewScore": 16.621586, "Projects": 1.206252, "Publications": 0.717497, "SoftSkillsRating": 0.946282, "Workshops": 0.986426}};
   window.FORM_META = [{"default": 7.25, "max": 10.0, "min": 4.0, "name": "CGPA", "step": "0.1"}, {"default": 77.2, "max": 100.0, "min": 50.0, "name": "AttendancePercent", "step": "0.1"}, {"default": 1.0, "max": 3.0, "min": 0.0, "name": "Internships", "step": "1"}, {"default": 2.0, "max": 5.0, "min": 0.0, "name": "Projects", "step": "1"}, {"default": 2.0, "max": 4.0, "min": 0.0, "name": "Workshops", "step": "1"}, {"default": 2.0, "max": 5.0, "min": 0.0, "name": "Certifications", "step": "1"}, {"default": 1.0, "max": 3.0, "min": 0.0, "name": "Publications", "step": "1"}, {"default": 69.9, "max": 100.0, "min": 30.0, "name": "AptitudeTestScore", "step": "0.1"}, {"default": 3.2, "max": 5.0, "min": 1.0, "name": "SoftSkillsRating", "step": "0.1"}, {"default": 57.7, "max": 100.0, "min": 0.0, "name": "CodingTestScore", "step": "0.1"}, {"default": 54.7, "max": 100.0, "min": 15.9, "name": "MockInterviewScore", "step": "0.1"}, {"default": 1.0, "max": 1.0, "min": 0.0, "name": "ExtraCurricular", "step": "1"}];
   window.CHAMPION = {"auc": 0.9733, "name": "Gradient Boosting"};
 </script>

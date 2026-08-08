@@ -70,6 +70,14 @@ def set_security_headers(response):
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["X-Frame-Options"] = "DENY"
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    if request.path.startswith("/api/"):
+        # The JSON API answers without credentials (cross-origin fetches
+        # don't carry the session cookie, so they always see the bundled
+        # dataset) and is meant to be callable — the static showcase on
+        # GitHub Pages falls back to it. Never combine "*" with credentials.
+        response.headers["Access-Control-Allow-Origin"] = "*"
+        response.headers["Access-Control-Allow-Headers"] = "Content-Type"
+        response.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
     return response
 
 
@@ -80,6 +88,8 @@ def _warm_model_cache():
     with an early request."""
     try:
         model.get_model_bundle(DEFAULT_DATASET)
+        # absorb the one-time first-predict initialisation as well
+        model.predict(DEFAULT_DATASET, {})
         app.logger.info("model warm-up complete")
     except Exception:  # noqa: BLE001 - warm-up failure must never kill the app
         app.logger.exception("model warm-up failed (will retry on first request)")
@@ -164,8 +174,8 @@ PIPELINE_STEPS = [
         "endpoint": "train_model",
         "eyebrow": "Stage 07 · Modelling",
         "live": True,
-        "note": "Three classifiers trained and timed: an interpretable "
-        "logistic baseline, a random forest, and gradient boosting.",
+        "note": "Three classifiers trained on one sealed split — inspect any "
+        "of them, or benchmark any subset and see the best emerge from the data.",
     },
     {
         "id": "evaluate",
@@ -184,8 +194,8 @@ PIPELINE_STEPS = [
         "endpoint": "predict_placement",
         "eyebrow": "Stage 09 · Assessment",
         "live": True,
-        "note": "Enter a student's profile and get a placement call, with "
-        "a calibrated probability, from the champion model.",
+        "note": "Enter a student's profile, pick a model — or the recommended "
+        "best — and get a placement call with its calibrated probability.",
     },
 ]
 
@@ -449,12 +459,79 @@ def preprocess_data():
 
 @app.route("/train")
 def train_model():
-    return _model_stage_view("train", "train.html")
+    step = _find_step("train")
+    bundle, dataset_name, is_default = _active_bundle()
+    prev_step, next_step = _step_pager("train")
+    mb = None
+    if bundle["schema_ok"]:
+        path, _, _ = _active_dataset()
+        try:
+            mb = model.get_model_bundle(path)
+        except Exception as exc:  # noqa: BLE001 - never 500 a stage page
+            mb = {"schema_ok": True, "ok": False, "error": str(exc)}
+
+    # single-model drill-down: /train?model=random_forest — an unknown key
+    # renders the page with a notice instead of a 404 (the URL is user-facing)
+    requested_model = request.args.get("model", "").strip()
+    selected = None
+    if mb and mb.get("ok") and requested_model:
+        selected_key = model.resolve_model_key(requested_model)
+        if selected_key:
+            selected = next(
+                (m for m in mb["models"] if m["key"] == selected_key), None
+            )
+
+    return render_template(
+        "train.html",
+        step=step,
+        active_step="train",
+        bundle=bundle,
+        mb=mb,
+        selected=selected,
+        requested_model=requested_model,
+        dataset_name=dataset_name,
+        is_default=is_default,
+        prev_step=prev_step,
+        next_step=next_step,
+    )
 
 
 @app.route("/evaluate")
 def evaluate_model():
     return _model_stage_view("evaluate", "evaluate.html")
+
+
+def _resolve_requested_model(raw, mb):
+    """(display_name, key, requested, error) for a model selector from the
+    predict form or the JSON API. `requested` is what the UI re-selects
+    ("best" or a registry key); `key` is always the concrete model resolved
+    from the latest training run."""
+    if not raw or model.is_best_alias(raw):
+        return mb["best"], mb["best_key"], "best", None
+    key = model.resolve_model_key(raw)
+    if key is None:
+        return None, None, "best", (
+            f"Unknown model “{raw}” — pick one of the listed models."
+        )
+    return model.MODEL_REGISTRY[key]["name"], key, key, None
+
+
+def _prediction_note(placed, probability_pct, model_name, roc_auc):
+    """Responsible one-liner under the verdict — banded by distance from the
+    threshold, never a guarantee."""
+    p = probability_pct / 100
+    if placed:
+        tone = ("predicts a high likelihood of placement"
+                if p >= 0.8 else
+                "leans toward placement, though the margin is modest")
+    else:
+        tone = ("predicts a low likelihood of placement"
+                if p <= 0.2 else
+                "leans against placement, though the margin is modest")
+    return (f"The model {tone} based on the provided features. This is a "
+            f"calibrated statistical estimate from {model_name} (sealed-test "
+            f"ROC-AUC {roc_auc}), not a guarantee — probabilities near the "
+            "50% threshold are genuinely uncertain calls.")
 
 
 @app.route("/predict", methods=["GET", "POST"])
@@ -476,8 +553,13 @@ def predict_placement():
     errors = []
     invalid_fields = []
     values = {}
+    selected_model = "best"
 
     if request.method == "POST" and model_ready:
+        raw_model = request.form.get("model", "best")
+        chosen, _, selected_model, model_error = _resolve_requested_model(raw_model, mb)
+        if model_error:
+            errors.append(model_error)
         for meta in mb["form_meta"]:
             name = meta["name"]
             raw = request.form.get(name, "").strip()
@@ -497,12 +579,19 @@ def predict_placement():
                 invalid_fields.append(name)
             values[name] = val
         if not errors:
-            proba = model.predict(path, values)
+            proba = model.predict(path, values, chosen)
+            roc_auc = next(
+                m["metrics"]["roc_auc"] for m in mb["models"] if m["name"] == chosen
+            )
+            placed = proba >= 0.5
+            probability = round(proba * 100, 1)
             result = {
-                "placed": proba >= 0.5,
-                "probability": round(proba * 100, 1),
-                "model": mb["best"],
-                "roc_auc": next(m["metrics"]["roc_auc"] for m in mb["models"] if m["name"] == mb["best"]),
+                "placed": placed,
+                "probability": probability,
+                "model": chosen,
+                "is_champion": chosen == mb["best"],
+                "roc_auc": roc_auc,
+                "explanation": _prediction_note(placed, probability, chosen, roc_auc),
                 "values": values,
             }
 
@@ -521,6 +610,7 @@ def predict_placement():
         errors=errors,
         invalid_fields=invalid_fields,
         values=values,
+        selected_model=selected_model,
     )
 
 
@@ -531,7 +621,7 @@ LIVE_STAGES = {
 
 
 # ---------------------------------------------------------------------------
-# JSON API — the service contract. Same validation and champion model as the
+# JSON API — the service contract. Same validation and model selection as the
 # UI form; health never triggers training.
 # ---------------------------------------------------------------------------
 
@@ -573,6 +663,18 @@ def api_predict():
     if not isinstance(payload, dict):
         return jsonify({"error": "JSON body must be an object of feature values."}), 400
 
+    # model selection: "model" may be a registry key ("random_forest"), a
+    # display name ("Random Forest"), or "best" (the default) for the
+    # champion of the latest training run
+    chosen, chosen_key, _, model_error = _resolve_requested_model(
+        payload.get("model", "best"), mb
+    )
+    if model_error:
+        return jsonify({
+            "error": model_error,
+            "valid_models": model.MODEL_KEYS + ["best"],
+        }), 400
+
     errors = []
     values = {}
     for meta in mb["form_meta"]:
@@ -596,15 +698,88 @@ def api_predict():
     if errors:
         return jsonify({"error": "Validation failed", "details": errors}), 400
 
-    proba = model.predict(path, values)
+    proba = model.predict(path, values, chosen)
     return jsonify({
         "placed": proba >= 0.5,
         "probability": round(proba * 100, 1),
         "threshold": 0.5,
-        "model": mb["best"],
-        "roc_auc": next(m["metrics"]["roc_auc"] for m in mb["models"] if m["name"] == mb["best"]),
+        "model": chosen,
+        "model_key": chosen_key,
+        "roc_auc": next(m["metrics"]["roc_auc"] for m in mb["models"] if m["name"] == chosen),
         "dataset": dataset_name,
     })
+
+
+@app.route("/api/benchmark", methods=["POST"])
+def api_benchmark():
+    """Comparative evaluation of the requested models on the active dataset.
+
+    Body (optional): {"models": ["logistic_regression", ...], "fresh": false}
+    — an absent/empty body benchmarks all three candidates; "fresh": true
+    genuinely re-runs the pipeline for the selection instead of reading the
+    cached evaluation. Every number comes from the real training run for the
+    active dataset (first call trains, later calls read the cached
+    evaluation)."""
+    payload = {}
+    if request.is_json:
+        payload = request.get_json(silent=True)
+        if payload is None:
+            payload = {}
+        if not isinstance(payload, dict):
+            return jsonify({
+                "error": 'JSON body must be an object like {"models": [...]}.'
+            }), 400
+    elif request.form or (request.data and request.data.strip()):
+        return jsonify({
+            "error": "Content-Type must be application/json",
+            "valid_models": model.MODEL_KEYS,
+        }), 415
+
+    bundle, dataset_name, _ = _active_bundle()
+    if not bundle["schema_ok"]:
+        return jsonify({
+            "error": "The active dataset does not match the placement schema.",
+            "dataset": dataset_name,
+        }), 503
+
+    keys = None
+    raw_models = payload.get("models")
+    if raw_models is not None:
+        if not isinstance(raw_models, list) or not all(
+            isinstance(item, str) for item in raw_models
+        ):
+            return jsonify({
+                "error": '"models" must be a list of model keys.',
+                "valid_models": model.MODEL_KEYS,
+            }), 400
+        keys = []
+        unknown = []
+        for item in raw_models:
+            key = model.resolve_model_key(item)
+            (keys if key else unknown).append(key or item)
+        if unknown:
+            return jsonify({
+                "error": "Unknown model(s): " + ", ".join(unknown) + ".",
+                "valid_models": model.MODEL_KEYS,
+            }), 400
+        keys = list(dict.fromkeys(keys))
+        if not keys:
+            return jsonify({
+                "error": "Select at least one model to benchmark.",
+                "valid_models": model.MODEL_KEYS,
+            }), 400
+
+    path, _, _ = _active_dataset()
+    fresh = bool(payload.get("fresh", False))
+    result = model.benchmark(path, keys, fresh=fresh)
+    if not result.get("ok"):
+        return jsonify({
+            "error": "No trained models available for the active dataset.",
+            "detail": result.get("error"),
+            "dataset": dataset_name,
+        }), 503
+    result["dataset"] = dataset_name
+    return jsonify(result)
 
 
 def _make_stage_view(step):

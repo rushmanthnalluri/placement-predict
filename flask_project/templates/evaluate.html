@@ -46,6 +46,8 @@
             <th>Recall</th>
             <th>F1</th>
             <th>ROC-AUC</th>
+            <th>Brier ↓</th>
+            <th>Log-loss ↓</th>
           </tr>
         </thead>
         <tbody>
@@ -55,16 +57,21 @@
               {{ m.name }}
               {% if m.name == mb.best %}<span class="badge badge-accent badge-offset">Champion</span>{% endif %}
             </td>
-            <td class="num">{{ m.metrics.accuracy }}</td>
-            <td class="num">{{ m.metrics.precision }}</td>
-            <td class="num">{{ m.metrics.recall }}</td>
-            <td class="num">{{ m.metrics.f1 }}</td>
-            <td class="num accent">{{ m.metrics.roc_auc }}</td>
+            <td class="num">{{ "%.4f" | format(m.metrics.accuracy) }}</td>
+            <td class="num">{{ "%.4f" | format(m.metrics.precision) }}</td>
+            <td class="num">{{ "%.4f" | format(m.metrics.recall) }}</td>
+            <td class="num">{{ "%.4f" | format(m.metrics.f1) }}</td>
+            <td class="num accent">{{ "%.4f" | format(m.metrics.roc_auc) }}</td>
+            <td class="num">{{ "%.4f" | format(m.metrics.brier) }}</td>
+            <td class="num">{{ "%.4f" | format(m.metrics.log_loss) }}</td>
           </tr>
           {% endfor %}
         </tbody>
       </table>
     </div>
+    <p class="note">Brier score and log-loss measure probability quality (lower is better) — they are
+      what calibration improves. ROC-AUC is unchanged by calibration, by construction: a monotone
+      remap of probabilities never changes a ranking.</p>
   </section>
 
   <div class="divider" aria-hidden="true"></div>
@@ -82,6 +89,22 @@
         <canvas data-chart="roc" role="img"
                 aria-label="ROC curves for the three trained models"></canvas>
       </div>
+    </div>
+
+    <div class="chart-card chart-card-wide mt-28">
+      <div class="chart-card-head">
+        <h3>Reliability curves — do the probabilities mean what they say?</h3>
+        <span class="chart-tag">dashed = perfectly calibrated</span>
+      </div>
+      <div class="chart-wrap chart-wrap-tall">
+        <canvas data-chart="calibration" role="img"
+                aria-label="Reliability curves: observed placement frequency against predicted probability for the three models"></canvas>
+      </div>
+      <p class="note">Each point pools the sealed test rows whose predicted probability falls in a
+        bin, then plots the observed placement rate against it. Points on the diagonal mean a
+        predicted 70% really places ~70% of the time. Every model is Platt-calibrated (sigmoid map
+        fit on 3-fold out-of-fold predictions within the training split — the test set never
+        participates).</p>
     </div>
 
     <div class="eval-duo">
@@ -128,7 +151,7 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 <script>
   window.EDA = {
-    roc: {{ mb.models | tojson }},
+    models: {{ mb.models | tojson }},
     importance: {{ mb.importance | tojson }}
   };
 </script>

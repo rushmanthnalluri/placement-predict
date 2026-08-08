@@ -1364,3 +1364,149 @@ select:focus-visible, textarea:focus-visible, [tabindex]:focus-visible,
   .metrics { grid-template-columns: 1fr 1fr; }
   .outcome-legend { flex-direction: column; gap: 6px; }
 }
+
+/* ------------------------------------------------- model selection ---- */
+
+/* dropdown — visually a .field-input sibling with a custom chevron */
+.select {
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 34px;
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%239BA29A' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 10px 6px;
+}
+.select:disabled { opacity: 0.55; cursor: default; }
+
+.model-pick {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.model-pick-field { flex: 0 1 380px; }
+
+.model-role {
+  margin: 0 0 20px;
+  font-size: 13px;
+  color: var(--text-2);
+}
+
+/* metric card row that sizes to its content (5 evaluation cards) */
+.metrics-auto { grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); }
+
+/* ------------------------------------------------ benchmark console --- */
+
+.bench-controls {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex-wrap: wrap;
+  margin-bottom: 4px;
+}
+
+.check {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text-2);
+  cursor: pointer;
+  padding: 8px 0;
+}
+.check:hover { color: var(--text); }
+.check-input {
+  width: 15px;
+  height: 15px;
+  margin: 0;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+/* revealed by script.js — the re-run controls are pointless without
+   JavaScript; the full benchmark is server-rendered regardless */
+.needs-js { display: none; }
+
+.bench-banner {
+  border: 1px solid rgba(217, 166, 63, 0.4);
+  background: rgba(217, 166, 63, 0.06);
+  border-radius: var(--radius-lg);
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 20px 0;
+}
+.bench-banner-kicker {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+.bench-banner-name {
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--accent);
+}
+.bench-banner-sub {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-2);
+}
+
+/* busy state for buttons (training, benchmarking, predicting) */
+.btn[disabled] { opacity: 0.6; cursor: default; }
+.btn-primary[disabled]:hover { background: var(--accent); }
+
+.spinner {
+  width: 12px;
+  height: 12px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  border: 2px solid rgba(22, 19, 10, 0.35);
+  border-top-color: var(--accent-ink);
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .spinner { animation: none; } }
+
+/* ------------------------------------------------ prediction result --- */
+
+.result-kicker-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.result-facts {
+  margin: 2px 0 0;
+  border-top: 1px solid var(--border);
+}
+.result-fact {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 12.5px;
+}
+.result-fact dt { color: var(--text-3); }
+.result-fact dd {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+@media (max-width: 820px) {
+  .model-pick-field { flex: 1 1 100%; }
+  .metrics-auto { grid-template-columns: repeat(2, 1fr); }
+  .bench-controls { gap: 12px; }
+}

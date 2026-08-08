@@ -18,5 +18,8 @@ DATA = os.path.join(
 
 if __name__ == "__main__":
     model.save_artifact(DATA)
-    size_mb = os.path.getsize(model._artifact_path(DATA)) / 1e6
-    print(f"artifact written: {model._artifact_path(DATA)} ({size_mb:.1f} MB)")
+    total = os.path.getsize(model._artifact_path(DATA))
+    for key in model.MODEL_KEYS:
+        total += os.path.getsize(model._model_artifact_path(DATA, key))
+    print(f"artifacts written next to {DATA} ({total / 1e6:.1f} MB total: "
+          f"bundle + champion, plus one file per candidate)")

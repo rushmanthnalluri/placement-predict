@@ -6,7 +6,7 @@
     <p class="page-kicker">{{ step.eyebrow }}</p>
     <h1>{{ step.label }}</h1>
     <p class="page-desc">{{ step.note }}</p>
-    <p class="page-meta">{% if mb and mb.ok %}Champion · {{ mb.best }} · ROC-AUC {{ (mb.models | selectattr('name', 'equalto', mb.best) | first).metrics.roc_auc }}{% else %}Dataset · {{ dataset_name }}{{ ' (bundled default)' if is_default else '' }}{% endif %}</p>
+    <p class="page-meta">{% if mb and mb.ok %}Recommended · {{ mb.best }} · ROC-AUC {{ (mb.models | selectattr('name', 'equalto', mb.best) | first).metrics.roc_auc }}{% else %}Dataset · {{ dataset_name }}{{ ' (bundled default)' if is_default else '' }}{% endif %}</p>
   </section>
 
   {% if not bundle.schema_ok %}
@@ -63,6 +63,21 @@
           </div>
         </fieldset>
         {% endfor %}
+
+        <fieldset class="predict-fieldset">
+          <legend>Model</legend>
+          <label class="field" for="predictModel">
+            <span class="field-label">Model</span>
+            <select name="model" id="predictModel" class="field-input select">
+              <option value="best" {{ 'selected' if selected_model == 'best' }}>Best model — {{ mb.best }} (recommended)</option>
+              {% for m in mb.models %}
+              <option value="{{ m.key }}" {{ 'selected' if selected_model == m.key }}>{{ m.name }} · ROC-AUC {{ m.metrics.roc_auc }}</option>
+              {% endfor %}
+            </select>
+            <span class="field-hint" id="modelStaticHint">Best model = highest cross-validated ROC-AUC of the latest training run — currently {{ mb.best }}.</span>
+          </label>
+        </fieldset>
+
         <button type="submit" class="btn btn-primary">Predict placement</button>
         <p class="note mt-10">Blank inputs fall back to the dataset median.</p>
       </form>
@@ -70,7 +85,10 @@
       <aside class="predict-result" aria-live="polite">
         {% if result %}
         <div class="result-panel {{ 'result-placed' if result.placed else 'result-not' }}">
-          <span class="result-kicker">{{ result.model }}</span>
+          <div class="result-kicker-row">
+            <span class="result-kicker">Prediction · {{ result.model }}</span>
+            {% if result.is_champion %}<span class="badge badge-accent">Best model</span>{% endif %}
+          </div>
           <span class="result-verdict">{{ 'Placed' if result.placed else 'Not placed' }}</span>
           <div class="result-track" role="img" aria-label="Placement probability {{ result.probability }} percent">
             <div class="result-fill" style="width: {{ result.probability }}%"></div>
@@ -79,15 +97,20 @@
             <span class="mono">{{ result.probability }}% probability</span>
             <span class="mono dim">threshold 50%</span>
           </div>
+          <dl class="result-facts">
+            <div class="result-fact"><dt>Model used</dt><dd>{{ result.model }}</dd></div>
+            <div class="result-fact"><dt>Placement probability</dt><dd>{{ result.probability }}%</dd></div>
+            <div class="result-fact"><dt>Model ROC-AUC</dt><dd>{{ result.roc_auc }}</dd></div>
+          </dl>
+          <p class="note note-flush">{{ result.explanation }}</p>
         </div>
-        <p class="note">A probability near the threshold is a genuinely uncertain call — treat
-          it as "needs a second look", not as a verdict.</p>
         {% else %}
         <div class="result-panel">
           <span class="result-kicker">Awaiting input</span>
           <span class="result-verdict result-verdict-idle">—</span>
-          <p class="note note-flush">Fill the profile on the left and the champion
-            model's placement call appears here, with its probability.</p>
+          <p class="note note-flush">Fill the profile on the left and the placement call appears
+            here, with its probability. Pick a specific model, or leave the dropdown on the
+            recommended best — {{ mb.best }}.</p>
         </div>
         {% endif %}
       </aside>
@@ -103,7 +126,7 @@
 {% set champ = mb.models | selectattr('name', 'equalto', mb.best) | first %}
 <script>
   // The logistic baseline as JSON. The Flask app predicts server-side with
-  // the champion model; the static Pages build (where the form is inert)
+  // the selected model; the static Pages build (where the form is inert)
   // uses this in script.js to predict in the browser.
   window.LR_MODEL = {{ mb.lr_export | tojson }};
   window.FORM_META = {{ mb.form_meta | tojson }};

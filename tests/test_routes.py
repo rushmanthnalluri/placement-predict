@@ -19,6 +19,43 @@ def test_get_model_route_200(client, route):
     assert client.get(route).status_code == 200
 
 
+@pytest.mark.slow
+def test_train_model_drilldown(client):
+    body = client.get("/train?model=random_forest").get_data(as_text=True)
+    assert 'panel-title">Random Forest' in body
+    assert "Confusion matrix" in body
+    assert "ROC curve" in body
+    # the dropdown reflects the selection
+    assert 'value="random_forest" selected' in body
+
+
+@pytest.mark.slow
+def test_train_unknown_model_notice(client):
+    resp = client.get("/train?model=svm")
+    assert resp.status_code == 200
+    assert "Unknown model" in resp.get_data(as_text=True)
+
+
+@pytest.mark.slow
+def test_train_benchmark_console_rendered(client):
+    body = client.get("/train").get_data(as_text=True)
+    assert "Best performing model" in body
+    assert "Gradient Boosting" in body
+    assert body.count('class="check-input bench-check"') == 3
+    assert 'id="benchRun"' in body
+    assert 'id="benchFresh"' in body
+    assert "Brier" in body
+    assert 'data-chart="benchmark"' in body
+
+
+@pytest.mark.slow
+def test_evaluate_shows_calibration(client):
+    body = client.get("/evaluate").get_data(as_text=True)
+    assert 'data-chart="calibration"' in body
+    assert "Brier" in body
+    assert "Log-loss" in body
+
+
 def test_home_shows_default_overview(client):
     body = client.get("/").get_data(as_text=True)
     assert "50,000" in body          # usable records after the sentinel drop

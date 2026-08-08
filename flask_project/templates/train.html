@@ -6,7 +6,7 @@
     <p class="page-kicker">{{ step.eyebrow }}</p>
     <h1>{{ step.label }}</h1>
     <p class="page-desc">{{ step.note }}</p>
-    <p class="page-meta">Dataset · {{ dataset_name }}{{ ' (bundled default)' if is_default else '' }}{% if mb and mb.ok %} · trained on {{ "{:,}".format(mb.split.train) }} rows{% endif %}</p>
+    <p class="page-meta">Dataset · {{ dataset_name }}{{ ' (bundled default)' if is_default else '' }}{% if mb and mb.ok %} · trained on {{ "{:,}".format(mb.split.train) }} rows · assessed once on {{ "{:,}".format(mb.split.test) }} sealed rows{% endif %}</p>
   </section>
 
   {% if not bundle.schema_ok %}
@@ -29,54 +29,223 @@
     </div>
   </section>
   {% else %}
+  {% set champ = mb.models | selectattr('name', 'equalto', mb.best) | first %}
 
   <div class="divider" aria-hidden="true"></div>
 
   <section class="section">
     <div class="section-head">
-      <h2 class="section-title">The candidates</h2>
+      <h2 class="section-title">Model selection</h2>
       <span class="mono dim mono-sm">seed {{ mb.seed }} · scikit-learn</span>
     </div>
-    <p class="section-sub">One model from each family of the classical canon, so the choice between
-      them is a measured one — not a guess.</p>
-    <div class="table-scroll">
-      <table class="table">
-        <thead>
-          <tr>
-            <th>Model</th>
-            <th>Role</th>
-            <th>Input</th>
-            <th>Key settings</th>
-            <th>Train time</th>
-            <th>CV ROC-AUC · {{ mb.cv_folds }}-fold train</th>
-          </tr>
-        </thead>
-        <tbody>
+    <p class="section-sub">Pick a candidate to inspect its full evaluation. All three are fitted in
+      one pass over identical data — the first run after an upload trains (~15–30&nbsp;s on the free
+      host), afterwards every selection reads the shared run.</p>
+
+    <form method="get" action="{{ url_for('train_model') }}" class="model-pick" id="modelPickForm">
+      <label class="field model-pick-field" for="modelPick">
+        <span class="field-label">Model</span>
+        <select name="model" id="modelPick" class="field-input select">
+          <option value="" {{ 'selected' if not selected }}>Choose a model to inspect…</option>
           {% for m in mb.models %}
-          <tr class="{{ 'champion-row' if m.name == mb.best else '' }}">
-            <td class="strong">
-              {{ m.name }}
-              {% if m.name == mb.best %}<span class="badge badge-accent badge-offset">Champion</span>{% endif %}
-            </td>
-            <td class="dim cell-role">{{ m.note }}</td>
-            <td class="dim">{{ 'z-scored' if m.needs_scaling else 'raw imputed' }}</td>
-            <td class="mono num dim">
-              {%- if m.name == 'Logistic Regression' -%}max_iter 2000
-              {%- elif m.name == 'Random Forest' -%}150 trees
-              {%- else -%}default depth · lr 0.1{%- endif -%}
-            </td>
-            <td class="num">{{ m.train_time }}s</td>
-            <td class="num accent">{{ m.cv_auc_mean }} ± {{ m.cv_auc_std }}</td>
-          </tr>
+          <option value="{{ m.key }}" {{ 'selected' if selected and selected.key == m.key }}>{{ m.name }} · CV ROC-AUC {{ m.cv_auc_mean }}</option>
           {% endfor %}
-        </tbody>
-      </table>
+        </select>
+        <span class="field-hint">The selected model's metrics, error profile, and ROC curve appear below.</span>
+      </label>
+      <button type="submit" class="btn btn-primary">Train &amp; evaluate</button>
+      {% if selected %}<a href="{{ url_for('train_model') }}" class="btn btn-secondary">Clear selection</a>{% endif %}
+    </form>
+
+    {% if requested_model and not selected %}
+    <div class="alert alert-error mt-28" role="alert">
+      <strong>Unknown model “{{ requested_model }}”</strong>
+      Pick one of the three listed candidates from the dropdown.
     </div>
-    <p class="note">The champion is chosen by cross-validated ROC-AUC on the training split —
-      the sealed test set plays no part in the choice — and carries into the evaluation and
-      prediction stages. Full metrics on the next page.</p>
+    {% endif %}
+
+    <div id="modelDetail">
+      {% if selected %}
+      <div class="panel model-detail mt-28">
+        <div class="panel-head">
+          <span class="panel-title">{{ selected.name }}</span>
+          {% if selected.name == mb.best %}<span class="badge badge-accent">Champion</span>{% endif %}
+        </div>
+        <div class="panel-body">
+          <p class="model-role">{{ selected.note }} · input {{ 'z-scored' if selected.needs_scaling else 'raw imputed' }} · {{ selected.settings }} · {{ selected.calibration }}</p>
+          <div class="metrics metrics-auto">
+            <div class="metric">
+              <span class="metric-value">{{ "%.1f%%" | format(selected.metrics.accuracy * 100) }}</span>
+              <span class="metric-label">Accuracy</span>
+            </div>
+            <div class="metric">
+              <span class="metric-value">{{ "%.1f%%" | format(selected.metrics.precision * 100) }}</span>
+              <span class="metric-label">Precision</span>
+            </div>
+            <div class="metric">
+              <span class="metric-value">{{ "%.1f%%" | format(selected.metrics.recall * 100) }}</span>
+              <span class="metric-label">Recall</span>
+            </div>
+            <div class="metric">
+              <span class="metric-value">{{ "%.1f%%" | format(selected.metrics.f1 * 100) }}</span>
+              <span class="metric-label">F1</span>
+            </div>
+            <div class="metric">
+              <span class="metric-value text-accent">{{ "%.1f%%" | format(selected.metrics.roc_auc * 100) }}</span>
+              <span class="metric-label">ROC-AUC</span>
+            </div>
+          </div>
+          <p class="page-meta">Sealed test set · threshold 0.5 · CV ROC-AUC {{ selected.cv_auc_mean }} ± {{ selected.cv_auc_std }}
+            ({{ mb.cv_folds }}-fold on {{ "{:,}".format(mb.cv_rows) }} training rows) · fitted in {{ selected.train_time }}s</p>
+          <div class="eval-duo">
+            <div>
+              <div class="section-head mt-0">
+                <h2 class="section-title">Confusion matrix</h2>
+              </div>
+              <div class="cm-grid" role="img"
+                   aria-label="Confusion matrix: {{ selected.confusion.tp }} true positives, {{ selected.confusion.fp }} false positives, {{ selected.confusion.fn }} false negatives, {{ selected.confusion.tn }} true negatives">
+                <span></span>
+                <span class="cm-axis">Predicted placed</span>
+                <span class="cm-axis">Predicted not</span>
+                <span class="cm-axis cm-axis-row">Actually placed</span>
+                <span class="cm-cell cm-tp"><strong>{{ "{:,}".format(selected.confusion.tp) }}</strong><span>true positive</span></span>
+                <span class="cm-cell cm-fn"><strong>{{ "{:,}".format(selected.confusion.fn) }}</strong><span>false negative</span></span>
+                <span class="cm-axis cm-axis-row">Actually not</span>
+                <span class="cm-cell cm-fp"><strong>{{ "{:,}".format(selected.confusion.fp) }}</strong><span>false positive</span></span>
+                <span class="cm-cell cm-tn"><strong>{{ "{:,}".format(selected.confusion.tn) }}</strong><span>true negative</span></span>
+              </div>
+            </div>
+            <div>
+              <div class="section-head mt-0">
+                <h2 class="section-title">ROC curve</h2>
+              </div>
+              <div class="chart-card">
+                <div class="chart-wrap h-340">
+                  <canvas data-chart="rocsel" role="img"
+                          aria-label="ROC curve for {{ selected.name }}"></canvas>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </section>
+
+  <div class="divider" aria-hidden="true"></div>
+
+  <section class="section" id="benchmark">
+    <div class="section-head">
+      <h2 class="section-title">Benchmark — the candidates, head to head</h2>
+      <span class="mono dim mono-sm">{{ "{:,}".format(mb.split.test) }} sealed test rows · threshold 0.5</span>
+    </div>
+    <p class="section-sub">Every number below comes from one genuine training run on the active
+      dataset — identical split, identical transforms for every model. Tick a subset and re-run to
+      filter the comparison; the trained pipeline is cached, so filtered re-runs are instant.
+      Tick <em>Re-train from scratch</em> to genuinely re-fit and re-evaluate the selection
+      (deterministic recipe — same numbers, real work, tens of seconds).</p>
+
+    <div class="bench-controls needs-js" id="benchControls" role="group" aria-label="Models to benchmark">
+      {% for m in mb.models %}
+      <label class="check">
+        <input type="checkbox" class="check-input bench-check" value="{{ m.key }}" checked>
+        <span>{{ m.name }}</span>
+      </label>
+      {% endfor %}
+      <label class="check" title="Re-fit and re-evaluate the selected models from scratch">
+        <input type="checkbox" class="check-input" id="benchFresh">
+        <span>Re-train from scratch</span>
+      </label>
+      <button type="button" class="btn btn-primary" id="benchRun">Run benchmark</button>
+    </div>
+    <p class="note note-tight" id="benchStatus" role="status" aria-live="polite"></p>
+    <div class="alert alert-error mb-24" id="benchError" role="alert" hidden></div>
+    <noscript><p class="note">The re-run controls need JavaScript — the full three-model benchmark below is always shown.</p></noscript>
+
+    <div id="benchResults">
+      <div class="bench-banner">
+        <span class="bench-banner-kicker">Best performing model</span>
+        <span class="bench-banner-name">{{ mb.best }}</span>
+        <span class="bench-banner-sub">highest cross-validated ROC-AUC — {{ champ.cv_auc_mean }} ± {{ champ.cv_auc_std }}
+          over {{ mb.cv_folds }} folds of the training split · sealed-test ROC-AUC {{ "%.4f" | format(champ.metrics.roc_auc) }} · Brier {{ "%.4f" | format(champ.metrics.brier) }}</span>
+      </div>
+      <div class="table-scroll">
+        <table class="table" id="benchTable">
+          <thead>
+            <tr>
+              <th>Model</th>
+              <th>Accuracy</th>
+              <th>Precision</th>
+              <th>Recall</th>
+              <th>F1</th>
+              <th>ROC-AUC</th>
+              <th>Brier ↓</th>
+              <th>Log-loss ↓</th>
+              <th>CV ROC-AUC · {{ mb.cv_folds }}-fold</th>
+              <th>Train time</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for m in mb.models %}
+            <tr class="{{ 'champion-row' if m.name == mb.best else '' }}">
+              <td class="strong">
+                {{ m.name }}
+                {% if m.name == mb.best %}<span class="badge badge-accent badge-offset">Best</span>{% endif %}
+              </td>
+              <td class="num">{{ "%.4f" | format(m.metrics.accuracy) }}</td>
+              <td class="num">{{ "%.4f" | format(m.metrics.precision) }}</td>
+              <td class="num">{{ "%.4f" | format(m.metrics.recall) }}</td>
+              <td class="num">{{ "%.4f" | format(m.metrics.f1) }}</td>
+              <td class="num accent">{{ "%.4f" | format(m.metrics.roc_auc) }}</td>
+              <td class="num">{{ "%.4f" | format(m.metrics.brier) }}</td>
+              <td class="num">{{ "%.4f" | format(m.metrics.log_loss) }}</td>
+              <td class="num dim">{{ m.cv_auc_mean }} ± {{ m.cv_auc_std }}</td>
+              <td class="num dim">{{ m.train_time }}s</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="chart-card chart-card-wide mt-28">
+      <div class="chart-card-head">
+        <h3>Sealed-test metrics by model</h3>
+        <span class="chart-tag">0–1 scale · higher is better</span>
+      </div>
+      <div class="chart-wrap chart-wrap-tall">
+        <canvas id="benchChart" data-chart="benchmark" role="img"
+                aria-label="Grouped bar chart comparing accuracy, precision, recall, F1, and ROC-AUC across the selected models"></canvas>
+      </div>
+    </div>
+    <p class="note">The best model is chosen by cross-validated ROC-AUC on the training split — the
+      sealed test set plays no part in the choice. All served probabilities are Platt-calibrated
+      (3-fold out-of-fold on the training split); ROC curves, reliability curves, and the champion's
+      feature importance are on the <a href="{{ url_for('evaluate_model') }}">evaluation page</a>;
+      the selected model predicts on the <a href="{{ url_for('predict_placement') }}">prediction page</a>.</p>
   </section>
   {% endif %}
 
   {% include "_pager.html" %}
+{% endblock %}
+
+{% block scripts %}
+{% if mb and mb.ok %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script>
+  // Genuine pipeline output, embedded for the charts and for the static
+  // Pages build (where the benchmark API is unreachable).
+  window.MODEL_PAGE = {
+    best: {{ mb.best | tojson }},
+    bestKey: {{ mb.best_key | tojson }},
+    cvFolds: {{ mb.cv_folds | tojson }},
+    cvRows: {{ mb.cv_rows | tojson }},
+    split: {{ mb.split | tojson }},
+    selectedKey: {{ (selected.key if selected else None) | tojson }},
+    models: {{ mb.models | tojson }}
+  };
+</script>
+<script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+{% endif %}
 {% endblock %}

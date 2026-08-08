@@ -7,3 +7,4 @@ __pycache__/
 .env
 flask_project/data/uploads/
 flask_project/data/model_artifact.joblib
+flask_project/data/model_artifact_*.joblib

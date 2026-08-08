@@ -65,3 +65,47 @@ def test_predict_all_blank_falls_back_to_medians(client):
     assert resp.status_code == 200
     assert _has_verdict(body)
     assert "% probability" in body
+
+
+@pytest.mark.slow
+def test_predict_with_selected_model(client, model_bundle):
+    data = _profile(model_bundle, "default")
+    data["model"] = "random_forest"
+    resp = client.post("/predict", data=data)
+    body = resp.get_data(as_text=True)
+    assert resp.status_code == 200
+    assert _has_verdict(body)
+    assert "Prediction · Random Forest" in body
+    # the dropdown keeps the user's selection
+    assert 'value="random_forest" selected' in body
+
+
+@pytest.mark.slow
+def test_predict_default_is_the_champion(client, model_bundle):
+    resp = client.post("/predict", data=_profile(model_bundle, "default"))
+    body = resp.get_data(as_text=True)
+    assert f"Prediction · {model_bundle['best']}" in body
+    assert 'badge-accent">Best model' in body
+
+
+@pytest.mark.slow
+def test_predict_unknown_model_flagged(client, model_bundle):
+    data = _profile(model_bundle, "default")
+    data["model"] = "svm"
+    resp = client.post("/predict", data=data)
+    body = resp.get_data(as_text=True)
+    assert resp.status_code == 200
+    assert "Unknown model" in body
+    assert not _has_verdict(body)  # invalid selection suppresses the verdict
+
+
+@pytest.mark.slow
+def test_predict_result_shows_model_facts(client, model_bundle):
+    resp = client.post("/predict", data=_profile(model_bundle, "default"))
+    body = resp.get_data(as_text=True)
+    assert "Model used" in body
+    assert "Placement probability" in body
+    assert "Model ROC-AUC" in body
+    # responsible wording — a calibrated estimate, never a guarantee
+    assert "calibrated statistical estimate" in body
+    assert "definitely" not in body

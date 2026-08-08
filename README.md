@@ -49,9 +49,9 @@ dataset on every load — nothing is hardcoded:
 | 04 | Missing Value Analysis | 19,976 missing cells across 5 columns, mean-imputed |
 | 05 | Data Visualization | Distributions, z-scores, 21×21 correlation heatmap, boxplots |
 | 06 | Preprocessing | Stratified 80/20 split (seed 42), frozen train-only transforms |
-| 07 | Model Training | Logistic regression, random forest, gradient boosting |
+| 07 | Model Training | Three candidates on one sealed split — drill into any model, benchmark any subset |
 | 08 | Model Evaluation | Sealed-test metrics, ROC curves, confusion matrix, importances |
-| 09 | Predict Placement | Validated profile form → champion's call + probability |
+| 09 | Predict Placement | Validated profile form + model picker (or the recommended best) → call + calibrated probability |
 
 ## How it fits together
 
@@ -60,28 +60,34 @@ CSV upload ──► EDA bundle (cached) ──► split 80/20 (sealed test)
                                               │
               build time: train 3 models ──► champion by 3-fold CV
                                               │
-                       validated 0.3 MB artifact (sha256 + recipe version)
+              validated artifacts (sha256 + recipe version): bundle +
+              champion at boot, one compressed file per candidate
                                               │
               ┌───────────────────────────────┼────────────────────┐
               ▼                               ▼                    ▼
         Flask web app                   JSON API              Static showcase
         (9 live stages)           /api/predict · /api/health   (GitHub Pages)
+                                  /api/benchmark
 ```
 
 Runtime never trains on request for the bundled dataset — the artifact loads
-in ~50 ms; uploads retrain once (~9 s) and are cached.
+in ~50 ms; a non-champion model selection lazy-loads its own artifact in ~1 s;
+uploads retrain once (~9 s) and are cached.
 
 ## Results (sealed test set, assessed once)
 
-| Model | Accuracy | Precision | Recall | F1 | ROC-AUC |
-|-------|----------|-----------|--------|----|---------|
-| Logistic Regression | 0.893 | 0.902 | 0.938 | 0.920 | 0.960 |
-| Random Forest | 0.909 | 0.912 | 0.954 | 0.932 | 0.972 |
-| **Gradient Boosting (champion)** | **0.909** | **0.916** | **0.948** | **0.932** | **0.973** |
+| Model | Accuracy | Precision | Recall | F1 | ROC-AUC | Brier ↓ |
+|-------|----------|-----------|--------|----|---------|---------|
+| Logistic Regression | 0.892 | 0.902 | 0.938 | 0.920 | 0.960 | 0.074 |
+| Random Forest | 0.908 | 0.915 | 0.949 | 0.931 | 0.972 | 0.066 |
+| **Gradient Boosting (champion)** | **0.909** | **0.916** | **0.948** | **0.932** | **0.973** | **0.062** |
 
 Top drivers: CGPA (0.65), Mock Interview Score (0.63), Soft Skills Rating (0.60).
 Champion selection: 3-fold CV ROC-AUC on a 12k stratified training subsample.
-Every number reproduced by the independent [forensic audit](docs/audit/FINAL_AUDIT.md).
+Served probabilities are Platt-calibrated (3-fold out-of-fold on the training
+split) — ROC-AUC unchanged by construction, Brier/log-loss improved. The v1
+pre-calibration numbers were reproduced byte-identically by the independent
+[forensic audit](docs/audit/FINAL_AUDIT.md).
 
 ![Model evaluation](screenshots/evaluate.png)
 
@@ -91,15 +97,38 @@ Every number reproduced by the independent [forensic audit](docs/audit/FINAL_AUD
 curl https://placement-predict-p2z1.onrender.com/api/health
 # → {"status":"ok","model":"Gradient Boosting","roc_auc":0.9733, ...}
 
+# predict with the recommended best model (the default)…
 curl -X POST https://placement-predict-p2z1.onrender.com/api/predict \
   -H "Content-Type: application/json" \
   -d '{"CGPA": 8.6, "MockInterviewScore": 88, "CodingTestScore": 85}'
 # → {"placed": true, "probability": 99.9, "threshold": 0.5,
-#    "model": "Gradient Boosting", "roc_auc": 0.9733, ...}
+#    "model": "Gradient Boosting", "model_key": "gradient_boosting",
+#    "roc_auc": 0.9733, ...}
+
+# …or pick the model yourself: "model" accepts a registry key
+# ("logistic_regression" | "random_forest" | "gradient_boosting"),
+# a display name ("Random Forest"), or "best"
+curl -X POST https://placement-predict-p2z1.onrender.com/api/predict \
+  -H "Content-Type: application/json" \
+  -d '{"model": "random_forest", "CGPA": 8.6, "CodingTestScore": 85}'
+
+# benchmark any subset of candidates on the active dataset
+curl -X POST https://placement-predict-p2z1.onrender.com/api/benchmark \
+  -H "Content-Type: application/json" \
+  -d '{"models": ["logistic_regression", "random_forest", "gradient_boosting"]}'
+# → per-model accuracy/precision/recall/F1/ROC-AUC, Brier & log-loss, CV
+#   scores, train times, confusion matrices, and the best model (by CV
+#   ROC-AUC) — every number from the real training run; an empty body
+#   benchmarks all three; "fresh": true re-executes the pipeline for the
+#   selection instead of reading the cached evaluation
 ```
 
-All 12 fields optional (absent = dataset median). Errors are JSON: `400` with
-per-field details, `415` for non-JSON, `503` when no model can train.
+All 12 fields optional (absent = dataset median). Probabilities are
+Platt-calibrated. Errors are JSON: `400` with per-field details, `415` for
+non-JSON, `503` when no model can train. The API sends
+`Access-Control-Allow-Origin: *` (no credentials ever flow cross-origin), so
+it is callable from any web page — the static showcase uses it for
+server-side predictions with the selected model.
 
 ## Engineering practices worth pointing at
 
@@ -121,8 +150,8 @@ per-field details, `415` for non-JSON, `503` when no model can train.
 
 ## Testing & CI
 
-41 pytest tests cover every route × dataset state, the API contract, model
-artifacts, and degenerate-input guards:
+64 pytest tests cover every route × dataset state, the API contract, model
+artifacts, model selection, benchmarking, and degenerate-input guards:
 
 ```bash
 pytest -q                 # full suite (~30s)
@@ -140,6 +169,8 @@ Every push runs **pytest + Docker build + pip-audit** on GitHub Actions.
 - **Railway / Fly.io / any container host**: portable Dockerfile; expose `$PORT`.
 - **Hugging Face Spaces**: Docker SDK works, but HF now requires PRO for Docker runtimes.
 - **GitHub Pages**: `python flask_project/export_pages.py` re-renders `docs/`.
+  The static demo calls the live API with the selected model, and falls back
+  to an in-browser calibrated logistic baseline when the host is asleep.
 
 ## Project structure
 
@@ -153,7 +184,7 @@ flask_project/
 ├── data/               # bundled 50k dataset
 ├── static/             # design system CSS, Chart.js builders
 └── templates/          # Jinja templates, one per stage
-tests/                  # 41-test pytest suite
+tests/                  # 64-test pytest suite
 docs/                   # Pages site + audit trail (docs/audit/)
 MODEL_CARD.md           # intended use, methodology, limitations
 Dockerfile · render.yaml · requirements.txt
@@ -171,7 +202,7 @@ label-consistent noise. A deliberate, disclosed choice.
 
 ## Roadmap
 
-- Probability calibration (isotonic/Platt) + cost-based threshold control
+- Cost-based threshold control
 - Per-prediction explanations (SHAP-style "why this call")
 - Fairness slices: performance by Gender/CollegeTier with group metrics
 
