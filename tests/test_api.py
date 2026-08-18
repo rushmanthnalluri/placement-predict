@@ -10,8 +10,9 @@ def test_health_shape(client):
     assert body["status"] == "ok"
     assert body["is_default_dataset"] is True
     assert "placement_predict_50k" in body["dataset"]
-    # health never triggers training on a cold app
-    assert body["trained"] is False or body["trained"] is True  # warm order-agnostic
+    # health never triggers training on a cold app; warm order-agnostic,
+    # but the field must always be present and a real JSON boolean
+    assert isinstance(body["trained"], bool)
 
 
 @pytest.mark.slow
@@ -206,7 +207,7 @@ def test_api_dataset_summary(client):
     assert resp.status_code == 200
     body = resp.get_json()
     s = body["summary"]
-    assert s["total_records"] == 50_000          # sentinel row dropped
+    assert s["total_records"] == 50_000          # no sentinel row in this revision
     assert s["placed"] + s["not_placed"] == 50_000
     assert s["numerical_features"] + s["categorical_features"] == s["total_features"]
     assert 0 < s["placement_rate"] < 100

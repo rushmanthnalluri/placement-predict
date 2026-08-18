@@ -24,7 +24,6 @@
   --success: #63A87D;
   --danger: #C65D55;
   --danger-dim: rgba(198, 93, 85, 0.1);
-  --slate: #6E8FA0;
 
   --radius-sm: 4px;
   --radius: 6px;
@@ -462,36 +461,6 @@ select:focus-visible, textarea:focus-visible, [tabindex]:focus-visible,
   color: var(--text);
 }
 .metric-label { font-size: 12px; color: var(--text-3); }
-
-/* ------------------------------------------------------ outcome split - */
-
-.outcome { display: flex; flex-direction: column; gap: 12px; }
-
-.outcome-track {
-  display: flex;
-  height: 10px;
-  border-radius: 3px;
-  overflow: hidden;
-  background: var(--raised);
-}
-.outcome-placed { background: var(--accent); }
-.outcome-not { background: #3A403B; flex: 1; }
-
-.outcome-legend {
-  display: flex;
-  justify-content: space-between;
-  font-size: 12.5px;
-  color: var(--text-2);
-}
-.outcome-legend .mono { font-size: 12px; }
-.outcome-key {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-}
-.outcome-swatch { width: 8px; height: 8px; border-radius: 2px; }
-.outcome-swatch-placed { background: var(--accent); }
-.outcome-swatch-not { background: #3A403B; }
 
 /* ----------------------------------------------------------- drivers -- */
 
@@ -1284,7 +1253,6 @@ select:focus-visible, textarea:focus-visible, [tabindex]:focus-visible,
 .note-offset { margin: -16px 0 32px; }
 .badge-offset { margin-left: 8px; }
 .cell-note { white-space: normal; font-size: 12.5px; }
-.cell-role { white-space: normal; min-width: 220px; }
 .scroll-60 { max-height: 60vh; }
 .scroll-68 { max-height: 68vh; }
 .h-340 { height: 340px; }
@@ -1362,7 +1330,6 @@ select:focus-visible, textarea:focus-visible, [tabindex]:focus-visible,
 @media (max-width: 520px) {
   .app-body main { padding: 0 18px; }
   .metrics { grid-template-columns: 1fr 1fr; }
-  .outcome-legend { flex-direction: column; gap: 6px; }
 }
 
 /* ------------------------------------------------- model selection ---- */

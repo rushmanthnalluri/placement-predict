@@ -40,8 +40,8 @@ Every page in the app is computed live from the real dataset — no number is ha
 ### Dataset overview & EDA
 
 - A home page plus nine pipeline stages, each a live page: `/` (home), `/upload`, `/features`, `/descriptive`, `/missing`, `/visualize`, `/preprocess`, `/train`, `/evaluate`, `/predict` — with a sidebar stepper driven by `PIPELINE_STEPS`.
-- Full 31-field registry with types, roles, coverage, and samples (23 numeric / 8 categorical fields in 6 groups).
-- Descriptive statistics (centre, spread, range) for 20 numeric fields, plus a by-outcome comparison of the 12 core factors.
+- Full 32-field registry with types, roles, coverage, and samples (24 numeric / 8 categorical fields in 6 groups).
+- Descriptive statistics (centre, spread, range) for 21 numeric fields, plus a by-outcome comparison of the 12 core factors.
 - Missing-value analysis: 19,976 missing cells across exactly 5 columns, mean-imputed.
 - Drag-and-drop `.csv`/`.xlsx` upload (≤10 MB), schema-validated against 13 required columns, per-session namespaced storage, instant profiling preview of the first 8 rows.
 
@@ -70,7 +70,7 @@ Every page in the app is computed live from the real dataset — no number is ha
 
 ### Engineering highlights
 
-- **Leakage found in the wild** — the dataset ships a corrupt sentinel row (StudentID 0, holding per-column missing counts as values): detected, dropped, and disclosed in the UI.
+- **Leakage found in the wild** — an earlier dataset revision shipped a corrupt sentinel row (StudentID 0, holding per-column missing counts as values); the detect-and-drop guard remains in the pipeline and now protects user uploads.
 - **Honest evaluation** — the test set is sealed before any transform is fit and touched exactly once; all preprocessing statistics are train-only.
 - **Graceful failure** — off-schema uploads, single-class datasets, and tiny files each get a clear explanation, never a traceback. Branded 404/413/500 pages.
 - **Secure by construction** — ephemeral session keys, path containment on uploads, schema-validated uploads, security headers (`X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: strict-origin-when-cross-origin`), non-root container, strict pip-audit in CI.
@@ -104,24 +104,24 @@ A sequential boosting ensemble of shallow trees, where each new tree is fit to t
 
 | Stat | Value |
 |------|-------|
-| Raw shape | 50,001 rows × 31 columns |
-| Analysed records | 50,000 (one corrupt sentinel row dropped) |
+| Raw shape | 50,000 rows × 32 columns |
+| Analysed records | 50,000 (shipped clean — no sentinel row) |
 | Placed | 32,856 (65.7%) |
 | Not placed | 17,144 (34.3%) |
-| Field types | 23 numeric · 8 categorical |
-| Missing cells | 19,976 of 1,550,000 (98.7% complete) |
+| Field types | 24 numeric · 8 categorical |
+| Missing cells | 19,976 of 1,600,000 (98.8% complete) |
 | Anomaly rows | 1,750 (3.5%), retained deliberately |
 | CGPA quartiles | 25%: 6.04 · median: 7.25 · 75%: 8.48 |
 | Averages | attendance 76.7 · aptitude 68.9 |
 
-The 31 fields fall into six groups:
+The 32 fields fall into six groups:
 
 - **Identity** — StudentID
 - **Demographics** — Gender (M 30,133 / F 19,867), City (10 cities), CollegeTier (Tier1/2/3), Stream (6), Specialisation (4), Hostel (Y/N)
 - **Academic** — SGPA_Sem1–SGPA_Sem8, CGPA, AttendancePercent, HistoryOfBacklogs (Y/N), CGPA_Tier (Low/Mid/High)
 - **Experience** — Internships, Projects, Workshops, Certifications, Publications, ExtraCurricular (binary 0/1)
 - **Skill scores** — AptitudeTestScore, SoftSkillsRating, CodingTestScore, MockInterviewScore
-- **Outcome** — PlacementStatus (target, 0/1), IsAnomaly
+- **Outcome** — PlacementStatus (target, 0/1), IsAnomaly, Salary Package (LPA, 0 = not placed — an outcome column, not a model input)
 
 **Missing values** — exactly 5 columns carry missing data, 19,976 cells in total:
 
@@ -135,7 +135,7 @@ The 31 fields fall into six groups:
 
 EDA pages show full-dataset mean imputation; the model imputes all 12 features with training-split means only.
 
-**Sentinel-row disclosure.** The raw file contains one corrupt sentinel row (StudentID 0) holding per-column missing counts as values — impossible on every scale. It is detected, dropped, and disclosed in the UI before any analysis.
+**Sentinel-row guard.** Earlier revisions of the raw file carried one corrupt sentinel row (StudentID 0) holding per-column missing counts as values — impossible on every scale. The current revision ships clean; the detect-and-drop guard remains in the pipeline and still applies to user uploads.
 
 **Anomaly disclosure.** The 1,750 `IsAnomaly` records (3.5%) are *retained* deliberately: their placement rate (65.71%) matches the population, so they act as label-consistent noise rather than leakage. A deliberate, disclosed choice.
 
@@ -143,7 +143,7 @@ EDA pages show full-dataset mean imputation; the model imputes all 12 features w
 
 ```mermaid
 flowchart LR
-    A[50k placement dataset] --> B[Clean — drop sentinel row]
+    A[50k placement dataset] --> B[Clean — sentinel-row guard<br/>(uploads)]
     B --> C[Stratified 80/20 split · seed 42]
     C --> D[Fit on train only:<br/>mean imputation · scaler]
     D --> E[Train 3 candidates<br/>+ Platt calibration]
@@ -155,10 +155,10 @@ flowchart LR
 | # | Stage | What it shows |
 |---|-------|---------------|
 | 01 | Upload Dataset | Drag-and-drop CSV/Excel intake with instant profiling |
-| 02 | Analyse Features | Full 31-field registry: types, roles, coverage, samples (23 numeric / 8 categorical, 6 groups) |
-| 03 | Descriptive Statistics | Centre/spread/range for 20 numeric fields + by-outcome split of the 12 core factors |
+| 02 | Analyse Features | Full 32-field registry: types, roles, coverage, samples (24 numeric / 8 categorical, 6 groups) |
+| 03 | Descriptive Statistics | Centre/spread/range for 21 numeric fields + by-outcome split of the 12 core factors |
 | 04 | Missing Value Analysis | 19,976 missing cells across 5 columns, mean-imputed |
-| 05 | Data Visualization | Distributions, z-scores, 21×21 correlation heatmap, boxplots, category rates |
+| 05 | Data Visualization | Distributions, z-scores, 22×22 correlation heatmap, boxplots, category rates |
 | 06 | Preprocessing | Stratified 80/20 split (seed 42), frozen train-only transforms |
 | 07 | Model Training | Three candidates on one sealed split — drill into any model, benchmark any subset |
 | 08 | Model Evaluation | Sealed-test metrics, ROC + reliability curves, confusion matrix, importances |
@@ -183,7 +183,7 @@ Every number comes from the real training run — nothing is hardcoded.
 
 **Home page (`/`)** — eight stat cards, a placement-distribution donut, toggleable feature-distribution and placement-rate-by-feature charts, a 13×13 core correlation heatmap, auto-generated data insights, and the top-5 placement drivers.
 
-**`/visualize` page** — ten distribution histograms with smoothing, four z-score histograms, the full 21×21 correlation heatmap, an influence-on-outcome bar chart, nine SVG boxplots split by outcome, six categorical placement-rate charts, and a gender × outcome chart.
+**`/visualize` page** — ten distribution histograms with smoothing, four z-score histograms, the full 22×22 correlation heatmap, an influence-on-outcome bar chart, nine SVG boxplots split by outcome, six categorical placement-rate charts, and a gender × outcome chart.
 
 Chart.js 4.4.3 (jsDelivr CDN) renders the interactive charts; heatmaps, the confusion matrix, and boxplots are hand-rendered HTML/SVG — they work with JavaScript disabled.
 
@@ -261,7 +261,7 @@ python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\act
 pip install -r requirements.txt
 ```
 
-Dependencies: `flask>=3.1.3`, `jinja2>=3.1.6`, `werkzeug>=3.1.8`, `pandas>=2.0`, `scikit-learn>=1.4`, `openpyxl>=3.1`, `gunicorn>=21.2`.
+Dependencies: `flask>=3.1.3`, `jinja2>=3.1.6`, `werkzeug>=3.1.8`, `numpy>=1.26`, `pandas>=2.0`, `joblib>=1.2`, `scikit-learn>=1.4`, `openpyxl>=3.1`, `gunicorn>=21.2`.
 
 ## Environment Variables
 
@@ -336,8 +336,8 @@ curl -X POST https://placement-predict-p2z1.onrender.com/api/predict \
 
 # dataset overview: summary stats, auto-generated insights, chart payloads
 curl https://placement-predict-p2z1.onrender.com/api/dataset
-# → {"summary": {"total_records": 50000, "total_features": 31,
-#    "numerical_features": 23, "categorical_features": 8, "placed": 32856, ...},
+# → {"summary": {"total_records": 50000, "total_features": 32,
+#    "numerical_features": 24, "categorical_features": 8, "placed": 32856, ...},
 #    "insights": [...], "distributions": {...}, "rate_by_feature": {...},
 #    "correlation": {...}}   # 13×13 core matrix
 

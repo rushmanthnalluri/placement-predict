@@ -144,9 +144,9 @@ def save_artifact(path):
     candidate, so production never trains at request time. Used by
     train_artifact.py at image/deploy build time.
 
-    Layout (ARTIFACT_VERSION 2): the main artifact carries the bundle, the
-    impute means, and the fitted champion — small, so boot stays fast. Each
-    candidate additionally gets its own compressed file; a non-champion
+    Layout (since ARTIFACT_VERSION 2): the main artifact carries the bundle,
+    the impute means, and the fitted champion — small, so boot stays fast.
+    Each candidate additionally gets its own compressed file; a non-champion
     selection then loads on demand in about a second (the 150-tree forest
     shrinks ~5x under zlib) instead of retraining."""
     bundle = get_model_bundle(path)  # trains if needed; fills the fitted cache
@@ -155,8 +155,22 @@ def save_artifact(path):
     sha = _dataset_sha(path)
     with _cache_lock:
         fitted = _fitted_cache.get(_cache_key(path))
-    if fitted is None or len(fitted["models"]) != len(MODEL_REGISTRY):
-        raise RuntimeError("fitted cache incomplete after training")
+        if fitted is None:
+            raise RuntimeError("fitted cache incomplete after training")
+        # a bundle loaded from a current artifact leaves only the champion in
+        # the fitted cache — top up from the per-model artifacts (same recipe
+        # and content hash, so deterministic-identical) instead of failing,
+        # keeping a re-run of train_artifact.py idempotent
+        for key, spec in MODEL_REGISTRY.items():
+            if spec["name"] not in fitted["models"]:
+                payload = _load_model_artifact(path, key)
+                if payload is not None:
+                    fitted["models"][spec["name"]] = (
+                        payload["clf"], payload["scaler"],
+                    )
+                else:
+                    clf, scaler, _ = _train_single(path, spec["name"])
+                    fitted["models"][spec["name"]] = (clf, scaler)
     champion_name = fitted["champion"]
     champ_clf, champ_scaler = fitted["models"][champion_name]
     joblib.dump(
@@ -195,6 +209,8 @@ def _load_validated(ap, path):
     try:
         payload = joblib.load(ap)
     except Exception:  # noqa: BLE001 - a corrupt artifact just retrains
+        return None
+    if not isinstance(payload, dict):  # unpickled but not an artifact payload
         return None
     if payload.get("version") != ARTIFACT_VERSION:
         return None
@@ -305,11 +321,8 @@ def warm_status(path):
     precomputed artifact is on disk (loads in ~ms on first use)."""
     with _cache_lock:
         bundle = _bundle_cache.get(_cache_key(path))
-    artifact_ready = False
     if not bundle or not bundle.get("ok"):
-        ap = _artifact_path(path)
-        artifact_ready = os.path.exists(ap)
-    if not bundle or not bundle.get("ok"):
+        artifact_ready = os.path.exists(_artifact_path(path))
         return {"trained": False, "artifact_available": artifact_ready}
     return {
         "trained": True,
@@ -362,6 +375,18 @@ def _train_all_inner(path):
             "error": "The target column (PlacementStatus) has missing values — "
                      "every row needs a known 0/1 outcome before a model can "
                      "be trained.",
+        }
+    # exactly 0/1, before astype(int) below: floats like 0.5 would otherwise
+    # truncate silently and train on labels the file never had, and other
+    # label sets ({1, 2}, multiclass, text) only fail later with a raw
+    # sklearn error instead of a clear reason
+    target_ok = pd.api.types.is_numeric_dtype(df[TARGET]) and df[TARGET].isin([0, 1]).all()
+    if not target_ok:
+        return {
+            "schema_ok": True, "ok": False,
+            "error": "The target column (PlacementStatus) must be 0 or 1 on "
+                     "every row — 0 = not placed, 1 = placed. Other values "
+                     "can't train a binary placement model.",
         }
     text_cols = [c for c in FEATURES if not pd.api.types.is_numeric_dtype(df[c])]
     if text_cols:

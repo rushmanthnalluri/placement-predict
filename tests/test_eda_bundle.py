@@ -14,7 +14,7 @@ def bundle():
 def test_schema_and_row_counts(bundle):
     assert bundle["schema_ok"] is True
     assert bundle["n_rows"] == 50_000
-    assert bundle["dropped_rows"] == 1  # the StudentID-0 sentinel row
+    assert bundle["dropped_rows"] == 0  # no StudentID-0 sentinel row in this revision
 
 
 def test_missing_value_total(bundle):

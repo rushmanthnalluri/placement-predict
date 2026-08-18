@@ -79,11 +79,11 @@
         <span class="vs-name">{{ item.name }}</span>
         <div class="vs-bars">
           <div class="vs-bar-line">
-            <div class="vs-bar vs-bar-not" style="--w: {{ (item.not_placed / hi * 100) | round(1) }}%"></div>
+            <div class="vs-bar vs-bar-not" style="--w: {{ (item.not_placed / hi * 100) | round(1) if hi else 0 }}%"></div>
             <span class="vs-val">{{ item.not_placed }}</span>
           </div>
           <div class="vs-bar-line">
-            <div class="vs-bar vs-bar-placed" style="--w: {{ (item.placed / hi * 100) | round(1) }}%"></div>
+            <div class="vs-bar vs-bar-placed" style="--w: {{ (item.placed / hi * 100) | round(1) if hi else 0 }}%"></div>
             <span class="vs-val">{{ item.placed }}</span>
           </div>
         </div>

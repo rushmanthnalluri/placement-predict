@@ -56,7 +56,7 @@ def client(tmp_path):
 
 @pytest.fixture()
 def default_df():
-    """Raw bundled dataset, exactly as shipped (sentinel row included)."""
+    """Raw bundled dataset, exactly as shipped (no sentinel row in this revision)."""
     return pd.read_csv(DEFAULT_DATASET)
 
 

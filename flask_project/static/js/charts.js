@@ -502,8 +502,8 @@
         else if (kind === "influence" && EDA.influence) buildInfluence(canvas, EDA.influence);
         else if (kind === "cat" && EDA.categories) buildCategory(canvas, EDA.categories[key]);
         else if (kind === "gender" && EDA.gender_split) buildGender(canvas, EDA.gender_split);
-        else if (kind === "roc" && (EDA.models || EDA.roc)) buildRoc(canvas, EDA.models || EDA.roc);
-        else if (kind === "calibration" && (EDA.models || EDA.roc)) buildCalibration(canvas, EDA.models || EDA.roc);
+        else if (kind === "roc" && EDA.models) buildRoc(canvas, EDA.models);
+        else if (kind === "calibration" && EDA.models) buildCalibration(canvas, EDA.models);
         else if (kind === "importance" && EDA.importance) buildInfluence(canvas, EDA.importance, "mean decrease in impurity");
         else if (kind === "rocsel" || kind === "benchmark") {
           // model pages carry their payload in window.MODEL_PAGE

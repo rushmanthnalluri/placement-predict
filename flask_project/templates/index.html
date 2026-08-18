@@ -131,12 +131,12 @@
           <h3>Placement rate by feature</h3>
           <select class="chart-select" id="rateSelect" aria-label="Feature shown in the placement-rate chart">
             {% for col in bundle.rate_by_feature.keys() %}
-            <option value="{{ col }}" {{ 'selected' if col == 'CGPA' }}>{{ col }}</option>
+            <option value="{{ col }}" {{ 'selected' if loop.first }}>{{ col }}</option>
             {% endfor %}
           </select>
         </div>
         <div class="chart-wrap">
-          <canvas id="rateChart" data-chart="ratefeat" data-key="CGPA" role="img"
+          <canvas id="rateChart" data-chart="ratefeat" data-key="{{ bundle.rate_by_feature.keys() | first }}" role="img"
                   aria-label="Bar chart of placement rate per band of the selected feature"></canvas>
         </div>
       </div>
@@ -167,7 +167,7 @@
             <span>+1</span>
           </div>
         </div>
-        <p class="note">The full 21-field matrix (including semester SGPAs) is on the
+        <p class="note">The full 22-field matrix (including semester SGPAs) is on the
           <a href="{{ url_for('visualize_data') }}">Data Visualization</a> page.</p>
       </div>
     </div>

@@ -37,7 +37,7 @@ def test_predict_valid_profile_renders_verdict(client, model_bundle):
 @pytest.mark.slow
 def test_predict_out_of_range_flagged(client, model_bundle):
     data = _profile(model_bundle, "default")
-    data["CGPA"] = "999"  # observed CGPA range is 0-10
+    data["CGPA"] = "999"  # observed CGPA range is 4-10
     resp = client.post("/predict", data=data)
     body = resp.get_data(as_text=True)
     assert resp.status_code == 200

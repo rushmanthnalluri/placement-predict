@@ -29,11 +29,13 @@ consequential decision about a real person.**
 
 ## Training data
 
-- Synthetic 50,000-record dataset (31 fields) modelled on Indian
-  engineering-college placement data; bundled at
-  `flask_project/data/placement_predict_50k.csv`.
-- Cleaning: the corrupt sentinel row (StudentID 0 — its values are the
-  per-column missing counts) is dropped → 50,000 usable records.
+- Synthetic 50,000-record dataset (32 fields, including the `Salary Package`
+  outcome column) modelled on Indian engineering-college placement data;
+  bundled at `flask_project/data/placement_predict_50k.csv`.
+- Cleaning: the current revision ships clean — no sentinel row, so all 50,000
+  records are usable. (Earlier revisions carried a corrupt sentinel row,
+  StudentID 0, holding the per-column missing counts as values; the
+  detect-and-drop guard is retained for user uploads.)
 - The 1,750 records flagged `IsAnomaly` are **retained deliberately**: their
   placement rate matches the population (65.71%) and they act as
   label-consistent noise. Disclosed, not silent.
@@ -49,8 +51,9 @@ Publications, AptitudeTestScore, SoftSkillsRating, CodingTestScore,
 MockInterviewScore, ExtraCurricular. Target: `PlacementStatus` (1 = placed).
 
 **Excluded deliberately:** StudentID (identifier), IsAnomaly (quality flag),
-CGPA_Tier (noisy CGPA proxy — no added signal), SGPA_Sem1–8 (subsumed by CGPA),
-and all demographics (Gender, CollegeTier, Stream, …) from the headline model.
+Salary Package (outcome column — leakage, not a predictor), CGPA_Tier (noisy
+CGPA proxy — no added signal), SGPA_Sem1–8 (subsumed by CGPA), and all
+demographics (Gender, CollegeTier, Stream, …) from the headline model.
 
 ## Evaluation
 
@@ -87,7 +90,7 @@ MockInterviewScore, then the skill-score cluster.
   any individual.
 - **No fairness audit on outcomes.** Demographics are excluded from the
   feature set, but proxy bias via CGPA/skills is possible; no group metrics
-  are computed in v1.
+  are computed in v2.
 - **Fixed threshold (0.5).** No cost-sensitive tuning is applied.
 
 ## Reproducibility

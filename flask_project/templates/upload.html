@@ -55,8 +55,8 @@
           <span class="metric-label">Missing values</span>
         </div>
       </div>
-      {% if is_default %}
-      <p class="note note-offset">Raw file counts — one corrupt record is removed in the analysis stages.</p>
+      {% if is_default and preview.corrupt_rows %}
+      <p class="note note-offset">Raw file counts — {{ preview.corrupt_rows }} corrupt record{{ 's' if preview.corrupt_rows != 1 }} removed in the analysis stages.</p>
       {% endif %}
 
       <div class="section-head">

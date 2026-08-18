@@ -16,3 +16,10 @@ eda.ipynb
 
 # The bundled xlsx is never read by code (the CSV twin is the runtime source)
 **/*.xlsx
+
+# Local secrets must never be baked into an image
+**/.env
+
+# Locally trained artifacts (gitignored too): train_artifact.py rebuilds them
+# during the image build, so a stale local copy must not enter the context
+flask_project/data/model_artifact*.joblib

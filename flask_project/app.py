@@ -3,7 +3,6 @@ import secrets
 import threading
 from uuid import uuid4
 
-import pandas as pd
 from flask import Flask, jsonify, redirect, render_template, request, session, url_for
 from werkzeug.exceptions import HTTPException
 from werkzeug.utils import secure_filename
@@ -134,7 +133,7 @@ PIPELINE_STEPS = [
         "endpoint": "descriptive_statistics",
         "eyebrow": "Stage 03 · Records",
         "live": True,
-        "note": "Mean, median, spread, and range across twenty numeric "
+        "note": "Mean, median, spread, and range across twenty-one numeric "
         "fields, then split by placement outcome.",
     },
     {
@@ -269,9 +268,9 @@ def _allowed_file(filename):
 
 
 def _read_dataset(filepath):
-    if filepath.lower().endswith(".csv"):
-        return pd.read_csv(filepath)
-    return pd.read_excel(filepath)
+    # the shared loader caches by path+mtime+size, so revisiting the upload
+    # page doesn't re-parse the same file from disk on every request
+    return eda.load_dataframe(filepath)
 
 
 def _build_preview(df, max_rows=MAX_PREVIEW_ROWS):
@@ -283,6 +282,10 @@ def _build_preview(df, max_rows=MAX_PREVIEW_ROWS):
         "rows": int(df.shape[0]),
         "columns": int(df.shape[1]),
         "missing_total": int(df.isna().sum().sum()),
+        # corrupt sentinel records (StudentID 0) the analysis stages drop
+        "corrupt_rows": (
+            int((df["StudentID"] == 0).sum()) if "StudentID" in df.columns else 0
+        ),
         "column_names": list(df.columns),
         "head": preview_df.to_dict(orient="records"),
         "dtypes": [{"name": col, "dtype": str(df[col].dtype)} for col in df.columns],
@@ -395,10 +398,23 @@ def upload_dataset():
             error = "Only .csv or .xlsx files are accepted."
         else:
             display_name = uploaded_file.filename
+            ext = display_name.rsplit(".", 1)[1].lower()  # whitelisted above
+            safe_name = secure_filename(display_name)
+            # secure_filename can eat the whole base name (".csv" or an
+            # all-non-ASCII name both become "csv"); without the extension
+            # the stored file would be re-read with the wrong parser.
+            if not safe_name.lower().endswith("." + ext):
+                safe_name = (safe_name or "dataset") + "." + ext
+            # Filesystems cap a name component (255 bytes on most) — an
+            # over-long original name would make save() raise below. The
+            # stored name is internal only, so keep just its tail with the
+            # extension intact (secure_filename is ASCII, so this can't
+            # split a multibyte character).
+            safe_name = safe_name[-120:]
             # Namespace the stored file per upload so concurrent sessions
             # can't clobber each other's dataset; the original name is
             # kept only for display.
-            stored_name = f"{uuid4().hex[:8]}_{secure_filename(display_name)}"
+            stored_name = f"{uuid4().hex[:8]}_{safe_name}"
             filepath = os.path.join(app.config["UPLOAD_FOLDER"], stored_name)
             uploaded_file.save(filepath)
 
@@ -416,9 +432,19 @@ def upload_dataset():
                     error = ("That file is missing required columns: "
                              + ", ".join(missing) + ".")
                 else:
+                    previous = session.get("dataset_file")
                     session["dataset_file"] = stored_name
                     session["dataset_name"] = display_name
                     preview = _build_preview(df)
+                    # the replaced upload would otherwise sit on disk until
+                    # the next restart's _clean_uploads sweep
+                    if previous and previous != stored_name:
+                        old_path = _dataset_path(previous)
+                        if old_path and os.path.exists(old_path):
+                            try:
+                                os.remove(old_path)
+                            except OSError:
+                                pass
 
     # No fresh upload this request - if one is already on file, show it
     # (even alongside an error, so the active dataset stays visible).
@@ -764,7 +790,13 @@ def api_predict():
             "detail": mb.get("error"),
         }), 503
 
-    payload = request.get_json(silent=True) or {}
+    payload = request.get_json(silent=True)
+    if payload is None:
+        # an unparseable body must not silently become an all-median input
+        # (an empty body or a JSON null still means "all defaults")
+        if request.data and request.data.strip() != b"null":
+            return jsonify({"error": "Request body is not valid JSON."}), 400
+        payload = {}
     if not isinstance(payload, dict):
         return jsonify({"error": "JSON body must be an object of feature values."}), 400
 
@@ -829,6 +861,9 @@ def api_benchmark():
     if request.is_json:
         payload = request.get_json(silent=True)
         if payload is None:
+            # an unparseable body must not silently benchmark everything
+            if request.data and request.data.strip() != b"null":
+                return jsonify({"error": "Request body is not valid JSON."}), 400
             payload = {}
         if not isinstance(payload, dict):
             return jsonify({

@@ -1,6 +1,6 @@
 """Champion-model sanity on the bundled dataset + degenerate-upload handling.
 
-The four bundle tests share one module-scoped training run (~20s, marked
+The bundle tests share one module-scoped training run (~20s, marked
 slow). The degenerate-upload tests fail before any fitting, so they stay
 in the fast subset.
 """

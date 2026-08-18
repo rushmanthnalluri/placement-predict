@@ -84,6 +84,7 @@ COLUMN_META = {
     "CodingTestScore": ("Skill scores", "feature", "coding test, 0–100 — has missing values"),
     "MockInterviewScore": ("Skill scores", "feature", "mock interview, 0–100 — has missing values"),
     "PlacementStatus": ("Outcome", "target", "1 = Placed, 0 = Not placed"),
+    "Salary Package": ("Outcome", "outcome", "offered package, LPA — 0 = not placed; outcome, not a model input"),
     "IsAnomaly": ("Outcome", "flag", "1 marks synthetic / anomalous records"),
 }
 
@@ -170,15 +171,22 @@ def _histogram(series, max_bins=24):
         edges = np.linspace(lo, hi, max_bins + 1)
     counts, edges = np.histogram(s, bins=edges)
     counts = counts.astype(float)
-    # lightly smoothed overlay line, like the KDE in the notebook
-    smooth = np.convolve(counts, [0.25, 0.5, 0.25], mode="same")
+    # lightly smoothed overlay line, like the KDE in the notebook — the
+    # centred window of the full convolution (mode="same" would pad the
+    # output to length 3 when fewer than 3 bins exist, breaking the
+    # labels/counts/smooth alignment the charts rely on)
+    full = np.convolve(counts, [0.25, 0.5, 0.25], mode="full")
+    start = (len(full) - len(counts)) // 2
+    smooth = full[start : start + len(counts)]
     labels = [f"{_f(edges[k], 1)}–{_f(edges[k + 1], 1)}" for k in range(len(counts))]
     return {
         "labels": labels,
         "counts": [int(c) for c in counts],
         "smooth": [_f(v, 1) for v in smooth],
         "mean": _f(s.mean()),
-        "std": _f(s.std()),
+        # std needs 2+ values (ddof=1) — a single-value histogram reports 0,
+        # like the empty case above, rather than leaking NaN into the page
+        "std": _f(s.std()) if len(s) > 1 else 0,
         "min": _f(lo),
         "max": _f(hi),
     }
@@ -252,7 +260,10 @@ def _rate_bands(dfi, col):
     lo, hi = float(s.min()), float(s.max())
     edges = np.linspace(lo, hi, 9)
     band = pd.cut(s, bins=edges, include_lowest=True)
-    grp = dfi.groupby(band, observed=True)[TARGET].agg(["count", "mean"])
+    # observed=False keeps all 8 bands in the result so empty ones surface
+    # as count 0 / rate None; observed=True would drop them and leave the
+    # rates/counts lists shorter than the 8 labels
+    grp = dfi.groupby(band, observed=False)[TARGET].agg(["count", "mean"])
     rates = []
     for _, row in grp.iterrows():
         rates.append(None if row["count"] == 0 else _f(row["mean"] * 100, 1))
@@ -285,9 +296,10 @@ def _build_bundle(df):
     if not schema_ok(df):
         return {"schema_ok": False}
 
-    # The bundled file ships one corrupt sentinel row (StudentID 0) whose
-    # values are the per-column missing counts — impossible on every scale
-    # (e.g. Workshops = 4488 on a 0-4 scale). Drop it before any analysis.
+    # Older revisions of the bundled file shipped one corrupt sentinel row
+    # (StudentID 0) whose values were the per-column missing counts —
+    # impossible on every scale (e.g. Workshops = 4488 on a 0-4 scale).
+    # Drop it before any analysis when present.
     dropped_rows = 0
     if "StudentID" in df.columns:
         dropped_rows = _i((df["StudentID"] == 0).sum())
@@ -362,7 +374,9 @@ def _build_bundle(df):
         col: {
             "count": _i(desc.loc["count", col]),
             "mean": _f(desc.loc["mean", col]),
-            "std": _f(desc.loc["std", col]),
+            # std is undefined for a single row — report 0 rather than NaN,
+            # which the template would print as the text "nan"
+            "std": 0 if pd.isna(desc.loc["std", col]) else _f(desc.loc["std", col]),
             "min": _f(desc.loc["min", col]),
             "25%": _f(desc.loc["25%", col]),
             "50%": _f(desc.loc["50%", col]),
@@ -397,7 +411,10 @@ def _build_bundle(df):
     affected = missing_counts[missing_counts > 0]
     affected_rows = []
     for col in affected.index:
-        mean = df[col].mean()
+        # .mean() only exists for numeric columns — a string column with
+        # gaps (e.g. Gender in an upload) has no mean to impute with, and
+        # asking for one raises under pandas 3
+        mean = df[col].mean() if pd.api.types.is_numeric_dtype(df[col]) else None
         affected_rows.append({
             "name": col,
             "count": _i(affected[col]),
@@ -432,8 +449,10 @@ def _build_bundle(df):
             continue
         z = (dfi[col] - dfi[col].mean()) / dfi[col].std()
         standardized[col] = _histogram(z)
-        standardized[col]["mean"] = _f(z.mean(), 3)
-        standardized[col]["std"] = _f(z.std(), 3)
+        # a constant column has no spread: z comes out all-NaN — report 0
+        # rather than leaking NaN into the JSON the charts consume
+        standardized[col]["mean"] = 0 if pd.isna(z.mean()) else _f(z.mean(), 3)
+        standardized[col]["std"] = 0 if pd.isna(z.std()) else _f(z.std(), 3)
     bundle["standardized"] = standardized
 
     # -- correlation heatmap ----------------------------------------------------

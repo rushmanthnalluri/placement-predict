@@ -58,7 +58,7 @@ def test_evaluate_shows_calibration(client):
 
 def test_home_shows_default_overview(client):
     body = client.get("/").get_data(as_text=True)
-    assert "50,000" in body          # usable records after the sentinel drop
+    assert "50,000" in body          # bundled cohort record count
     assert "65.7" in body            # placement rate, percent
     assert "placement_predict_50k.csv" in body
 

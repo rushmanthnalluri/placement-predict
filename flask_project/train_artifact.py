@@ -4,8 +4,10 @@ Run at image/deploy build time so production never trains at request time:
 
     python flask_project/train_artifact.py
 
-Writes flask_project/data/model_artifact.joblib, which model.get_model_bundle
-loads after validating the recipe version and the dataset's content hash.
+Writes flask_project/data/model_artifact.joblib (bundle + champion), plus one
+model_artifact_<key>.joblib per candidate for on-demand non-champion loads.
+model.get_model_bundle loads them after validating the recipe version and the
+dataset's content hash.
 """
 
 import os
@@ -17,6 +19,17 @@ DATA = os.path.join(
 )
 
 if __name__ == "__main__":
+    # Remove existing artifacts first: with a valid artifact on disk (e.g. the
+    # committed one, which the Docker build context copies into the image),
+    # get_model_bundle loads it instead of training, so the fitted cache holds
+    # only the champion and save_artifact's completeness guard fails. The
+    # artifacts are build outputs — the point of this script is a fresh train.
+    stale = [model._artifact_path(DATA)] + [
+        model._model_artifact_path(DATA, key) for key in model.MODEL_KEYS
+    ]
+    for path in stale:
+        if os.path.exists(path):
+            os.remove(path)
     model.save_artifact(DATA)
     total = os.path.getsize(model._artifact_path(DATA))
     for key in model.MODEL_KEYS:
