@@ -51,7 +51,8 @@ Publications, AptitudeTestScore, SoftSkillsRating, CodingTestScore,
 MockInterviewScore, ExtraCurricular. Target: `PlacementStatus` (1 = placed).
 
 **Excluded deliberately:** StudentID (identifier), IsAnomaly (quality flag),
-Salary Package (outcome column — leakage, not a predictor), CGPA_Tier (noisy
+Salary Package (outcome column — leakage, not a predictor; it is only the
+salary regressor's target, never a classifier input), CGPA_Tier (noisy
 CGPA proxy — no added signal), SGPA_Sem1–8 (subsumed by CGPA), and all
 demographics (Gender, CollegeTier, Stream, …) from the headline model.
 
@@ -75,6 +76,19 @@ FN 339 · TN 2,854.
 
 Top drivers (RF importance / target correlation agree at the top): CGPA,
 MockInterviewScore, then the skill-score cluster.
+
+## Salary regressor
+
+- **Model:** `HistGradientBoostingRegressor` (default depth, lr 0.1, seed 42),
+  served alongside the classifier to estimate the offered package (LPA).
+- **Training data:** the placed rows of the same sealed split only — 26,285
+  training / 6,571 test rows. Salary is an outcome of placement, so
+  not-placed rows (0 LPA) never enter training, and the column is never a
+  classifier input.
+- **Sealed-test metrics:** MAE 0.67 LPA, R² 0.9593.
+- **Served as:** the conditional package if placed (`salary_package_lpa`) and
+  the placement-probability-weighted expectation (`expected_package_lpa`),
+  on the predict page and in `/api/predict`.
 
 ## Limitations
 

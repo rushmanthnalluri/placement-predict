@@ -27,13 +27,13 @@
     <div class="section-head">
       <h2 class="section-title">All numeric fields — centre, spread, and range</h2>
     </div>
-    <div class="table-scroll scroll-68">
+    <div class="table-scroll scroll-68" tabindex="0">
       <table class="table table-sticky">
         <thead>
           <tr>
-            <th class="sticky-col">Field</th>
+            <th scope="col" class="sticky-col">Field</th>
             {% for stat in bundle.descriptive.stats %}
-            <th>{{ stat }}</th>
+            <th scope="col">{{ stat }}</th>
             {% endfor %}
           </tr>
         </thead>
@@ -78,11 +78,11 @@
       <div class="vs-row">
         <span class="vs-name">{{ item.name }}</span>
         <div class="vs-bars">
-          <div class="vs-bar-line">
+          <div class="vs-bar-line" role="img" aria-label="Not placed: mean {{ item.not_placed }}">
             <div class="vs-bar vs-bar-not" style="--w: {{ (item.not_placed / hi * 100) | round(1) if hi else 0 }}%"></div>
             <span class="vs-val">{{ item.not_placed }}</span>
           </div>
-          <div class="vs-bar-line">
+          <div class="vs-bar-line" role="img" aria-label="Placed: mean {{ item.placed }}">
             <div class="vs-bar vs-bar-placed" style="--w: {{ (item.placed / hi * 100) | round(1) if hi else 0 }}%"></div>
             <span class="vs-val">{{ item.placed }}</span>
           </div>

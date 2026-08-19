@@ -1,6 +1,7 @@
 import os
 import secrets
 import threading
+import zipfile
 from uuid import uuid4
 
 from flask import Flask, jsonify, redirect, render_template, request, session, url_for
@@ -268,6 +269,13 @@ def _allowed_file(filename):
 
 
 def _read_dataset(filepath):
+    if filepath.lower().endswith(".xlsx"):
+        # an xlsx is a zip: the 10 MB upload cap limits the *compressed*
+        # size, but a hostile file can inflate to hundreds of MB of sheet
+        # XML in RAM — reject by uncompressed size before pandas opens it
+        with zipfile.ZipFile(filepath) as zf:
+            if sum(i.file_size for i in zf.infolist()) > 100 * 1024 * 1024:
+                raise ValueError("Excel file expands too large when opened")
     # the shared loader caches by path+mtime+size, so revisiting the upload
     # page doesn't re-parse the same file from disk on every request
     return eda.load_dataframe(filepath)
@@ -397,7 +405,10 @@ def upload_dataset():
         elif not _allowed_file(uploaded_file.filename):
             error = "Only .csv or .xlsx files are accepted."
         else:
-            display_name = uploaded_file.filename
+            # the display name rides in the 4 KB signed session cookie —
+            # keep just the tail of an extreme name so the cookie (and the
+            # user's just-uploaded dataset) isn't silently dropped
+            display_name = uploaded_file.filename[-120:]
             ext = display_name.rsplit(".", 1)[1].lower()  # whitelisted above
             safe_name = secure_filename(display_name)
             # secure_filename can eat the whole base name (".csv" or an
@@ -534,7 +545,7 @@ def _model_stage_view(step_id, template):
         try:
             model_bundle = model.get_model_bundle(path)
         except Exception as exc:  # noqa: BLE001 - never 500 a stage page
-            model_bundle = {"schema_ok": True, "ok": False, "error": str(exc)}
+            model_bundle = {"schema_ok": True, "ok": False, "error": "Training failed on this dataset."}
     return render_template(
         template,
         step=step,
@@ -564,7 +575,7 @@ def train_model():
         try:
             mb = model.get_model_bundle(path)
         except Exception as exc:  # noqa: BLE001 - never 500 a stage page
-            mb = {"schema_ok": True, "ok": False, "error": str(exc)}
+            mb = {"schema_ok": True, "ok": False, "error": "Training failed on this dataset."}
 
     # single-model drill-down: /train?model=random_forest — an unknown key
     # renders the page with a notice instead of a 404 (the URL is user-facing)
@@ -630,6 +641,16 @@ def _prediction_note(placed, probability_pct, model_name, roc_auc):
             "50% threshold are genuinely uncertain calls.")
 
 
+def _conditional_salary(path, values):
+    """Expected package (LPA) if placed, from the salary regressor — None
+    when the active dataset has no salary model (e.g. an upload without the
+    salary column), so the result simply omits the package line."""
+    try:
+        return model.predict_salary(path, values)
+    except RuntimeError:
+        return None
+
+
 @app.route("/predict", methods=["GET", "POST"])
 def predict_placement():
     step = _find_step("predict")
@@ -642,7 +663,7 @@ def predict_placement():
         try:
             mb = model.get_model_bundle(path)
         except Exception as exc:  # noqa: BLE001 - never 500 the page
-            mb = {"schema_ok": True, "ok": False, "error": str(exc)}
+            mb = {"schema_ok": True, "ok": False, "error": "Training failed on this dataset."}
     model_ready = bool(mb and mb.get("ok"))
 
     result = None
@@ -681,6 +702,7 @@ def predict_placement():
             )
             placed = proba >= 0.5
             probability = round(proba * 100, 1)
+            conditional = _conditional_salary(path, values)
             result = {
                 "placed": placed,
                 "probability": probability,
@@ -689,6 +711,13 @@ def predict_placement():
                 "roc_auc": roc_auc,
                 "explanation": _prediction_note(placed, probability, chosen, roc_auc),
                 "values": values,
+                "salary_package_lpa": (
+                    round(conditional, 1) if conditional is not None else None
+                ),
+                "expected_package_lpa": (
+                    round(proba * conditional, 1)
+                    if conditional is not None else None
+                ),
             }
 
     return render_template(
@@ -783,7 +812,7 @@ def api_predict():
     try:
         mb = model.get_model_bundle(path)
     except Exception as exc:  # noqa: BLE001
-        mb = {"ok": False, "error": str(exc)}
+        mb = {"ok": False, "error": "Training failed on this dataset."}
     if not mb.get("ok"):
         return jsonify({
             "error": "No trained model available for the active dataset.",
@@ -836,6 +865,7 @@ def api_predict():
         return jsonify({"error": "Validation failed", "details": errors}), 400
 
     proba = model.predict(path, values, chosen)
+    conditional = _conditional_salary(path, values)
     return jsonify({
         "placed": proba >= 0.5,
         "probability": round(proba * 100, 1),
@@ -843,6 +873,12 @@ def api_predict():
         "model": chosen,
         "model_key": chosen_key,
         "roc_auc": next(m["metrics"]["roc_auc"] for m in mb["models"] if m["name"] == chosen),
+        "salary_package_lpa": (
+            round(conditional, 1) if conditional is not None else None
+        ),
+        "expected_package_lpa": (
+            round(proba * conditional, 1) if conditional is not None else None
+        ),
         "dataset": dataset_name,
     })
 

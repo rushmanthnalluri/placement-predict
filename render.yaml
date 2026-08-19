@@ -9,3 +9,6 @@ services:
     envVars:
       - key: SECRET_KEY
         generateValue: true
+      # Render serves https (http redirects), so mark session cookies Secure
+      - key: SESSION_COOKIE_SECURE
+        value: "1"

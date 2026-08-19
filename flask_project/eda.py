@@ -235,9 +235,15 @@ def _heat_matrix(corr, cols):
         for c in cols:
             v = corr.loc[r, c]
             v = None if pd.isna(v) else _f(v)
-            # ink text once the amber fill is bright enough to carry it
-            strong = v is not None and (max(0.0, min(1.0, v)) ** 0.7) >= 0.45
-            row.append({"v": v, "color": _heat_color(v), "strong": strong})
+            # WCAG-AA text on the amber ramp (measured against the blended
+            # fill): muted text passes up to t 0.181, ink only from t 0.663 —
+            # in between neither passes, so the value hides (the title
+            # tooltip still carries it) instead of rendering unreadably
+            t = (max(0.0, min(1.0, v)) ** 0.7) if v is not None else None
+            strong = t is not None and t >= 0.663
+            show = t is not None and (t <= 0.181 or t >= 0.663)
+            row.append({"v": v, "color": _heat_color(v), "strong": strong,
+                        "show": show})
         matrix.append(row)
     return matrix
 

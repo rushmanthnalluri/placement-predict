@@ -45,7 +45,7 @@
 
     <div class="chart-card mt-36">
       <div class="chart-card-head">
-        <h3>Missing values per column</h3>
+        <h2>Missing values per column</h2>
         <span class="chart-tag">raw file · cells</span>
       </div>
       <div class="chart-wrap chart-wrap-tall">
@@ -63,15 +63,15 @@
     </div>
     <p class="section-sub">Following the notebook, each gap is filled with the column's mean.
       Every chart downstream is computed on the repaired frame.</p>
-    <div class="table-scroll">
+    <div class="table-scroll" tabindex="0">
       <table class="table">
         <thead>
           <tr>
-            <th>Column</th>
-            <th>Missing</th>
-            <th>% of rows</th>
-            <th>Imputed mean</th>
-            <th>Coverage</th>
+            <th scope="col">Column</th>
+            <th scope="col">Missing</th>
+            <th scope="col">% of rows</th>
+            <th scope="col">Imputed mean</th>
+            <th scope="col">Coverage</th>
           </tr>
         </thead>
         <tbody>

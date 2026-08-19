@@ -157,6 +157,43 @@ def test_predict_accepts_keys_and_best_aliases(model_bundle):
 
 
 @pytest.mark.slow
+def test_salary_model_in_bundle(model_bundle):
+    sm = model_bundle["salary_model"]
+    assert sm["name"] == "Gradient Boosting Regressor"
+    assert sm["task"] == "regression · placed students only"
+    assert 0 < sm["mae"] < 5
+    assert sm["r2"] > 0
+    # trained and evaluated on placed rows of the same sealed split only
+    assert sm["train_rows"] < model_bundle["split"]["train"]
+    assert sm["test_rows"] < model_bundle["split"]["test"]
+    assert sm["train_rows"] > 20_000  # ~65.7% of the 40k training rows
+
+
+@pytest.mark.slow
+def test_predict_salary_sane(model_bundle):
+    values = {m["name"]: m["default"] for m in model_bundle["form_meta"]}
+    sal = model.predict_salary(app_module.DEFAULT_DATASET, values)
+    # observed placed packages span 3–26 LPA; a tree prediction stays nearby
+    assert 0.0 < sal < 30.0
+    # never negative, even for the weakest profile
+    weak = {c: 0.0 for c in model.FEATURES}
+    assert model.predict_salary(app_module.DEFAULT_DATASET, weak) >= 0.0
+
+
+def test_predict_salary_unavailable_without_column(tmp_path, default_df):
+    """An upload without the salary column still trains the classifiers, but
+    has no salary model — predict_salary refuses like predict() does with no
+    model, instead of inventing a number."""
+    df = default_df.head(300).drop(columns=["Salary Package"])
+    path = str(make_csv(tmp_path, df, "no_salary.csv"))
+    bundle = model.get_model_bundle(path)
+    assert bundle["ok"] is True
+    assert bundle["salary_model"] is None
+    with pytest.raises(RuntimeError):
+        model.predict_salary(path, {"CGPA": 8.0})
+
+
+@pytest.mark.slow
 def test_train_single_resolves_registry_keys():
     """The solo re-fit path resolves the same selectors as the full run."""
     clf, scaler, means = model._train_single(

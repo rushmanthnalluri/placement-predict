@@ -9,6 +9,11 @@ the prediction form can each work with any selected model — never a
 hardcoded one. Served probabilities are Platt-calibrated (sigmoid, 3-fold
 out-of-fold within the training split), so a predicted 80% means ~80%.
 
+Alongside the classifiers, a gradient-boosting regressor predicts the salary
+package (LPA) — trained only on the placed rows of the same sealed split
+(salary is an outcome of placement, never a classifier input, and not-placed
+rows never enter its training data).
+
 Mirrors the workbook discipline: impute with training means, standardise for
 the linear model, trees on raw features, assess once on the sealed test set.
 """
@@ -25,11 +30,15 @@ import numpy as np
 import pandas as pd
 from sklearn.base import clone
 from sklearn.calibration import CalibratedClassifierCV, calibration_curve
-from sklearn.ensemble import HistGradientBoostingClassifier, RandomForestClassifier
+from sklearn.ensemble import (
+    HistGradientBoostingClassifier, HistGradientBoostingRegressor,
+    RandomForestClassifier,
+)
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import (
     accuracy_score, brier_score_loss, confusion_matrix, f1_score, log_loss,
-    precision_score, recall_score, roc_auc_score, roc_curve,
+    mean_absolute_error, precision_score, r2_score, recall_score,
+    roc_auc_score, roc_curve,
 )
 from sklearn.model_selection import StratifiedKFold, cross_val_score, train_test_split
 from sklearn.pipeline import make_pipeline
@@ -43,6 +52,9 @@ FEATURES = [
     "CodingTestScore", "MockInterviewScore", "ExtraCurricular",
 ]
 TARGET = "PlacementStatus"
+# Outcome column the salary regressor learns (LPA) — never a classifier
+# input, and absent from REQUIRED_COLS, so uploads may not carry it.
+SALARY_TARGET = "Salary Package"
 SEED = 42
 # Champion selection runs 3-fold CV on a stratified subsample of the training
 # split — statistically identical ranking, a fraction of the cost, so a cold
@@ -111,16 +123,18 @@ def is_best_alias(raw):
 _CACHE_MAX = 2  # the bundled dataset plus one upload, without retraining on every switch
 _bundle_cache = OrderedDict()
 # cache_key -> {"champion": name, "models": {name: (clf, scaler_or_None)},
-#               "impute_means": pd.Series} — every candidate stays available
-# for model-selected prediction, not just the champion
+#               "salary_reg": regressor_or_None, "impute_means": pd.Series}
+# — every candidate stays available for model-selected prediction, not just
+# the champion
 _fitted_cache = OrderedDict()
 _cache_lock = threading.Lock()
 
 # Bump whenever the training recipe or artifact layout changes — stale
 # artifacts are ignored. v2: per-model artifact files sit next to the main
 # bundle+champion artifact, so non-champion selections load in ~1 s instead
-# of retraining. v3: served models are Platt-calibrated.
-ARTIFACT_VERSION = 3
+# of retraining. v3: served models are Platt-calibrated. v4: the main
+# artifact also carries the fitted salary regressor.
+ARTIFACT_VERSION = 4
 
 
 def _dataset_sha(path):
@@ -148,7 +162,8 @@ def save_artifact(path):
     the impute means, and the fitted champion — small, so boot stays fast.
     Each candidate additionally gets its own compressed file; a non-champion
     selection then loads on demand in about a second (the 150-tree forest
-    shrinks ~5x under zlib) instead of retraining."""
+    shrinks ~5x under zlib) instead of retraining. Since v4 the main
+    artifact also carries the fitted salary regressor."""
     bundle = get_model_bundle(path)  # trains if needed; fills the fitted cache
     if not bundle.get("ok"):
         raise RuntimeError(f"cannot build artifact: {bundle.get('error')}")
@@ -181,6 +196,7 @@ def save_artifact(path):
             "champion_name": champion_name,
             "champion": champ_clf,
             "scaler": champ_scaler,
+            "salary_reg": fitted.get("salary_reg"),
             "impute_means": fitted["impute_means"],
         },
         _artifact_path(path),
@@ -256,6 +272,7 @@ def get_model_bundle(path):
                             payload["champion"], payload["scaler"],
                         ),
                     },
+                    "salary_reg": payload.get("salary_reg"),
                     "impute_means": payload["impute_means"],
                 }
             else:
@@ -346,10 +363,13 @@ def _subsample_curve(fpr, tpr, points=80):
 def _train_all(path):
     try:
         return _train_all_inner(path)
-    except Exception as exc:  # noqa: BLE001 - surface training failures as a page, not a 500
+    except Exception:  # noqa: BLE001 - surface training failures as a page, not a 500
+        # deliberately generic: the checks above give designed reasons for
+        # every known degenerate case, and raw library error text can leak
+        # internals into pages and API payloads
         return {
             "schema_ok": True, "ok": False,
-            "error": f"Training failed on this dataset: {exc}",
+            "error": "Training failed on this dataset.",
         }
 
 
@@ -395,6 +415,18 @@ def _train_all_inner(path):
             "error": "Feature columns must be numeric — "
                      f"{', '.join(text_cols)} arrived as text. Check the file "
                      "for stray headers or formatting and try again.",
+        }
+    # an all-NaN feature has no training mean to impute with — without this
+    # guard the fit dies deep in sklearn with a raw internal error
+    empty_cols = [c for c in FEATURES if df[c].isna().all()]
+    if empty_cols:
+        plural = len(empty_cols) > 1
+        return {
+            "schema_ok": True, "ok": False,
+            "error": f"Feature column{'s' if plural else ''} "
+                     f"{', '.join(empty_cols)} {'are' if plural else 'is'} "
+                     "completely empty — there are no values to impute or "
+                     "train on. Fill or drop the column and try again.",
         }
 
     X = df[FEATURES].copy()
@@ -571,6 +603,46 @@ def _fit_and_evaluate(path, df, X, y):
     best = max(models, key=lambda m: m["cv_auc_mean"])
     best_name = best["name"]
 
+    # Salary regressor: HistGradientBoostingRegressor on the placed rows of
+    # the same sealed split (raw imputed features — trees need no scaling).
+    # Salary is an outcome of placement, so not-placed rows (0 LPA) never
+    # enter training, and the column is never a classifier input. Skipped
+    # silently for uploads that don't carry the column, and any salary-only
+    # failure degrades to "no salary model" — it must never take the
+    # classifiers down with it.
+    salary_reg = None
+    salary_entry = None
+    if SALARY_TARGET in df.columns:
+        # non-finite targets ("inf", 1e400) can't be learned — treat as
+        # missing rather than let the regressor's fit reject them
+        sal = pd.to_numeric(df[SALARY_TARGET], errors="coerce")
+        sal = sal.where(np.isfinite(sal))
+        sal_train, sal_test = sal.loc[X_train.index], sal.loc[X_test.index]
+        tr_placed = (y_train == 1) & sal_train.notna()
+        te_placed = (y_test == 1) & sal_test.notna()
+        if bool(tr_placed.any()):
+            try:
+                salary_reg = HistGradientBoostingRegressor(random_state=SEED)
+                salary_reg.fit(X_train[tr_placed], sal_train[tr_placed])
+                if bool(te_placed.any()):
+                    sal_pred = salary_reg.predict(X_test[te_placed])
+                    r2_val = float(r2_score(sal_test[te_placed], sal_pred))
+                    salary_entry = {
+                        "name": "Gradient Boosting Regressor",
+                        "settings": "default depth · lr 0.1",
+                        "task": "regression · placed students only",
+                        "mae": round(float(mean_absolute_error(
+                            sal_test[te_placed], sal_pred)), 2),
+                        # undefined (NaN) below two placed test rows — None
+                        # keeps the bundle strict-JSON-safe
+                        "r2": None if np.isnan(r2_val) else round(r2_val, 4),
+                        "train_rows": int(tr_placed.sum()),
+                        "test_rows": int(te_placed.sum()),
+                    }
+            except Exception:  # noqa: BLE001 - degrade salary-only, keep the classifiers
+                salary_reg = None
+                salary_entry = None
+
     # feature importance from the forest's inner estimator (stable,
     # model-agnostic enough to read)
     rf_clf = fitted["Random Forest"][0].calibrated_classifiers_[0].estimator
@@ -628,6 +700,7 @@ def _fit_and_evaluate(path, df, X, y):
         "models": models,
         "best": best_name,
         "best_key": best["key"],
+        "salary_model": salary_entry,
         # the champion's error profile at the 0.5 threshold (each candidate
         # also carries its own under "confusion")
         "confusion": best["confusion"],
@@ -644,6 +717,7 @@ def _fit_and_evaluate(path, df, X, y):
     _fitted_cache[_cache_key(path)] = {
         "champion": best_name,
         "models": fitted,
+        "salary_reg": salary_reg,
         "impute_means": impute_means,
     }
     return bundle
@@ -720,3 +794,24 @@ def predict(path, values, model_name=None):
         vec = scaler.transform(vec)
     proba = float(model_obj.predict_proba(vec)[0, 1])
     return proba
+
+
+def predict_salary(path, values):
+    """Expected salary package (LPA) if the student is placed — the output of
+    the regressor trained on placed students only. values: dict feature ->
+    float, filled with the training impute means exactly like predict(); no
+    scaling (trees read raw features). Never negative. Raises RuntimeError
+    when no salary model is available (e.g. an upload without the salary
+    column)."""
+    bundle = get_model_bundle(path)  # ensures caches are warm
+    if not bundle.get("ok"):
+        raise RuntimeError("no trained model available for this dataset")
+    with _cache_lock:
+        fitted = _fitted_cache.get(_cache_key(path))
+        reg = fitted.get("salary_reg") if fitted else None
+        impute_means = fitted["impute_means"] if fitted else None
+    if reg is None:
+        raise RuntimeError("no salary model available for this dataset")
+    row = {c: values.get(c, float(impute_means[c])) for c in FEATURES}
+    vec = pd.DataFrame([row], columns=FEATURES).fillna(impute_means)
+    return max(0.0, float(reg.predict(vec)[0]))

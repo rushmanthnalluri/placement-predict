@@ -109,3 +109,11 @@ def test_predict_result_shows_model_facts(client, model_bundle):
     # responsible wording — a calibrated estimate, never a guarantee
     assert "calibrated statistical estimate" in body
     assert "definitely" not in body
+
+
+@pytest.mark.slow
+def test_predict_result_shows_salary_package(client, model_bundle):
+    resp = client.post("/predict", data=_profile(model_bundle, "default"))
+    body = resp.get_data(as_text=True)
+    assert "Package if placed" in body
+    assert "LPA" in body

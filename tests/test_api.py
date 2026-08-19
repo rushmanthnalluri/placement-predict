@@ -45,6 +45,27 @@ def test_api_predict_empty_body_uses_medians(client):
     assert "placed" in body and "probability" in body
 
 
+@pytest.mark.slow
+def test_api_predict_includes_salary_package(client):
+    resp = client.post("/api/predict", json={
+        "CGPA": 9.2, "MockInterviewScore": 88, "CodingTestScore": 85,
+    })
+    assert resp.status_code == 200
+    body = resp.get_json()
+    # conditional package (if placed) sits in the observed placed range…
+    assert 3.0 <= body["salary_package_lpa"] <= 26.0
+    # …and the probability-weighted package can never exceed it
+    assert 0.0 <= body["expected_package_lpa"] <= body["salary_package_lpa"]
+
+    # a weak profile separates the two fields with a wide margin (13%
+    # probability → weighted well below conditional), so a swapped or
+    # unweighted "expected" fails loudly instead of by a rounding hair
+    weak = client.post("/api/predict", json={
+        "CGPA": 5.0, "MockInterviewScore": 40, "CodingTestScore": 40,
+    }).get_json()
+    assert weak["expected_package_lpa"] < weak["salary_package_lpa"]
+
+
 def test_api_predict_requires_json(client):
     resp = client.post("/api/predict", data="CGPA=8")
     assert resp.status_code == 415

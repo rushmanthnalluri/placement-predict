@@ -116,10 +116,10 @@ function benchmarkHtml(data) {
       <span class="bench-banner-sub">highest cross-validated ROC-AUC — ${best.cv_auc_mean} ± ${best.cv_auc_std}
         over ${data.cv_folds} folds of the training split · sealed-test ROC-AUC ${fmt4(best.metrics.roc_auc)} · Brier ${fmt4(best.metrics.brier)}</span>
     </div>
-    <div class="table-scroll">
+    <div class="table-scroll" tabindex="0">
       <table class="table" id="benchTable">
         <thead>
-          <tr><th>Model</th><th>Accuracy</th><th>Precision</th><th>Recall</th><th>F1</th><th>ROC-AUC</th><th>Brier ↓</th><th>Log-loss ↓</th><th>CV ROC-AUC · ${data.cv_folds}-fold</th><th>Train time</th></tr>
+          <tr><th scope="col">Model</th><th scope="col">Accuracy</th><th scope="col">Precision</th><th scope="col">Recall</th><th scope="col">F1</th><th scope="col">ROC-AUC</th><th scope="col">Brier ↓</th><th scope="col">Log-loss ↓</th><th scope="col">CV ROC-AUC · ${data.cv_folds}-fold</th><th scope="col">Train time</th></tr>
         </thead>
         <tbody>${rows}</tbody>
       </table>
@@ -194,7 +194,7 @@ document.addEventListener("DOMContentLoaded", () => {
       return { payload, z };
     }
 
-    function resultHtml(placed, pct, kicker, note) {
+    function resultHtml(placed, pct, kicker, note, salary) {
       return `
         <div class="result-panel ${placed ? "result-placed" : "result-not"}">
           <span class="result-kicker">${kicker}</span>
@@ -206,6 +206,7 @@ document.addEventListener("DOMContentLoaded", () => {
             <span class="mono">${pct}% probability</span>
             <span class="mono dim">threshold 50%</span>
           </div>
+          ${salary ? `<div class="result-meta"><span class="mono">Package if placed ≈ ${salary.cond} LPA · weighted ≈ ${salary.weighted} LPA</span></div>` : ""}
         </div>
         <p class="note">${note}</p>`;
     }
@@ -233,10 +234,18 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!resp.ok || !Number.isFinite(prob)) {
           throw new Error((data && data.error) || `HTTP ${resp.status}`);
         }
+        // salary fields exist only when the server has a regressor for the
+        // active dataset — the in-browser fallback below has none
+        const cond = data.salary_package_lpa == null ? NaN : Number(data.salary_package_lpa);
+        const weighted = data.expected_package_lpa == null ? NaN : Number(data.expected_package_lpa);
+        const salary = Number.isFinite(cond) && Number.isFinite(weighted)
+          ? { cond, weighted }
+          : null;
         aside.innerHTML = resultHtml(
           Boolean(data.placed), prob,
           `${esc(data.model)} · live API`,
           `Served by the hosted app — the selected model ran server-side (calibrated probability, sealed-test ROC-AUC ${Number(data.roc_auc)}).`,
+          salary,
         );
         return;
       } catch (err) {
@@ -399,6 +408,7 @@ document.addEventListener("DOMContentLoaded", () => {
           window.PPCharts.buildHistogram(
             canvas, payload, window.PPCharts.palette.accentFill, window.PPCharts.palette.accent,
           );
+          canvas.setAttribute("aria-label", `Histogram of ${distSelect.value}`);
         }
       });
     }
@@ -406,7 +416,10 @@ document.addEventListener("DOMContentLoaded", () => {
       rateSelect.addEventListener("change", () => {
         const canvas = document.getElementById("rateChart");
         const payload = window.EDA.rateByFeature && window.EDA.rateByFeature[rateSelect.value];
-        if (canvas && payload) window.PPCharts.buildRateBars(canvas, payload);
+        if (canvas && payload) {
+          window.PPCharts.buildRateBars(canvas, payload);
+          canvas.setAttribute("aria-label", `Bar chart of placement rate per band of ${rateSelect.value}`);
+        }
       });
     }
   }

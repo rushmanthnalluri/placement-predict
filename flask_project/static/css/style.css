@@ -23,6 +23,9 @@
 
   --success: #63A87D;
   --danger: #C65D55;
+  /* lighter danger tint for text sitting on the danger-dim wash — the base
+     red only reaches 4.2:1 there; this tint passes WCAG AA at 5.6:1 */
+  --danger-text: #D37A71;
   --danger-dim: rgba(198, 93, 85, 0.1);
 
   --radius-sm: 4px;
@@ -751,7 +754,7 @@ select:focus-visible, textarea:focus-visible, [tabindex]:focus-visible,
 }
 .alert a { color: var(--accent); text-decoration: underline; text-underline-offset: 3px; }
 .alert-error { border-color: rgba(198, 93, 85, 0.45); background: var(--danger-dim); }
-.alert-error strong { color: var(--danger); }
+.alert-error strong { color: var(--danger-text); }
 .alert .alert-actions { margin-top: 12px; }
 
 /* ------------------------------------------------------------ upload -- */
@@ -910,7 +913,7 @@ select:focus-visible, textarea:focus-visible, [tabindex]:focus-visible,
   gap: 12px;
   margin-bottom: 10px;
 }
-.chart-card-head h3 {
+.chart-card-head h2, .chart-card-head h3 {
   font-size: 13px;
   font-weight: 600;
   letter-spacing: -0.01em;
@@ -1096,7 +1099,7 @@ select:focus-visible, textarea:focus-visible, [tabindex]:focus-visible,
 }
 .cm-cell span { font-size: 11px; color: var(--text-3); }
 .cm-tp strong, .cm-tn strong { color: var(--accent); }
-.cm-fp strong, .cm-fn strong { color: var(--danger); }
+.cm-fp strong, .cm-fn strong { color: var(--danger-text); }
 .cm-tp, .cm-tn { background: rgba(217, 166, 63, 0.05); }
 .cm-fp, .cm-fn { background: var(--danger-dim); }
 

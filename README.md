@@ -56,6 +56,7 @@ Every page in the app is computed live from the real dataset — no number is ha
 
 - Validated 12-input profile form with a model picker (recommended best, or any candidate).
 - Placed / Not placed verdict with a calibrated probability bar at a 50% threshold.
+- Expected salary package alongside the verdict — a Gradient Boosting regressor trained on placed students only (same sealed split; MAE 0.67 LPA, R² 0.9593), shown as the conditional package if placed and the probability-weighted expectation.
 - Also available as a JSON endpoint for programmatic use.
 
 ### Visualization
@@ -90,6 +91,10 @@ A bagging ensemble of 150 decision trees, each trained on a bootstrapped sample 
 
 A sequential boosting ensemble of shallow trees, where each new tree is fit to the residual errors of the ensemble so far. This is scikit-learn's histogram-based `HistGradientBoostingClassifier`, and it is the champion of this project — the strongest on cross-validation and on the sealed test set.
 
+### Salary regressor
+
+A sibling `HistGradientBoostingRegressor` (same default depth · lr 0.1 · seed 42) predicts the offered package in LPA. It trains only on the placed rows of the same sealed 80/20 split — 26,285 training / 6,571 test rows — because salary is an outcome of placement, so not-placed rows (0 LPA) never enter its training data and the column is never a classifier input. On the sealed test rows it posts MAE 0.67 LPA and R² 0.9593. The app reports it two ways: the conditional package if placed, and the placement-probability-weighted expectation.
+
 ### Model registry
 
 | Key | Display name | Estimator | Settings |
@@ -121,7 +126,7 @@ The 32 fields fall into six groups:
 - **Academic** — SGPA_Sem1–SGPA_Sem8, CGPA, AttendancePercent, HistoryOfBacklogs (Y/N), CGPA_Tier (Low/Mid/High)
 - **Experience** — Internships, Projects, Workshops, Certifications, Publications, ExtraCurricular (binary 0/1)
 - **Skill scores** — AptitudeTestScore, SoftSkillsRating, CodingTestScore, MockInterviewScore
-- **Outcome** — PlacementStatus (target, 0/1), IsAnomaly, Salary Package (LPA, 0 = not placed — an outcome column, not a model input)
+- **Outcome** — PlacementStatus (target, 0/1), IsAnomaly, Salary Package (LPA, 0 = not placed — an outcome column: never a classifier input, only the salary regressor's target)
 
 **Missing values** — exactly 5 columns carry missing data, 19,976 cells in total:
 
@@ -193,7 +198,7 @@ The `/predict` page takes a student profile and returns a placement call:
 
 - **Inputs** — 12 numeric fields grouped Academic / Experience / Skill scores, validated against observed dataset min/max. Leaving a field blank uses the dataset median.
 - **Model picker** — "Best model" recommended, plus each candidate labelled with its sealed-test ROC-AUC.
-- **Result** — a Placed / Not placed verdict, a calibrated probability bar at the 50% threshold, the model used, its ROC-AUC, and a "Best model" badge when the champion made the call.
+- **Result** — a Placed / Not placed verdict, a calibrated probability bar at the 50% threshold, the model used, its ROC-AUC, and a "Best model" badge when the champion made the call. Alongside: the expected salary package — conditional if placed (`salary_package_lpa`) and probability-weighted (`expected_package_lpa`) — from a regressor trained on placed students only; salary itself is never a classifier input.
 - **Responsible note** — the output is a calibrated statistical estimate, not a guarantee of any real outcome.
 
 ## System Architecture
@@ -225,7 +230,7 @@ placement-predict/
 │   ├── data/               # bundled 50k CSV (+ gitignored trained artifacts & uploads)
 │   ├── static/             # design-system CSS, Chart.js builders, site JS
 │   └── templates/          # Jinja templates, one per stage
-├── tests/                  # 79-test pytest suite (7 files)
+├── tests/                  # 84-test pytest suite (7 files)
 ├── docs/                   # GitHub Pages site + forensic audit trail (docs/audit/)
 ├── screenshots/            # demo.gif + page captures used in this README
 ├── .github/workflows/      # ci.yml — pytest + Docker build + pip-audit
@@ -245,7 +250,7 @@ placement-predict/
 | Machine learning | scikit-learn ≥1.4 — HistGradientBoostingClassifier · RandomForestClassifier · LogisticRegression · CalibratedClassifierCV; joblib artifacts |
 | Data processing | pandas ≥2.0, NumPy, openpyxl (Excel intake) |
 | Frontend | Server-rendered Jinja2, vanilla JS, Chart.js 4.4.3 (jsDelivr CDN), custom CSS design system (Inter + IBM Plex Mono) |
-| Testing & QA | pytest (79 tests), pip-audit |
+| Testing & QA | pytest (84 tests), pip-audit |
 | CI | GitHub Actions (pytest · Docker build · pip-audit) |
 | Deployment | Render (Blueprint) · Docker · GitHub Pages |
 | Version control | Git + GitHub |
@@ -324,7 +329,8 @@ curl -X POST https://placement-predict-p2z1.onrender.com/api/predict \
   -d '{"CGPA": 8.6, "MockInterviewScore": 88, "CodingTestScore": 85}'
 # → {"placed": true, "probability": 99.9, "threshold": 0.5,
 #    "model": "Gradient Boosting", "model_key": "gradient_boosting",
-#    "roc_auc": 0.9733, ...}
+#    "roc_auc": 0.9733, "salary_package_lpa": 22.4,
+#    "expected_package_lpa": 22.4, ...}
 
 # …or pick the model yourself: "model" accepts a registry key
 # ("logistic_regression" | "random_forest" | "gradient_boosting"),
@@ -447,7 +453,7 @@ The animated demo sits at the [top of this README](#placement-predict-system). P
 
 ## Testing & CI
 
-79 pytest tests (41 slow / 38 fast; the `slow` marker is registered in `tests/conftest.py`):
+84 pytest tests (45 slow / 39 fast; the `slow` marker is registered in `tests/conftest.py`):
 
 ```bash
 pytest -q                 # full suite (trains + evaluates all models once)

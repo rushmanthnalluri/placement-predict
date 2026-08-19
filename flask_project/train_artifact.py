@@ -4,10 +4,10 @@ Run at image/deploy build time so production never trains at request time:
 
     python flask_project/train_artifact.py
 
-Writes flask_project/data/model_artifact.joblib (bundle + champion), plus one
-model_artifact_<key>.joblib per candidate for on-demand non-champion loads.
-model.get_model_bundle loads them after validating the recipe version and the
-dataset's content hash.
+Writes flask_project/data/model_artifact.joblib (bundle + champion + salary
+regressor), plus one model_artifact_<key>.joblib per candidate for on-demand
+non-champion loads. model.get_model_bundle loads them after validating the
+recipe version and the dataset's content hash.
 """
 
 import os
@@ -35,4 +35,4 @@ if __name__ == "__main__":
     for key in model.MODEL_KEYS:
         total += os.path.getsize(model._model_artifact_path(DATA, key))
     print(f"artifacts written next to {DATA} ({total / 1e6:.1f} MB total: "
-          f"bundle + champion, plus one file per candidate)")
+          f"bundle + champion + salary regressor, plus one file per candidate)")

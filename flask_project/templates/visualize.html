@@ -96,7 +96,7 @@
     <p class="section-sub">This matrix is computed on the raw file with pairwise-complete
       observations, while every other chart on this page uses the imputed frame — small
       differences between the two are expected.</p>
-    <div class="heat-scroll">
+    <div class="heat-scroll" tabindex="0">
       <div class="heat-grid" style="--n: {{ bundle.heatmap.labels | length }}">
         <div></div>
         {% for c in bundle.heatmap.labels %}
@@ -107,7 +107,7 @@
         {% for cell in bundle.heatmap.matrix[loop.index0] %}
         <div class="heat-cell {{ 'heat-strong' if cell.strong else '' }}"
              style="background: {{ cell.color }}"
-             {% if cell.v is not none %}title="{{ r }} × {{ bundle.heatmap.labels[loop.index0] }}: {{ cell.v }}"{% endif %}>{{ cell.v if cell.v is not none else '' }}</div>
+             {% if cell.v is not none %}title="{{ r }} × {{ bundle.heatmap.labels[loop.index0] }}: {{ cell.v }}"{% endif %}>{{ cell.v if cell.show else '' }}</div>
         {% endfor %}
         {% endfor %}
       </div>

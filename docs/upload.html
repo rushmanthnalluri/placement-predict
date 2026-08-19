@@ -128,7 +128,7 @@
       <label for="datasetInput" class="upload-drop" id="uploadDrop">
         <span class="upload-drop-title">Drop a file here, or click to browse</span>
         <span class="upload-drop-hint">.csv · .xlsx · up to 10 MB</span>
-        <span class="upload-drop-filename" id="uploadFilename"></span>
+        <span class="upload-drop-filename" id="uploadFilename" aria-live="polite"></span>
         <input type="file" name="dataset" id="datasetInput" accept=".csv,.xlsx">
       </label>
       <button type="button" class="btn btn-primary upload-submit">Upload dataset</button>
@@ -161,10 +161,10 @@
       <div class="section-head">
         <h2 class="section-title">Columns</h2>
       </div>
-      <div class="table-scroll mb-32">
+      <div class="table-scroll mb-32" tabindex="0">
         <table class="table">
           <thead>
-            <tr><th>Field</th><th>Type</th></tr>
+            <tr><th scope="col">Field</th><th scope="col">Type</th></tr>
           </thead>
           <tbody>
             
@@ -336,74 +336,74 @@
         <h2 class="section-title">Preview — first 8 rows</h2>
         <span class="mono dim mono-sm">32 columns · scroll →</span>
       </div>
-      <div class="table-scroll">
+      <div class="table-scroll" tabindex="0">
         <table class="table">
           <thead>
             <tr>
               
-              <th>StudentID</th>
+              <th scope="col">StudentID</th>
               
-              <th>Gender</th>
+              <th scope="col">Gender</th>
               
-              <th>City</th>
+              <th scope="col">City</th>
               
-              <th>CollegeTier</th>
+              <th scope="col">CollegeTier</th>
               
-              <th>Stream</th>
+              <th scope="col">Stream</th>
               
-              <th>Specialisation</th>
+              <th scope="col">Specialisation</th>
               
-              <th>Hostel</th>
+              <th scope="col">Hostel</th>
               
-              <th>HistoryOfBacklogs</th>
+              <th scope="col">HistoryOfBacklogs</th>
               
-              <th>SGPA_Sem1</th>
+              <th scope="col">SGPA_Sem1</th>
               
-              <th>SGPA_Sem2</th>
+              <th scope="col">SGPA_Sem2</th>
               
-              <th>SGPA_Sem3</th>
+              <th scope="col">SGPA_Sem3</th>
               
-              <th>SGPA_Sem4</th>
+              <th scope="col">SGPA_Sem4</th>
               
-              <th>SGPA_Sem5</th>
+              <th scope="col">SGPA_Sem5</th>
               
-              <th>SGPA_Sem6</th>
+              <th scope="col">SGPA_Sem6</th>
               
-              <th>SGPA_Sem7</th>
+              <th scope="col">SGPA_Sem7</th>
               
-              <th>SGPA_Sem8</th>
+              <th scope="col">SGPA_Sem8</th>
               
-              <th>CGPA</th>
+              <th scope="col">CGPA</th>
               
-              <th>AttendancePercent</th>
+              <th scope="col">AttendancePercent</th>
               
-              <th>Internships</th>
+              <th scope="col">Internships</th>
               
-              <th>Projects</th>
+              <th scope="col">Projects</th>
               
-              <th>Workshops</th>
+              <th scope="col">Workshops</th>
               
-              <th>Certifications</th>
+              <th scope="col">Certifications</th>
               
-              <th>Publications</th>
+              <th scope="col">Publications</th>
               
-              <th>AptitudeTestScore</th>
+              <th scope="col">AptitudeTestScore</th>
               
-              <th>SoftSkillsRating</th>
+              <th scope="col">SoftSkillsRating</th>
               
-              <th>CodingTestScore</th>
+              <th scope="col">CodingTestScore</th>
               
-              <th>MockInterviewScore</th>
+              <th scope="col">MockInterviewScore</th>
               
-              <th>ExtraCurricular</th>
+              <th scope="col">ExtraCurricular</th>
               
-              <th>CGPA_Tier</th>
+              <th scope="col">CGPA_Tier</th>
               
-              <th>PlacementStatus</th>
+              <th scope="col">PlacementStatus</th>
               
-              <th>IsAnomaly</th>
+              <th scope="col">IsAnomaly</th>
               
-              <th>Salary Package</th>
+              <th scope="col">Salary Package</th>
               
             </tr>
           </thead>

@@ -122,7 +122,7 @@
         </div>
         <div class="chart-wrap">
           <canvas id="distChart" data-chart="hist" data-key="CGPA" role="img"
-                  aria-label="Histogram of the selected feature"></canvas>
+                  aria-label="Histogram of CGPA"></canvas>
         </div>
       </div>
 
@@ -137,7 +137,7 @@
         </div>
         <div class="chart-wrap">
           <canvas id="rateChart" data-chart="ratefeat" data-key="{{ bundle.rate_by_feature.keys() | first }}" role="img"
-                  aria-label="Bar chart of placement rate per band of the selected feature"></canvas>
+                  aria-label="Bar chart of placement rate per band of {{ bundle.rate_by_feature.keys() | first }}"></canvas>
         </div>
       </div>
 
@@ -146,7 +146,7 @@
           <h3>Correlation — model features &amp; outcome</h3>
           <span class="chart-tag">hover cells for values</span>
         </div>
-        <div class="heat-scroll">
+        <div class="heat-scroll" tabindex="0">
           <div class="heat-grid" style="--n: {{ bundle.heatmap_core.labels | length }}">
             <div></div>
             {% for c in bundle.heatmap_core.labels %}
@@ -157,7 +157,7 @@
             {% for cell in bundle.heatmap_core.matrix[loop.index0] %}
             <div class="heat-cell {{ 'heat-strong' if cell.strong else '' }}"
                  style="background: {{ cell.color }}"
-                 {% if cell.v is not none %}title="{{ r }} × {{ bundle.heatmap_core.labels[loop.index0] }}: {{ cell.v }}"{% endif %}>{{ cell.v if cell.v is not none else '' }}</div>
+                 {% if cell.v is not none %}title="{{ r }} × {{ bundle.heatmap_core.labels[loop.index0] }}: {{ cell.v }}"{% endif %}>{{ cell.v if cell.show else '' }}</div>
             {% endfor %}
             {% endfor %}
           </div>

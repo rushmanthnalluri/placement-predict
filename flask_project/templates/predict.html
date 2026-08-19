@@ -56,7 +56,7 @@
               <input type="number" name="{{ meta.name }}" class="field-input {{ 'input-error' if meta.name in invalid_fields }}"
                      min="{{ meta.min }}" max="{{ meta.max }}" step="{{ meta.step }}"
                      value="{{ values.get(meta.name, '') }}" placeholder="{{ meta.default }}"
-                     inputmode="decimal">
+                     inputmode="decimal"{% if meta.name in invalid_fields %} aria-invalid="true"{% endif %}>
               <span class="field-hint {{ 'field-hint-error' if meta.name in invalid_fields }}">{{ meta.min }}–{{ meta.max }} · blank = median {{ meta.default }}</span>
             </label>
             {% endfor %}
@@ -101,6 +101,9 @@
             <div class="result-fact"><dt>Model used</dt><dd>{{ result.model }}</dd></div>
             <div class="result-fact"><dt>Placement probability</dt><dd>{{ result.probability }}%</dd></div>
             <div class="result-fact"><dt>Model ROC-AUC</dt><dd>{{ result.roc_auc }}</dd></div>
+            {% if result.salary_package_lpa is not none %}
+            <div class="result-fact"><dt>Package if placed</dt><dd>≈ {{ result.salary_package_lpa }} LPA · weighted ≈ {{ result.expected_package_lpa }} LPA</dd></div>
+            {% endif %}
           </dl>
           <p class="note note-flush">{{ result.explanation }}</p>
         </div>

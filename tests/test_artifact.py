@@ -21,10 +21,15 @@ def test_artifact_roundtrip(tmp_path, default_df):
     bundle = model.get_model_bundle(str(slice_path))
     assert bundle["ok"] is True
     assert bundle["best"] in {"Logistic Regression", "Random Forest", "Gradient Boosting"}
+    # the salary regressor is part of the bundle and the artifact payload
+    assert 0 < bundle["salary_model"]["mae"] < 5
+    assert bundle["salary_model"]["r2"] > 0
 
     # and inference works off the restored champion
     proba = model.predict(str(slice_path), {c: 7.0 for c in model.FEATURES})
     assert 0.0 <= proba <= 1.0
+    # …and off the restored salary regressor
+    assert model.predict_salary(str(slice_path), {c: 7.0 for c in model.FEATURES}) > 0.0
 
 
 def test_per_model_artifact_serves_non_champion(tmp_path, default_df):

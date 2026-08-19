@@ -23,7 +23,7 @@
       <label for="datasetInput" class="upload-drop" id="uploadDrop">
         <span class="upload-drop-title">Drop a file here, or click to browse</span>
         <span class="upload-drop-hint">.csv · .xlsx · up to 10 MB</span>
-        <span class="upload-drop-filename" id="uploadFilename"></span>
+        <span class="upload-drop-filename" id="uploadFilename" aria-live="polite"></span>
         <input type="file" name="dataset" id="datasetInput" accept=".csv,.xlsx">
       </label>
       <button type="submit" class="btn btn-primary upload-submit">Upload dataset</button>
@@ -62,10 +62,10 @@
       <div class="section-head">
         <h2 class="section-title">Columns</h2>
       </div>
-      <div class="table-scroll mb-32">
+      <div class="table-scroll mb-32" tabindex="0">
         <table class="table">
           <thead>
-            <tr><th>Field</th><th>Type</th></tr>
+            <tr><th scope="col">Field</th><th scope="col">Type</th></tr>
           </thead>
           <tbody>
             {% for col in preview.dtypes %}
@@ -82,12 +82,12 @@
         <h2 class="section-title">Preview — first {{ preview.head|length }} rows</h2>
         <span class="mono dim mono-sm">{{ preview.column_names|length }} columns · scroll →</span>
       </div>
-      <div class="table-scroll">
+      <div class="table-scroll" tabindex="0">
         <table class="table">
           <thead>
             <tr>
               {% for col in preview.column_names %}
-              <th>{{ col }}</th>
+              <th scope="col">{{ col }}</th>
               {% endfor %}
             </tr>
           </thead>
