@@ -91,7 +91,7 @@ def main():
                     "Certifications": "3",
                     "Publications": "1",
                     "AptitudeTestScore": "82",
-                    "SoftSkillsRating": "8",
+                    "SoftSkillsRating": "4.5",
                     "CodingTestScore": "85",
                     "MockInterviewScore": "8",
                     "ExtraCurricular": "2",
