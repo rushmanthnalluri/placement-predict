@@ -5,11 +5,15 @@ import json
 import os
 import platform
 from pathlib import Path
+import sys
 
 from playwright.sync_api import sync_playwright
 
 BASE_URL = os.environ.get("PLACEMENT_PREDICT_URL", "http://127.0.0.1:5000")
 ROOT = Path(__file__).resolve().parents[1]
+FLASK_PROJECT = ROOT / "flask_project"
+if str(FLASK_PROJECT) not in sys.path:
+    sys.path.insert(0, str(FLASK_PROJECT))
 SCREENSHOTS = ROOT / "screenshots"
 OUTPUT = Path(os.environ.get("VISUAL_OUTPUT", str(ROOT / "visuals_artifact")))
 SCREENSHOTS.mkdir(exist_ok=True)
