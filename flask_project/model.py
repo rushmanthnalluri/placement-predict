@@ -19,6 +19,7 @@ the linear model, trees on raw features, assess once on the sealed test set.
 """
 
 import os
+import platform
 import threading
 import time
 from collections import OrderedDict
@@ -28,6 +29,7 @@ import hashlib
 import joblib
 import numpy as np
 import pandas as pd
+import sklearn
 from sklearn.base import clone
 from sklearn.calibration import CalibratedClassifierCV, calibration_curve
 from sklearn.ensemble import (
@@ -134,7 +136,18 @@ _cache_lock = threading.Lock()
 # bundle+champion artifact, so non-champion selections load in ~1 s instead
 # of retraining. v3: served models are Platt-calibrated. v4: the main
 # artifact also carries the fitted salary regressor.
-ARTIFACT_VERSION = 4
+ARTIFACT_VERSION = 5
+
+# Artifacts are tied to the exact runtime that trained them. This prevents a
+# locally generated artifact from silently crossing a Python/scikit-learn
+# boundary and changing model selection or probability behavior.
+TRAINING_ENV = {
+    "python": platform.python_version(),
+    "numpy": np.__version__,
+    "pandas": pd.__version__,
+    "scikit_learn": sklearn.__version__,
+}
+
 
 
 def _dataset_sha(path):
@@ -198,6 +211,7 @@ def save_artifact(path):
             "scaler": champ_scaler,
             "salary_reg": fitted.get("salary_reg"),
             "impute_means": fitted["impute_means"],
+            "training_env": TRAINING_ENV,
         },
         _artifact_path(path),
     )
@@ -210,6 +224,7 @@ def save_artifact(path):
                 "key": key,
                 "clf": clf,
                 "scaler": scaler,
+                "training_env": TRAINING_ENV,
             },
             _model_artifact_path(path, key),
             compress=3,
@@ -231,6 +246,8 @@ def _load_validated(ap, path):
     if payload.get("version") != ARTIFACT_VERSION:
         return None
     if payload.get("dataset_sha") != _dataset_sha(path):
+        return None
+    if payload.get("training_env") != TRAINING_ENV:
         return None
     return payload
 
@@ -684,6 +701,7 @@ def _fit_and_evaluate(path, df, X, y):
         "ok": True,
         "features": FEATURES,
         "seed": SEED,
+        "training_env": TRAINING_ENV,
         "cv_folds": CV_FOLDS,
         "cv_rows": int(cv_rows),
         "split": {
