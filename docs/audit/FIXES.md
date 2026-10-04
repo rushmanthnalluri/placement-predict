@@ -53,3 +53,15 @@ Each fix: what changed, how it was verified, and the regression test that guards
 | **Gradient Boosting (champion)** | **0.9726 ± 0.0025** | **0.9087** | **0.9160** | **0.9480** | **0.9317** | **0.9733** |
 
 Split 40,000/10,000 stratified (placed rate 65.7/65.7). Confusion (GB, test): tn 2858, fp 571, fn 342, tp 6229. Test-set numbers moved ≤0.001 vs pre-fix — confirming the leakage had no practical impact, while the code now matches every claim.
+
+
+## Release-consistency pack — 2026-10-04
+
+| Fix | Verification / contract |
+|---|---|
+| Pin `scikit-learn==1.9.0` | CI and deployment use Python 3.12; model-selection metrics can no longer drift merely because a newer sklearn release resolves from `>=1.4`. |
+| Artifact environment binding | Artifact version bumped to v5; Python, NumPy, pandas and scikit-learn versions are stored and validated before loading. |
+| Deterministic visual capture | `tools/capture_visuals.py` captures all nine stages plus overview at 1500×950 and exports the exact training metrics/environment manifest. |
+| Complete screenshot coverage | The capture job now produces Overview, Upload, Features, Descriptive Statistics, Missing Analysis, Visualization, Preprocessing, Training, Evaluation and Prediction captures. |
+| Demo GIF readability | Rebuilt at 1200×760 with deliberate per-screen durations instead of sub-second transitions. |
+| Audit truth refresh | Added `RELEASE_VERIFICATION_2026-10-04.md`; the historical 34-test timing is no longer presented as the current suite result. |
