@@ -245,9 +245,9 @@ placement-predict/
 
 | Layer | Technology |
 |-------|------------|
-| Language | Python 3.11+ (CI runs 3.12) |
+| Language | Python 3.12 (CI and deployment baseline) |
 | Backend | Flask 3 (Jinja2, Werkzeug), gunicorn |
-| Machine learning | scikit-learn ≥1.4 — HistGradientBoostingClassifier · RandomForestClassifier · LogisticRegression · CalibratedClassifierCV; joblib artifacts |
+| Machine learning | scikit-learn 1.9.0 — HistGradientBoostingClassifier · RandomForestClassifier · LogisticRegression · CalibratedClassifierCV; joblib artifacts |
 | Data processing | pandas ≥2.0, NumPy, openpyxl (Excel intake) |
 | Frontend | Server-rendered Jinja2, vanilla JS, Chart.js 4.4.3 (jsDelivr CDN), custom CSS design system (Inter + IBM Plex Mono) |
 | Testing & QA | pytest (84 tests), pip-audit |
@@ -266,7 +266,7 @@ python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\act
 pip install -r requirements.txt
 ```
 
-Dependencies: `flask>=3.1.3`, `jinja2>=3.1.6`, `werkzeug>=3.1.8`, `numpy>=1.26`, `pandas>=2.0`, `joblib>=1.2`, `scikit-learn>=1.4`, `openpyxl>=3.1`, `gunicorn>=21.2`.
+Dependencies: `flask>=3.1.3`, `jinja2>=3.1.6`, `werkzeug>=3.1.8`, `numpy>=1.26`, `pandas>=2.0`, `joblib>=1.2`, `scikit-learn==1.9.0`, `openpyxl>=3.1`, `gunicorn>=21.2`.
 
 ## Environment Variables
 
