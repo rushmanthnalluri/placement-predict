@@ -7,7 +7,7 @@ on:
     branches: [main]
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   pytest:
@@ -97,3 +97,15 @@ jobs:
             docs/
             visuals_artifact/metrics.json
           if-no-files-found: error
+      - name: Commit regenerated visuals on main
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add screenshots docs
+          if git diff --cached --quiet; then
+            echo "No generated visual changes to commit."
+          else
+            git commit -m "chore: refresh generated visuals [skip ci]"
+            git push
+          fi
