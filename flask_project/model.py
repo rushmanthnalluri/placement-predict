@@ -171,7 +171,7 @@ def save_artifact(path):
     candidate, so production never trains at request time. Used by
     train_artifact.py at image/deploy build time.
 
-    Layout (since ARTIFACT_VERSION 2): the main artifact carries the bundle,
+    Layout (since ARTIFACT_VERSION 2; current environment-bound layout is v5): the main artifact carries the bundle,
     the impute means, and the fitted champion — small, so boot stays fast.
     Each candidate additionally gets its own compressed file; a non-champion
     selection then loads on demand in about a second (the 150-tree forest
