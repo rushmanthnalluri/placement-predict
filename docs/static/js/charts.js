@@ -10,7 +10,193 @@
 // One accent color; red is reserved for "missing / not placed".
 
 (function () {
-  if (typeof Chart === "undefined") return;
+  if (typeof Chart === "undefined") {
+    // Offline/local fallback. The public app used to depend on the jsDelivr
+    // Chart.js CDN; when that CDN was unavailable the canvases stayed blank.
+    // Keep the visual pipeline functional without an external runtime asset.
+    const EDA = window.EDA || {};
+    const C = {
+      text: "#EBECE8", text2: "#9BA29A", text3: "#8A9189",
+      accent: "#D9A63F", danger: "#C65D55", slate: "#6E8FA0",
+      grid: "rgba(235,236,232,.10)", panel: "#1B1F1C"
+    };
+
+    function setup(canvas) {
+      const rect = canvas.getBoundingClientRect();
+      const w = Math.max(320, Math.round(rect.width || 640));
+      const h = Math.max(180, Math.round(rect.height || 320));
+      const dpr = Math.max(1, window.devicePixelRatio || 1);
+      canvas.width = w * dpr;
+      canvas.height = h * dpr;
+      canvas.style.width = w + "px";
+      canvas.style.height = h + "px";
+      const ctx = canvas.getContext("2d");
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, w, h);
+      ctx.font = "10px 'IBM Plex Mono', ui-monospace, monospace";
+      return { ctx, w, h };
+    }
+
+    function grid(ctx, x, y, w, h, max, horizontal = true) {
+      ctx.strokeStyle = C.grid;
+      ctx.lineWidth = 1;
+      const steps = 5;
+      for (let i = 0; i <= steps; i++) {
+        const p = i / steps;
+        ctx.beginPath();
+        if (horizontal) {
+          ctx.moveTo(x, y + h - p * h);
+          ctx.lineTo(x + w, y + h - p * h);
+        } else {
+          ctx.moveTo(x + p * w, y);
+          ctx.lineTo(x + p * w, y + h);
+        }
+        ctx.stroke();
+        ctx.fillStyle = C.text3;
+        ctx.textAlign = "right";
+        ctx.fillText(String(Math.round(max * p)), x - 8, y + h - p * h + 3);
+      }
+    }
+
+    function xLabels(ctx, labels, x, y, w, max = 8) {
+      const step = Math.max(1, Math.ceil(labels.length / max));
+      ctx.fillStyle = C.text3;
+      ctx.textAlign = "center";
+      labels.forEach((label, i) => {
+        if (i % step !== 0 && i !== labels.length - 1) return;
+        const px = x + (i + .5) * (w / labels.length);
+        const text = String(label);
+        ctx.fillText(text.length > 18 ? text.slice(0, 17) + "…" : text, px, y);
+      });
+    }
+
+    function bar(canvas, labels, values, opts = {}) {
+      const {ctx,w,h} = setup(canvas);
+      const left = opts.left || 62, right = 18, top = 18, bottom = opts.bottom || 52;
+      const cw = w - left - right, ch = h - top - bottom;
+      const max = opts.max ?? Math.max(...values, 1);
+      grid(ctx, left, top, cw, ch, max);
+      const bw = Math.min(opts.maxBar || 48, cw / Math.max(values.length * 1.7, 1));
+      values.forEach((v, i) => {
+        const bh = (Number(v) / max) * ch;
+        const bx = left + (i + .5) * cw / values.length - bw / 2;
+        const by = top + ch - bh;
+        ctx.fillStyle = opts.fill || C.accent;
+        ctx.globalAlpha = .72;
+        ctx.fillRect(bx, by, bw, bh);
+        ctx.globalAlpha = 1;
+        ctx.strokeStyle = opts.stroke || C.accent;
+        ctx.strokeRect(bx + .5, by + .5, Math.max(1,bw-1), Math.max(1,bh-1));
+      });
+      xLabels(ctx, labels, left, top + ch + 28, cw, opts.maxLabels || 7);
+      if (opts.title) {
+        ctx.fillStyle = C.text3; ctx.textAlign = "left";
+        ctx.fillText(opts.title, 8, top + 4);
+      }
+    }
+
+    function horizontal(canvas, labels, values, opts = {}) {
+      const {ctx,w,h} = setup(canvas);
+      const left = 150, right = 28, top = 16, bottom = 18;
+      const cw = w-left-right, ch = h-top-bottom;
+      const maxAbs = opts.max ?? Math.max(...values.map(v => Math.abs(Number(v))), 1);
+      const row = ch / Math.max(values.length,1);
+      values.forEach((v,i) => {
+        const n = Number(v);
+        const bw = Math.abs(n) / maxAbs * (cw/2);
+        const cy = top + (i+.5)*row;
+        const base = left + (n < 0 ? cw/2 : 0);
+        ctx.fillStyle = n < 0 ? C.danger : (opts.fill || C.accent);
+        ctx.globalAlpha=.72; ctx.fillRect(n<0 ? base-bw : base, cy-row*.3, bw, row*.6); ctx.globalAlpha=1;
+        ctx.fillStyle=C.text3; ctx.textAlign="right";
+        const label=String(labels[i]); ctx.fillText(label.length>20?label.slice(0,19)+"…":label,left-10,cy+3);
+      });
+      ctx.strokeStyle=C.grid; ctx.beginPath(); ctx.moveTo(left+cw/2,top); ctx.lineTo(left+cw/2,top+ch); ctx.stroke();
+    }
+
+    function line(canvas, datasets, opts = {}) {
+      const {ctx,w,h} = setup(canvas);
+      const left=54,right=18,top=18,bottom=34,cw=w-left-right,ch=h-top-bottom;
+      ctx.strokeStyle=C.grid; ctx.lineWidth=1;
+      for(let i=0;i<=5;i++){const p=i/5;ctx.beginPath();ctx.moveTo(left,top+ch-p*ch);ctx.lineTo(left+cw,top+ch-p*ch);ctx.stroke();}
+      datasets.forEach((ds,di)=>{
+        ctx.strokeStyle=ds.color || [C.accent,C.slate,C.text2][di%3];
+        ctx.lineWidth=1.8; ctx.beginPath();
+        ds.points.forEach((p,i)=>{const px=left+p.x*cw,py=top+ch-p.y*ch;i?ctx.lineTo(px,py):ctx.moveTo(px,py);});
+        ctx.stroke();
+      });
+      ctx.fillStyle=C.text3;ctx.textAlign="center";
+      ctx.fillText(opts.xTitle||"0",left,top+ch+20);ctx.fillText("1",left+cw,top+ch+20);
+      ctx.textAlign="right";ctx.fillText("1",left-8,top+4);ctx.fillText("0",left-8,top+ch+3);
+    }
+
+    function donut(canvas, overview) {
+      const {ctx,w,h}=setup(canvas);
+      const cx=w/2,cy=h/2-8,r=Math.min(w,h)*.30;
+      const total=Math.max(1,overview.placed+overview.not_placed);
+      let a=-Math.PI/2;
+      [[overview.placed,C.accent],[overview.not_placed,"#3A403B"]].forEach(([v,color])=>{
+        const end=a+v/total*Math.PI*2;ctx.beginPath();ctx.moveTo(cx,cy);ctx.arc(cx,cy,r,a,end);ctx.closePath();ctx.fillStyle=color;ctx.fill();a=end;
+      });
+      ctx.fillStyle=C.panel;ctx.beginPath();ctx.arc(cx,cy,r*.62,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle=C.text;ctx.textAlign="center";ctx.font="700 18px 'IBM Plex Mono',monospace";ctx.fillText(((overview.placed/total)*100).toFixed(1)+"%",cx,cy+5);
+    }
+
+    function buildMissing(canvas,payload){ bar(canvas,payload.chart_labels,payload.chart_values,{fill:C.danger,stroke:C.danger,maxLabels:5,maxBar:60,title:"missing cells"}); }
+    function buildRateBars(canvas,payload){ bar(canvas,payload.labels,payload.rates,{max:100,fill:C.accent,stroke:C.accent,maxLabels:9,maxBar:42}); }
+    function buildInfluence(canvas,payload){ horizontal(canvas,payload.labels,payload.values,{fill:C.accent}); }
+    function buildCategory(canvas,rows){ bar(canvas,rows.map(r=>r.label),rows.map(r=>r.rate),{max:100,fill:C.accent,stroke:C.accent,maxLabels:8}); }
+    function buildGender(canvas,payload){ bar(canvas,payload.labels,payload.placed,{fill:C.accent,stroke:C.accent,maxLabels:8}); }
+    function buildDonut(canvas,overview){ donut(canvas,overview); }
+
+    function buildHistogram(canvas,payload,fill=C.accent,stroke=C.accent){
+      bar(canvas,payload.labels,payload.counts,{fill,stroke,maxLabels:8,maxBar:32});
+    }
+    function buildRoc(canvas,models){
+      line(canvas,models.map((m,i)=>({color:[C.text2,C.slate,C.accent][i%3],points:m.roc.fpr.map((x,k)=>({x,y:m.roc.tpr[k]}))})),{xTitle:"false-positive rate"});
+    }
+    function buildCalibration(canvas,models){
+      line(canvas,models.map((m,i)=>({color:[C.text2,C.slate,C.accent][i%3],points:m.reliability.bin_mid.map((x,k)=>({x,y:m.reliability.frac_pos[k]}))})),{xTitle:"mean predicted probability"});
+    }
+    function buildBenchmark(canvas,models){
+      const labels=["Accuracy","Precision","Recall","F1","ROC-AUC"];
+      const {ctx,w,h}=setup(canvas); const left=58,right=18,top=18,bottom=38,cw=w-left-right,ch=h-top-bottom;
+      grid(ctx,left,top,cw,ch,1);
+      const group=cw/labels.length, bw=Math.min(18,group/(models.length+2));
+      models.forEach((m,mi)=>labels.forEach((_,i)=>{
+        const keys=["accuracy","precision","recall","f1","roc_auc"];
+        const v=Number(m.metrics[keys[i]]); const bh=v*ch;
+        const bx=left+i*group+group/2+(mi-(models.length-1)/2)*(bw+3)-bw/2;
+        ctx.fillStyle=[C.text2,C.slate,C.accent][mi%3];ctx.globalAlpha=.72;ctx.fillRect(bx,top+ch-bh,bw,bh);ctx.globalAlpha=1;
+      }));
+      xLabels(ctx,labels,left,top+ch+24,cw,5);
+    }
+    function buildAllFallback(){
+      document.querySelectorAll("canvas[data-chart]").forEach(canvas=>{
+        const kind=canvas.dataset.chart,key=canvas.dataset.key;
+        try{
+          if(kind==="hist"&&EDA.histograms)buildHistogram(canvas,EDA.histograms[key]);
+          else if(kind==="donut"&&EDA.overview)buildDonut(canvas,EDA.overview);
+          else if(kind==="ratefeat"&&EDA.rateByFeature)buildRateBars(canvas,EDA.rateByFeature[key]);
+          else if(kind==="std"&&EDA.standardized)buildHistogram(canvas,EDA.standardized[key],C.slate,C.slate);
+          else if(kind==="missing"&&EDA.missing)buildMissing(canvas,EDA.missing);
+          else if(kind==="influence"&&EDA.influence)buildInfluence(canvas,EDA.influence);
+          else if(kind==="cat"&&EDA.categories)buildCategory(canvas,EDA.categories[key]);
+          else if(kind==="gender"&&EDA.gender_split)buildGender(canvas,EDA.gender_split);
+          else if(kind==="roc"&&EDA.models)buildRoc(canvas,EDA.models);
+          else if(kind==="calibration"&&EDA.models)buildCalibration(canvas,EDA.models);
+          else if(kind==="importance"&&EDA.importance)buildInfluence(canvas,EDA.importance);
+          else if(kind==="benchmark"&&window.MODEL_PAGE?.models)buildBenchmark(canvas,window.MODEL_PAGE.models);
+        }catch(err){console.error("fallback chart failed:",kind,key||"",err);}
+      });
+    }
+    window.PPCharts={buildRoc,buildBenchmark,buildCalibration,buildHistogram,buildRateBars,buildDonut,palette:{
+      accentFill:"rgba(217,166,63,.55)",accent:C.accent
+    }};
+    const ready=()=>buildAllFallback();
+    if(document.fonts?.ready) document.fonts.ready.then(ready); else ready();
+    return;
+  }
 
   const EDA = window.EDA || {};
 
