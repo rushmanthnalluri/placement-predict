@@ -33,7 +33,32 @@ def wait_for_page(page):
     page.wait_for_load_state("domcontentloaded")
     page.wait_for_timeout(1200)
     page.wait_for_function("document.fonts ? document.fonts.status === 'loaded' : true")
+    # Charts must be painted before the screenshot. Chart.js is optional now:
+    # the app has a native canvas fallback when the CDN is unreachable.
     page.wait_for_timeout(600)
+    page.wait_for_function(
+        """() => {
+            const canvases = [...document.querySelectorAll("canvas[data-chart]")];
+            if (!canvases.length) return true;
+            return canvases.every((canvas) => {
+                const w = canvas.width, h = canvas.height;
+                if (!w || !h) return false;
+                const ctx = canvas.getContext("2d");
+                if (!ctx) return false;
+                const stepX = Math.max(1, Math.floor(w / 80));
+                const stepY = Math.max(1, Math.floor(h / 40));
+                const pixels = ctx.getImageData(0, 0, w, h).data;
+                let painted = 0;
+                for (let y = 0; y < h; y += stepY) {
+                    for (let x = 0; x < w; x += stepX) {
+                        const i = (y * w + x) * 4;
+                        if (pixels[i + 3] > 20) painted++;
+                    }
+                }
+                return painted >= 4;
+            });
+        }"""
+    )
 
 
 def main():
