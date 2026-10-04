@@ -257,7 +257,7 @@ placement-predict/
 
 ## Installation
 
-Requires **Python 3.11+**. A virtual environment is recommended:
+Requires **Python 3.12** for the reproducible release baseline. A virtual environment is recommended:
 
 ```bash
 git clone https://github.com/rushmanthnalluri/placement-predict.git
@@ -453,7 +453,7 @@ The animated demo sits at the [top of this README](#placement-predict-system). P
 
 ## Testing & CI
 
-84 pytest tests (45 slow / 39 fast; the `slow` marker is registered in `tests/conftest.py`):
+84 pytest tests (the `slow` marker is registered in `tests/conftest.py`):
 
 ```bash
 pytest -q                 # full suite (trains + evaluates all models once)
@@ -462,7 +462,7 @@ pytest -m "not slow" -q   # fast subset — skips model training
 
 Coverage: every route × dataset state, the API contract, model artifacts, model selection, benchmarking, calibration, degenerate-input guards, upload intake, CORS, and security headers.
 
-CI (`.github/workflows/ci.yml`, on push/PR to `main`) runs pytest on Python 3.12, a Docker build, and strict pip-audit.
+CI (`.github/workflows/ci.yml`, on push/PR to `main`) runs pytest on Python 3.12, a Docker build, strict pip-audit, and a pinned-environment visual regeneration job that retrains the artifacts and captures every application stage.
 
 ## Future Improvements
 
