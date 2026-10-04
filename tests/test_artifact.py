@@ -1,6 +1,7 @@
 """Build-time model artifact: save/load round-trip and validation."""
 
 import model
+import sklearn
 
 
 def test_artifact_roundtrip(tmp_path, default_df):
@@ -20,7 +21,7 @@ def test_artifact_roundtrip(tmp_path, default_df):
     model._fitted_cache.clear()
     bundle = model.get_model_bundle(str(slice_path))
     assert bundle["ok"] is True
-    assert bundle["training_env"]["scikit_learn"] == model.sklearn.__version__ if hasattr(model, "sklearn") else True
+    assert bundle["training_env"]["scikit_learn"] == sklearn.__version__
     assert bundle["best"] in {"Logistic Regression", "Random Forest", "Gradient Boosting"}
     # the salary regressor is part of the bundle and the artifact payload
     assert 0 < bundle["salary_model"]["mae"] < 5
