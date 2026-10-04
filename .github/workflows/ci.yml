@@ -6,6 +6,9 @@ on:
   pull_request:
     branches: [main]
 
+permissions:
+  contents: read
+
 jobs:
   pytest:
     runs-on: ubuntu-latest
@@ -18,7 +21,6 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt pytest
       - name: Run the test suite
-        # includes the slow marker: cold model training runs once (~30s)
         run: pytest -q
 
   docker:
@@ -38,5 +40,60 @@ jobs:
       - name: Install pip-audit
         run: pip install pip-audit
       - name: Audit dependencies for known vulnerabilities
-        # strict: any known vulnerability in the resolved tree fails the job
         run: pip-audit -r requirements.txt
+
+  visuals:
+    runs-on: ubuntu-latest
+    needs: pytest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install application and visual test dependencies
+        run: pip install -r requirements.txt pytest playwright pillow
+      - name: Install Chromium
+        run: python -m playwright install --with-deps chromium
+      - name: Train the authoritative model artifacts
+        run: python flask_project/train_artifact.py
+      - name: Render the GitHub Pages snapshot from the trained bundle
+        run: python flask_project/export_pages.py
+      - name: Start the application
+        env:
+          SECRET_KEY: ci-visuals
+        run: |
+          nohup python flask_project/app.py > /tmp/placement-predict.log 2>&1 &
+          for i in $(seq 1 60); do
+            if curl -fsS http://127.0.0.1:5000/api/health >/tmp/health.json; then
+              cat /tmp/health.json
+              break
+            fi
+            sleep 1
+          done
+          curl -fsS http://127.0.0.1:5000/api/health
+      - name: Capture every application stage and regenerate the demo GIF
+        run: python tools/capture_visuals.py
+      - name: Validate visual outputs
+        run: |
+          test -s screenshots/home.png
+          test -s screenshots/upload.png
+          test -s screenshots/features.png
+          test -s screenshots/descriptive.png
+          test -s screenshots/missing.png
+          test -s screenshots/visualize.png
+          test -s screenshots/preprocess.png
+          test -s screenshots/train.png
+          test -s screenshots/evaluate.png
+          test -s screenshots/predict.png
+          test -s screenshots/demo.gif
+          test -s visuals_artifact/metrics.json
+      - name: Upload authoritative visual bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: placement-predict-authoritative-visuals
+          path: |
+            screenshots/
+            docs/
+            visuals_artifact/metrics.json
+          if-no-files-found: error
