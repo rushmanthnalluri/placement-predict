@@ -135,7 +135,8 @@ _cache_lock = threading.Lock()
 # artifacts are ignored. v2: per-model artifact files sit next to the main
 # bundle+champion artifact, so non-champion selections load in ~1 s instead
 # of retraining. v3: served models are Platt-calibrated. v4: the main
-# artifact also carries the fitted salary regressor.
+# artifact also carries the fitted salary regressor. v5: artifacts are bound
+# to the exact training environment.
 ARTIFACT_VERSION = 5
 
 # Artifacts are tied to the exact runtime that trained them. This prevents a
@@ -171,7 +172,8 @@ def save_artifact(path):
     candidate, so production never trains at request time. Used by
     train_artifact.py at image/deploy build time.
 
-    Layout (since ARTIFACT_VERSION 2; current environment-bound layout is v5): the main artifact carries the bundle,
+    Layout (since ARTIFACT_VERSION 2; current environment-bound layout is v5):
+    the main artifact carries the bundle,
     the impute means, and the fitted champion — small, so boot stays fast.
     Each candidate additionally gets its own compressed file; a non-champion
     selection then loads on demand in about a second (the 150-tree forest
@@ -233,8 +235,8 @@ def save_artifact(path):
 
 def _load_validated(ap, path):
     """joblib-load the artifact file `ap` for dataset `path`, or None.
-    Validates the recipe version and the dataset's content hash, so a stale
-    artifact can never silently serve the wrong model."""
+    Validates the recipe version, training environment, and dataset content hash,
+    so a stale or incompatible artifact can never silently serve the wrong model."""
     if not os.path.exists(ap):
         return None
     try:
