@@ -2,7 +2,7 @@
 
 ## Model details
 
-- **Model:** `HistGradientBoostingClassifier` (scikit-learn 1.9), default depth, lr 0.1
+- **Model:** `HistGradientBoostingClassifier` (scikit-learn 1.9.0), default depth, lr 0.1
 - **Calibration (new in v2):** Platt sigmoid — a logistic map fit on 3-fold
   out-of-fold predictions within the training split
   (`CalibratedClassifierCV(method="sigmoid", ensemble=False)`); the base model
