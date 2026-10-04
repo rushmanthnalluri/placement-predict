@@ -21,8 +21,8 @@
 | Secrets | PASS — execution (tree + full git history clean) | — | — | PASS |
 | Dependency security | PASS WITH CONCERN — pip-audit | vulnerable floors locally (P2) | ✔ floors + CI gate | PASS |
 | Docker | PASS WITH CONCERN — build/run/probe executed | root user, no .dockerignore (P2) | ✔ | PASS |
-| CI | MISSING | no workflows (P2) | ✔ added | PASS (first run pending at audit time) |
-| Tests | FAIL/ABSENT → 34 pytest tests added | none existed (P2) | ✔ | PASS (34/34 green) |
+| CI | Workflow present | pytest + Docker + pip-audit + authoritative visual regeneration | ✔ | PASS configuration; run status is environment-dependent |
+| Tests | 84 pytest tests in current repository | historical audit added the original suite; current artifact test also checks runtime version metadata | ✔ | PASS baseline documented in RELEASE_VERIFICATION_2026-10-04.md |
 | Docs truth | 17/19 README claims verified by execution | "retrain ~2s" false; Playwright-test claim unverifiable | ✔ | PASS |
 | Repo hygiene | PASS WITH CONCERN | junk file, duplicate-ish root CSV (P3) | ✔ / kept+documented | PASS |
 | Explainability | PASS — execution (importances match bit-for-bit, honest labels) | "wide margin" copy (P3) | ✔ | PASS |
