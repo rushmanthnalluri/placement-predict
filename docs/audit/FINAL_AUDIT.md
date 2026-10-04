@@ -1,3 +1,5 @@
+> **Current release note — 2026-10-04:** The historical audit below records the original forensic run and its 34-test suite. The current repository has **84 pytest tests**, pins **scikit-learn 1.9.0**, uses environment-bound v5 model artifacts, and has a dedicated CI visual-regeneration gate. See [RELEASE_VERIFICATION_2026-10-04.md](RELEASE_VERIFICATION_2026-10-04.md) for the current release contract.
+
 # PlacementPredict Final Forensic Audit
 
 ## Executive Verdict
