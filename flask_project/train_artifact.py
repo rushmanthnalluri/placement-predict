@@ -7,7 +7,7 @@ Run at image/deploy build time so production never trains at request time:
 Writes flask_project/data/model_artifact.joblib (bundle + champion + salary
 regressor), plus one model_artifact_<key>.joblib per candidate for on-demand
 non-champion loads. model.get_model_bundle loads them after validating the
-recipe version and the dataset's content hash.
+recipe version, training environment, and dataset content hash.
 """
 
 import os
