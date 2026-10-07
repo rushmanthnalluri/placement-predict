@@ -233,26 +233,85 @@ def save_artifact(path):
         )
 
 
-def _load_validated(ap, path):
-    """joblib-load the artifact file `ap` for dataset `path`, or None.
-    Validates the recipe version, training environment, and dataset content hash,
-    so a stale or incompatible artifact can never silently serve the wrong model."""
+def _valid_impute_means(value):
+    """Return True when an artifact carries a finite mean for every feature."""
+    try:
+        means = {feature: float(value[feature]) for feature in FEATURES}
+    except (KeyError, TypeError, ValueError):
+        return False
+    return all(np.isfinite(v) for v in means.values())
+
+
+def _valid_classifier(value):
+    """Minimal shape check before trusting an unpickled classifier object."""
+    return callable(getattr(value, "predict_proba", None)) and callable(
+        getattr(value, "predict", None)
+    )
+
+
+def _valid_scaler(value):
+    """Minimal shape check for the optional standard scaler."""
+    return value is None or callable(getattr(value, "transform", None))
+
+
+def _load_validated(ap, path, expected_key=None):
+    """Load an artifact only when version, environment, dataset, and shape match."""
     if not os.path.exists(ap):
         return None
     try:
         payload = joblib.load(ap)
     except Exception:  # noqa: BLE001 - a corrupt artifact just retrains
         return None
-    if not isinstance(payload, dict):  # unpickled but not an artifact payload
+    if not isinstance(payload, dict):
         return None
     if payload.get("version") != ARTIFACT_VERSION:
         return None
-    if payload.get("dataset_sha") != _dataset_sha(path):
+    try:
+        dataset_sha = _dataset_sha(path)
+    except OSError:
+        return None
+    if payload.get("dataset_sha") != dataset_sha:
         return None
     if payload.get("training_env") != TRAINING_ENV:
         return None
-    return payload
 
+    if expected_key is not None:
+        if payload.get("key") != expected_key:
+            return None
+        if not _valid_classifier(payload.get("clf")):
+            return None
+        expected_scaling = MODEL_REGISTRY[expected_key]["needs_scaling"]
+        if expected_scaling != (payload.get("scaler") is not None):
+            return None
+        if not _valid_scaler(payload.get("scaler")):
+            return None
+        return payload
+
+    bundle = payload.get("bundle")
+    champion_name = payload.get("champion_name")
+    champion = payload.get("champion")
+    scaler = payload.get("scaler")
+    if not isinstance(bundle, dict) or not bundle.get("ok"):
+        return None
+    if champion_name not in MODEL_NAMES or not _valid_classifier(champion):
+        return None
+    champion_key = resolve_model_key(champion_name)
+    if champion_key is None:
+        return None
+    if MODEL_REGISTRY[champion_key]["needs_scaling"] != (scaler is not None):
+        return None
+    if not _valid_scaler(scaler):
+        return None
+    if not _valid_impute_means(payload.get("impute_means")):
+        return None
+    if bundle.get("best") != champion_name or bundle.get("best_key") != champion_key:
+        return None
+    if not isinstance(bundle.get("models"), list) or not bundle.get("models"):
+        return None
+    salary_reg = payload.get("salary_reg")
+    if salary_reg is not None and not callable(getattr(salary_reg, "predict", None)):
+        return None
+    return payload
 
 def _load_artifact(path):
     """A validated precomputed bundle + fitted champion for `path`, or None."""
@@ -262,12 +321,12 @@ def _load_artifact(path):
 def _load_model_artifact(path, key):
     """A validated precomputed fitted candidate for `path`, or None — same
     version + content-hash discipline as the main artifact."""
-    return _load_validated(_model_artifact_path(path, key), path)
+    return _load_validated(_model_artifact_path(path, key), path, expected_key=key)
 
 
 def _cache_key(path):
     st = os.stat(path)
-    return (os.path.abspath(path), st.st_mtime, st.st_size)
+    return (os.path.abspath(path), st.st_mtime_ns, st.st_size)
 
 
 def get_model_bundle(path):
@@ -355,8 +414,14 @@ def warm_status(path):
     """Model readiness without triggering training — used by /api/health so
     health checks stay cheap. Reports the in-memory state plus whether a
     precomputed artifact is on disk (loads in ~ms on first use)."""
+    try:
+        key = _cache_key(path)
+    except OSError:
+        return {"trained": False, "artifact_available": False}
     with _cache_lock:
-        bundle = _bundle_cache.get(_cache_key(path))
+        bundle = _bundle_cache.get(key)
+        if bundle is not None:
+            _bundle_cache.move_to_end(key)
     if not bundle or not bundle.get("ok"):
         artifact_ready = os.path.exists(_artifact_path(path))
         return {"trained": False, "artifact_available": artifact_ready}
@@ -401,51 +466,13 @@ def _train_all_inner(path):
     if "StudentID" in df.columns:
         df = df[df["StudentID"] != 0]
 
-    # degenerate uploads get a clear reason instead of a traceback
-    if len(df) == 0:
+    # Shared schema/type/finite-value contract. Uploads are checked here too,
+    # but keep this guard for library callers that bypass the Flask intake.
+    valid, validation_error = eda.validate_dataset(df)
+    if not valid:
         return {
-            "schema_ok": True, "ok": False,
-            "error": "The file matches the placement schema but has no usable "
-                     "rows — there is nothing to train on.",
-        }
-    if df[TARGET].isna().any():
-        return {
-            "schema_ok": True, "ok": False,
-            "error": "The target column (PlacementStatus) has missing values — "
-                     "every row needs a known 0/1 outcome before a model can "
-                     "be trained.",
-        }
-    # exactly 0/1, before astype(int) below: floats like 0.5 would otherwise
-    # truncate silently and train on labels the file never had, and other
-    # label sets ({1, 2}, multiclass, text) only fail later with a raw
-    # sklearn error instead of a clear reason
-    target_ok = pd.api.types.is_numeric_dtype(df[TARGET]) and df[TARGET].isin([0, 1]).all()
-    if not target_ok:
-        return {
-            "schema_ok": True, "ok": False,
-            "error": "The target column (PlacementStatus) must be 0 or 1 on "
-                     "every row — 0 = not placed, 1 = placed. Other values "
-                     "can't train a binary placement model.",
-        }
-    text_cols = [c for c in FEATURES if not pd.api.types.is_numeric_dtype(df[c])]
-    if text_cols:
-        return {
-            "schema_ok": True, "ok": False,
-            "error": "Feature columns must be numeric — "
-                     f"{', '.join(text_cols)} arrived as text. Check the file "
-                     "for stray headers or formatting and try again.",
-        }
-    # an all-NaN feature has no training mean to impute with — without this
-    # guard the fit dies deep in sklearn with a raw internal error
-    empty_cols = [c for c in FEATURES if df[c].isna().all()]
-    if empty_cols:
-        plural = len(empty_cols) > 1
-        return {
-            "schema_ok": True, "ok": False,
-            "error": f"Feature column{'s' if plural else ''} "
-                     f"{', '.join(empty_cols)} {'are' if plural else 'is'} "
-                     "completely empty — there are no values to impute or "
-                     "train on. Fill or drop the column and try again.",
+            "schema_ok": False, "ok": False,
+            "error": validation_error,
         }
 
     X = df[FEATURES].copy()

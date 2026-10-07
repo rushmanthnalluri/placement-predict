@@ -13,10 +13,14 @@
   <div class="divider" aria-hidden="true"></div>
   <section class="upload-section">
     <div class="alert">
-      <strong>Dataset schema not supported</strong>
+      <strong>{{ "Dataset analysis unavailable" if bundle.get("analysis_error") else "Dataset schema not supported" }}</strong>
+      {% if bundle.get("analysis_error") %}
+      {{ bundle.error }}
+      {% else %}
       This stage expects the placement schema (CGPA, skill scores,
       PlacementStatus, …). The uploaded file has different columns, so there
       is nothing to analyse here — the bundled cohort would work.
+      {% endif %}
       <div class="alert-actions"><a href="{{ url_for('upload_dataset') }}">Review the upload</a></div>
     </div>
   </section>

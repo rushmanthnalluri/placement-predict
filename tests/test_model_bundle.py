@@ -7,6 +7,7 @@ in the fast subset.
 
 import pandas as pd
 import pytest
+import shutil
 
 import app as app_module
 import model
@@ -233,3 +234,39 @@ def test_string_typed_feature_rejected(tmp_path, default_df):
     bundle = model.get_model_bundle(str(make_csv(tmp_path, df, "text_cgpa.csv")))
     assert bundle["ok"] is False
     assert bundle["error"]
+
+# -- invalid-value contract -------------------------------------------------
+
+def test_infinite_feature_rejected(tmp_path, default_df):
+    df = default_df[default_df["StudentID"] != 0].head(100).copy()
+    df.loc[df.index[0], "CGPA"] = float("inf")
+    bundle = model.get_model_bundle(str(make_csv(tmp_path, df, "infinite.csv")))
+    assert bundle["ok"] is False
+    assert "non-finite" in bundle["error"]
+
+
+def test_invalid_target_value_rejected(tmp_path, default_df):
+    df = default_df[default_df["StudentID"] != 0].head(100).copy()
+    df.loc[df.index[0], "PlacementStatus"] = 2
+    bundle = model.get_model_bundle(str(make_csv(tmp_path, df, "bad-target.csv")))
+    assert bundle["ok"] is False
+    assert "only 0 or 1" in bundle["error"]
+
+
+def test_all_nan_feature_rejected(tmp_path, default_df):
+    df = default_df[default_df["StudentID"] != 0].head(100).copy()
+    df["CGPA"] = float("nan")
+    bundle = model.get_model_bundle(str(make_csv(tmp_path, df, "empty-feature.csv")))
+    assert bundle["ok"] is False
+    assert "completely empty" in bundle["error"]
+
+
+@pytest.mark.slow
+def test_per_model_artifact_rejects_swapped_key(tmp_path, default_df):
+    slice_path = tmp_path / "slice.csv"
+    default_df.head(300).to_csv(slice_path, index=False)
+    model.save_artifact(str(slice_path))
+    rf = tmp_path / "model_artifact_random_forest.joblib"
+    gb = tmp_path / "model_artifact_gradient_boosting.joblib"
+    shutil.copyfile(rf, gb)
+    assert model._load_model_artifact(str(slice_path), "gradient_boosting") is None

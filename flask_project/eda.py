@@ -106,7 +106,8 @@ _CACHE_MAX = 2  # the bundled dataset plus one upload, without re-reading on eve
 
 def _cache_key(path):
     st = os.stat(path)
-    return (os.path.abspath(path), st.st_mtime, st.st_size)
+    # nanosecond precision avoids stale hits when a file is rewritten quickly.
+    return (os.path.abspath(path), st.st_mtime_ns, st.st_size)
 
 
 def load_dataframe(path):
@@ -128,6 +129,78 @@ def load_dataframe(path):
 
 def schema_ok(df):
     return REQUIRED_COLS.issubset(set(df.columns))
+
+
+def validate_dataset(df):
+    """Validate the minimum data contract shared by upload, EDA, and ML.
+
+    Missing feature values are allowed and handled by train-only imputation;
+    non-finite values are rejected because they cannot be modelled safely.
+    Returns ``(True, None)`` when the frame is valid.
+    """
+    missing = sorted(REQUIRED_COLS - set(df.columns))
+    if missing:
+        return False, "That file is missing required columns: " + ", ".join(missing) + "."
+
+    if len(df) == 0:
+        return False, "The dataset is empty — add at least one data row."
+
+    numeric_cols = CORE_NUMERIC + [TARGET]
+    non_numeric = [
+        col for col in numeric_cols
+        if not pd.api.types.is_numeric_dtype(df[col])
+    ]
+    if non_numeric:
+        return (
+            False,
+            "Required feature/target columns must be numeric — "
+            + ", ".join(non_numeric) + " arrived as text.",
+        )
+
+    target = df[TARGET]
+    if target.isna().any():
+        return (
+            False,
+            "The target column (PlacementStatus) has missing values — "
+            "every row needs a known 0/1 outcome before modelling.",
+        )
+    if not np.isfinite(target.to_numpy(dtype=float)).all():
+        return (
+            False,
+            "The target column (PlacementStatus) contains non-finite values "
+            "(infinity).",
+        )
+    if not target.isin([0, 1]).all():
+        return (
+            False,
+            "The target column (PlacementStatus) must contain only 0 or 1 — "
+            "0 = not placed, 1 = placed.",
+        )
+
+    empty_features = []
+    bad_features = []
+    for col in CORE_NUMERIC:
+        values = df[col].dropna().to_numpy(dtype=float)
+        if not len(values):
+            empty_features.append(col)
+        elif not np.isfinite(values).all():
+            bad_features.append(col)
+
+    if empty_features:
+        return (
+            False,
+            "Feature columns " + ", ".join(empty_features)
+            + " are completely empty — there are no values to impute.",
+        )
+    if bad_features:
+        return (
+            False,
+            "Feature columns " + ", ".join(bad_features)
+            + " contain non-finite values (infinity). Replace them with "
+            "blank cells or finite numbers before uploading.",
+        )
+
+    return True, None
 
 
 def get_bundle(path):
@@ -214,16 +287,14 @@ def _box_stats(series):
 
 
 def _heat_color(value):
-    """Sequential amber cell color for the correlation heatmap (all
-    correlations in this dataset are >= 0, so a single-hue scale reads
-    cleaner than a diverging one). Matched to the UI palette."""
+    """Diverging correlation color: danger for negative, amber for positive."""
     if value is None:
         return "#1B1F1C"
-    v = max(0.0, min(1.0, value))
-    base = (27, 31, 28)                                   # raised surface
-    top = (217, 166, 63)                                  # flat amber accent
-    t = v ** 0.7                                          # boost mid-tones
-    rgb = tuple(round(b + (c - b) * t) for b, c in zip(base, top))
+    v = max(-1.0, min(1.0, value))
+    base = (27, 31, 28)
+    target = (217, 166, 63) if v >= 0 else (198, 93, 85)
+    t = abs(v) ** 0.7
+    rgb = tuple(round(b + (c - b) * t) for b, c in zip(base, target))
     return "#{:02x}{:02x}{:02x}".format(*rgb)
 
 
@@ -235,11 +306,9 @@ def _heat_matrix(corr, cols):
         for c in cols:
             v = corr.loc[r, c]
             v = None if pd.isna(v) else _f(v)
-            # WCAG-AA text on the amber ramp (measured against the blended
-            # fill): muted text passes up to t 0.181, ink only from t 0.663 —
-            # in between neither passes, so the value hides (the title
-            # tooltip still carries it) instead of rendering unreadably
-            t = (max(0.0, min(1.0, v)) ** 0.7) if v is not None else None
+            # Use magnitude for contrast thresholds so both correlation signs
+            # remain readable against their respective color ramps.
+            t = (abs(max(-1.0, min(1.0, v))) ** 0.7) if v is not None else None
             strong = t is not None and t >= 0.663
             show = t is not None and (t <= 0.181 or t >= 0.663)
             row.append({"v": v, "color": _heat_color(v), "strong": strong,
@@ -311,13 +380,10 @@ def _build_bundle(df):
         dropped_rows = _i((df["StudentID"] == 0).sum())
         df = df[df["StudentID"] != 0]
 
-    # a schema-passing frame can still be unusable — zero rows after the
-    # sentinel drop, or core columns that arrived as text. Treat those like
-    # a schema mismatch so no stage raises mid-build.
-    if len(df) == 0 or not all(
-        pd.api.types.is_numeric_dtype(df[c]) for c in CORE_NUMERIC + [TARGET]
-    ):
-        return {"schema_ok": False}
+    # Validate the full shared data contract before any numerical summary.
+    valid, validation_error = validate_dataset(df)
+    if not valid:
+        return {"schema_ok": False, "error": validation_error}
 
     bundle = {
         "schema_ok": schema_ok(df),
