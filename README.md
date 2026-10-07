@@ -15,6 +15,7 @@ sdk: docker
 
 [🚀 **Live app**](https://placement-predict-p2z1.onrender.com) ·
 [📊 **Static showcase**](https://rushmanthnalluri.github.io/placement-predict/) ·
+[💼 **LinkedIn**](https://www.linkedin.com/in/rushmanthnalluri/) ·
 [📋 **Model card**](MODEL_CARD.md) ·
 [🔍 **Forensic audit**](docs/audit/FINAL_AUDIT.md)
 
@@ -147,14 +148,18 @@ EDA pages show full-dataset mean imputation; the model imputes all 12 features w
 ## ML Pipeline
 
 ```mermaid
+---
+config:
+  htmlLabels: false
+---
 flowchart LR
-    A[50k placement dataset] --> B[Clean — sentinel-row guard<br/>(uploads)]
-    B --> C[Stratified 80/20 split · seed 42]
-    C --> D[Fit on train only:<br/>mean imputation · scaler]
-    D --> E[Train 3 candidates<br/>+ Platt calibration]
-    E --> F[Champion by 3-fold CV ROC-AUC<br/>on 12k training rows]
-    F --> G[Sealed test evaluation —<br/>touched exactly once]
-    G --> H[Serve: web app · JSON API<br/>sha256-validated artifacts]
+    A["50k placement dataset"] --> B["Clean — sentinel-row guard (uploads)"]
+    B --> C["Stratified 80/20 split · seed 42"]
+    C --> D["Fit on train only: mean imputation · scaler"]
+    D --> E["Train 3 candidates + Platt calibration"]
+    E --> F["Champion by 3-fold CV ROC-AUC on 12k training rows"]
+    F --> G["Sealed test evaluation — touched exactly once"]
+    G --> H["Serve: web app · JSON API · sha256-validated artifacts"]
 ```
 
 | # | Stage | What it shows |
