@@ -93,12 +93,15 @@ def main():
                     "AptitudeTestScore": "82",
                     "SoftSkillsRating": "4.5",
                     "CodingTestScore": "85",
-                    "MockInterviewScore": "8",
-                    "ExtraCurricular": "2",
+                    "MockInterviewScore": "80",
+                    "ExtraCurricular": "1",
                 }
                 for key, value in values.items():
                     page.locator(f'input[name="{key}"]').fill(value)
                 page.locator('button[type="submit"]').click()
+                page.locator(".result-kicker").filter(has_text="Prediction").wait_for()
+                if page.locator(".field-hint-error").count():
+                    raise RuntimeError("visual predict fixture produced validation errors")
                 wait_for_page(page)
 
             out = SCREENSHOTS / f"{name}.png"
