@@ -1,6 +1,10 @@
 """JSON API contract tests — /api/health and /api/predict."""
 
+import time
+
 import pytest
+
+import app as app_module
 
 
 def test_health_shape(client):
@@ -197,6 +201,16 @@ def test_api_benchmark_empty_body_benchmarks_all(client):
     resp = client.post("/api/benchmark")  # no body at all
     assert resp.status_code == 200
     assert len(resp.get_json()["models"]) == 3
+
+
+def test_api_benchmark_fresh_rate_limited(client, monkeypatch):
+    """The expensive fresh path cannot be hammered through the public API."""
+    monkeypatch.setattr(app_module, "FRESH_BENCHMARK_COOLDOWN", 60)
+    monkeypatch.setattr(app_module, "_last_fresh_benchmark_at", time.monotonic())
+    resp = client.post("/api/benchmark", json={"fresh": True})
+    assert resp.status_code == 429
+    assert resp.get_json()["retry_after_seconds"] > 0
+    assert resp.headers["Retry-After"]
 
 
 def test_api_benchmark_unknown_model(client):
