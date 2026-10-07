@@ -1,6 +1,7 @@
 import os
 import secrets
 import threading
+import time
 import zipfile
 from uuid import uuid4
 
@@ -63,6 +64,15 @@ app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
 app.config["SESSION_COOKIE_SECURE"] = os.environ.get(
     "SESSION_COOKIE_SECURE", ""
 ).lower() in {"1", "true", "yes"}
+
+# A fresh benchmark deliberately re-fits the ML pipeline and is therefore
+# expensive. Keep the public JSON endpoint from being used as an anonymous
+# CPU-exhaustion primitive. The normal cached benchmark remains unrestricted.
+FRESH_BENCHMARK_COOLDOWN = max(
+    0, int(os.environ.get("FRESH_BENCHMARK_COOLDOWN", "30"))
+)
+_fresh_benchmark_lock = threading.Lock()
+_last_fresh_benchmark_at = 0.0
 
 
 @app.after_request
@@ -957,6 +967,19 @@ def api_benchmark():
         isinstance(raw_fresh, str)
         and raw_fresh.strip().lower() in {"1", "true", "yes"}
     )
+    if fresh and FRESH_BENCHMARK_COOLDOWN:
+        global _last_fresh_benchmark_at
+        now = time.monotonic()
+        with _fresh_benchmark_lock:
+            elapsed = now - _last_fresh_benchmark_at
+            if elapsed < FRESH_BENCHMARK_COOLDOWN:
+                retry_after = max(1, int(FRESH_BENCHMARK_COOLDOWN - elapsed))
+                return jsonify({
+                    "error": "Fresh benchmarking is temporarily rate-limited.",
+                    "retry_after_seconds": retry_after,
+                }), 429, {"Retry-After": str(retry_after)}
+            _last_fresh_benchmark_at = now
+
     result = model.benchmark(path, keys, fresh=fresh)
     if not result.get("ok"):
         return jsonify({
