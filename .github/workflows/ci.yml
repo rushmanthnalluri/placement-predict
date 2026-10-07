@@ -7,7 +7,11 @@ on:
     branches: [main]
 
 permissions:
-  contents: write
+  contents: read
+
+concurrency:
+  group: placement-predict-ci-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   pytest:
@@ -45,6 +49,8 @@ jobs:
   visuals:
     runs-on: ubuntu-latest
     needs: pytest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
