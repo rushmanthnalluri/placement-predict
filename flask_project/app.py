@@ -34,6 +34,8 @@ else:
 UPLOAD_FOLDER = os.path.join(app.root_path, "data", "uploads")
 ALLOWED_EXTENSIONS = {"csv", "xlsx"}
 MAX_PREVIEW_ROWS = 8
+MAX_XLSX_UNCOMPRESSED_BYTES = 100 * 1024 * 1024
+MAX_XLSX_MEMBERS = 10_000
 
 # Bundled dataset (CSV twin of "placement_predict_50k Dataset.xlsx", kept for
 # fast loading) powers every page until the user uploads their own file.
@@ -71,8 +73,10 @@ app.config["SESSION_COOKIE_SECURE"] = os.environ.get(
 FRESH_BENCHMARK_COOLDOWN = max(
     0, int(os.environ.get("FRESH_BENCHMARK_COOLDOWN", "30"))
 )
+FRESH_BENCHMARK_BUSY_RETRY_SECONDS = 5
 _fresh_benchmark_lock = threading.Lock()
 _last_fresh_benchmark_at = 0.0
+_fresh_benchmark_in_progress = False
 
 
 @app.after_request
@@ -263,11 +267,13 @@ def _active_dataset():
 def _active_bundle():
     path, name, is_default = _active_dataset()
     try:
-        bundle = eda.get_bundle(path)
-    except Exception:  # noqa: BLE001 - unreadable upload falls back to default
-        bundle = eda.get_bundle(DEFAULT_DATASET)
-        path, name, is_default = DEFAULT_DATASET, DEFAULT_DATASET_NAME, True
-    return bundle, name, is_default
+        return eda.get_bundle(path), name, is_default
+    except Exception:  # noqa: BLE001 - keep the active dataset visible on analysis failure
+        app.logger.exception("Could not analyse active dataset %s", path)
+        return {
+            "schema_ok": False,
+            "error": "The active dataset could not be analysed. Re-upload the file and try again.",
+        }, name, is_default
 
 
 # ---------------------------------------------------------------------------
@@ -278,13 +284,27 @@ def _allowed_file(filename):
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
+def _safe_unlink(path):
+    """Delete an internal upload path without turning races into 500s."""
+    if not path:
+        return
+    try:
+        os.remove(path)
+    except FileNotFoundError:
+        pass
+    except OSError:
+        app.logger.warning("Could not remove upload file %s", path, exc_info=True)
+
+
 def _read_dataset(filepath):
     if filepath.lower().endswith(".xlsx"):
-        # an xlsx is a zip: the 10 MB upload cap limits the *compressed*
-        # size, but a hostile file can inflate to hundreds of MB of sheet
-        # XML in RAM — reject by uncompressed size before pandas opens it
+        # XLSX is a ZIP container. Bound both the expanded XML volume and
+        # member count before openpyxl allocates workbook structures.
         with zipfile.ZipFile(filepath) as zf:
-            if sum(i.file_size for i in zf.infolist()) > 100 * 1024 * 1024:
+            infos = zf.infolist()
+            if len(infos) > MAX_XLSX_MEMBERS:
+                raise ValueError("Excel file contains too many ZIP members")
+            if sum(i.file_size for i in infos) > MAX_XLSX_UNCOMPRESSED_BYTES:
                 raise ValueError("Excel file expands too large when opened")
     # the shared loader caches by path+mtime+size, so revisiting the upload
     # page doesn't re-parse the same file from disk on every request
@@ -441,35 +461,36 @@ def upload_dataset():
             # kept only for display.
             stored_name = f"{uuid4().hex[:8]}_{safe_name}"
             filepath = os.path.join(app.config["UPLOAD_FOLDER"], stored_name)
-            uploaded_file.save(filepath)
-
             try:
-                df = _read_dataset(filepath)
-            except Exception:  # noqa: BLE001 - any parse failure rejects the upload
-                app.logger.exception("Could not parse uploaded file %s", stored_name)
-                os.remove(filepath)
-                error = ("That file couldn't be read as a CSV or Excel "
-                         "dataset. Check the file and try again.")
+                uploaded_file.save(filepath)
+            except Exception:  # noqa: BLE001 - intake I/O failures are user-facing
+                app.logger.exception("Could not save uploaded file %s", stored_name)
+                _safe_unlink(filepath)
+                error = "The upload could not be saved. Check available storage and try again."
             else:
-                missing = sorted(eda.REQUIRED_COLS - set(df.columns))
-                if missing:
-                    os.remove(filepath)
-                    error = ("That file is missing required columns: "
-                             + ", ".join(missing) + ".")
+                try:
+                    df = _read_dataset(filepath)
+                except Exception:  # noqa: BLE001 - any parse failure rejects the upload
+                    app.logger.exception("Could not parse uploaded file %s", stored_name)
+                    _safe_unlink(filepath)
+                    error = ("That file couldn't be read as a CSV or Excel "
+                             "dataset. Check the file and try again.")
                 else:
-                    previous = session.get("dataset_file")
-                    session["dataset_file"] = stored_name
-                    session["dataset_name"] = display_name
-                    preview = _build_preview(df)
-                    # the replaced upload would otherwise sit on disk until
-                    # the next restart's _clean_uploads sweep
-                    if previous and previous != stored_name:
-                        old_path = _dataset_path(previous)
-                        if old_path and os.path.exists(old_path):
-                            try:
-                                os.remove(old_path)
-                            except OSError:
-                                pass
+                    valid, validation_error = eda.validate_dataset(df)
+                    if not valid:
+                        _safe_unlink(filepath)
+                        error = validation_error
+                    else:
+                        previous = session.get("dataset_file")
+                        session["dataset_file"] = stored_name
+                        session["dataset_name"] = display_name
+                        preview = _build_preview(df)
+                        # the replaced upload would otherwise sit on disk until
+                        # the next restart's _clean_uploads sweep
+                        if previous and previous != stored_name:
+                            old_path = _dataset_path(previous)
+                            if old_path and os.path.exists(old_path):
+                                _safe_unlink(old_path)
 
     # No fresh upload this request - if one is already on file, show it
     # (even alongside an error, so the active dataset stays visible).
@@ -508,7 +529,7 @@ def clear_dataset():
     session.pop("dataset_name", None)
     filepath = _dataset_path(stored_name)
     if filepath and os.path.exists(filepath):
-        os.remove(filepath)
+        _safe_unlink(filepath)
     return redirect(url_for("upload_dataset"))
 
 
@@ -663,6 +684,9 @@ def _conditional_salary(path, values):
         return model.predict_salary(path, values)
     except RuntimeError:
         return None
+    except Exception:  # noqa: BLE001 - salary is optional; classifier result remains usable
+        app.logger.exception("Optional salary prediction failed")
+        return None
 
 
 @app.route("/predict", methods=["GET", "POST"])
@@ -710,29 +734,36 @@ def predict_placement():
                 invalid_fields.append(name)
             values[name] = val
         if not errors:
-            proba = model.predict(path, values, chosen)
-            roc_auc = next(
-                m["metrics"]["roc_auc"] for m in mb["models"] if m["name"] == chosen
-            )
-            placed = proba >= 0.5
-            probability = round(proba * 100, 1)
-            conditional = _conditional_salary(path, values)
-            result = {
-                "placed": placed,
-                "probability": probability,
-                "model": chosen,
-                "is_champion": chosen == mb["best"],
-                "roc_auc": roc_auc,
-                "explanation": _prediction_note(placed, probability, chosen, roc_auc),
-                "values": values,
-                "salary_package_lpa": (
-                    round(conditional, 1) if conditional is not None else None
-                ),
-                "expected_package_lpa": (
-                    round(proba * conditional, 1)
-                    if conditional is not None else None
-                ),
-            }
+            try:
+                proba = model.predict(path, values, chosen)
+                roc_auc = next(
+                    m["metrics"]["roc_auc"] for m in mb["models"] if m["name"] == chosen
+                )
+            except Exception:  # noqa: BLE001 - never expose estimator internals
+                app.logger.exception("Prediction failed for active dataset")
+                errors.append(
+                    "Prediction failed for this dataset. Please re-upload it or try again."
+                )
+            else:
+                placed = proba >= 0.5
+                probability = round(proba * 100, 1)
+                conditional = _conditional_salary(path, values)
+                result = {
+                    "placed": placed,
+                    "probability": probability,
+                    "model": chosen,
+                    "is_champion": chosen == mb["best"],
+                    "roc_auc": roc_auc,
+                    "explanation": _prediction_note(placed, probability, chosen, roc_auc),
+                    "values": values,
+                    "salary_package_lpa": (
+                        round(conditional, 1) if conditional is not None else None
+                    ),
+                    "expected_package_lpa": (
+                        round(proba * conditional, 1)
+                        if conditional is not None else None
+                    ),
+                }
 
     return render_template(
         "predict.html",
@@ -815,6 +846,18 @@ def api_predict():
             "expected_fields": model.FEATURES,
         }), 415
 
+    # Parse the body before touching the model cache. A malformed or wrong-
+    # shaped request should fail cheaply instead of triggering cold training.
+    payload = request.get_json(silent=True)
+    if payload is None:
+        # an unparseable body must not silently become an all-median input
+        # (an empty body or a JSON null still means "all defaults")
+        if request.data and request.data.strip() != b"null":
+            return jsonify({"error": "Request body is not valid JSON."}), 400
+        payload = {}
+    if not isinstance(payload, dict):
+        return jsonify({"error": "JSON body must be an object of feature values."}), 400
+
     bundle, dataset_name, _ = _active_bundle()
     if not bundle["schema_ok"]:
         return jsonify({
@@ -825,23 +868,13 @@ def api_predict():
     path, _, _ = _active_dataset()
     try:
         mb = model.get_model_bundle(path)
-    except Exception as exc:  # noqa: BLE001
+    except Exception:  # noqa: BLE001 - preserve the API contract on training failure
         mb = {"ok": False, "error": "Training failed on this dataset."}
     if not mb.get("ok"):
         return jsonify({
             "error": "No trained model available for the active dataset.",
             "detail": mb.get("error"),
         }), 503
-
-    payload = request.get_json(silent=True)
-    if payload is None:
-        # an unparseable body must not silently become an all-median input
-        # (an empty body or a JSON null still means "all defaults")
-        if request.data and request.data.strip() != b"null":
-            return jsonify({"error": "Request body is not valid JSON."}), 400
-        payload = {}
-    if not isinstance(payload, dict):
-        return jsonify({"error": "JSON body must be an object of feature values."}), 400
 
     # model selection: "model" may be a registry key ("random_forest"), a
     # display name ("Random Forest"), or "best" (the default) for the
@@ -863,6 +896,9 @@ def api_predict():
         if raw is None or raw == "":
             values[name] = float(meta["default"])  # absent -> dataset median
             continue
+        if isinstance(raw, bool):
+            errors.append(f"{name}: expected a number, got boolean.")
+            continue
         try:
             val = float(raw)
         except (TypeError, ValueError):
@@ -878,7 +914,14 @@ def api_predict():
     if errors:
         return jsonify({"error": "Validation failed", "details": errors}), 400
 
-    proba = model.predict(path, values, chosen)
+    try:
+        proba = model.predict(path, values, chosen)
+    except Exception:  # noqa: BLE001 - preserve JSON API contract on estimator failure
+        app.logger.exception("API prediction failed for active dataset")
+        return jsonify({
+            "error": "Prediction failed for this dataset.",
+            "detail": "The selected model could not evaluate the supplied profile.",
+        }), 503
     conditional = _conditional_salary(path, values)
     return jsonify({
         "placed": proba >= 0.5,
@@ -967,20 +1010,35 @@ def api_benchmark():
         isinstance(raw_fresh, str)
         and raw_fresh.strip().lower() in {"1", "true", "yes"}
     )
-    if fresh and FRESH_BENCHMARK_COOLDOWN:
-        global _last_fresh_benchmark_at
+    if fresh:
+        global _last_fresh_benchmark_at, _fresh_benchmark_in_progress
         now = time.monotonic()
         with _fresh_benchmark_lock:
+            if _fresh_benchmark_in_progress:
+                return jsonify({
+                    "error": "A fresh benchmark is already running.",
+                    "retry_after_seconds": FRESH_BENCHMARK_BUSY_RETRY_SECONDS,
+                }), 429, {"Retry-After": str(FRESH_BENCHMARK_BUSY_RETRY_SECONDS)}
             elapsed = now - _last_fresh_benchmark_at
-            if elapsed < FRESH_BENCHMARK_COOLDOWN:
+            if FRESH_BENCHMARK_COOLDOWN and elapsed < FRESH_BENCHMARK_COOLDOWN:
                 retry_after = max(1, int(FRESH_BENCHMARK_COOLDOWN - elapsed))
                 return jsonify({
                     "error": "Fresh benchmarking is temporarily rate-limited.",
                     "retry_after_seconds": retry_after,
                 }), 429, {"Retry-After": str(retry_after)}
             _last_fresh_benchmark_at = now
+            _fresh_benchmark_in_progress = True
 
-    result = model.benchmark(path, keys, fresh=fresh)
+    try:
+        try:
+            result = model.benchmark(path, keys, fresh=fresh)
+        except Exception:  # noqa: BLE001 - keep benchmark failures JSON-shaped
+            app.logger.exception("Benchmark failed for active dataset")
+            return jsonify({"error": "Benchmark failed for this dataset."}), 503
+    finally:
+        if fresh:
+            with _fresh_benchmark_lock:
+                _fresh_benchmark_in_progress = False
     if not result.get("ok"):
         return jsonify({
             "error": "No trained models available for the active dataset.",

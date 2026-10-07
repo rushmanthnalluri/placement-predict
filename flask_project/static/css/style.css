@@ -1012,7 +1012,7 @@ select:focus-visible, textarea:focus-visible, [tabindex]:focus-visible,
   flex: 0 0 200px;
   height: 6px;
   border-radius: 3px;
-  background: linear-gradient(90deg, var(--raised), var(--accent));
+  background: linear-gradient(90deg, var(--danger), var(--raised) 50%, var(--accent));
 }
 
 /* boxplot SVGs */

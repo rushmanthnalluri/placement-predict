@@ -74,6 +74,46 @@ def test_clear_restores_default(client, tmp_path, default_df):
     assert DEFAULT_DATASET_NAME in home
 
 
+def test_upload_rejects_non_numeric_required_field(client, tmp_path, default_df):
+    df = default_df[default_df["StudentID"] != 0].head(100).copy()
+    df["CGPA"] = "bad"
+    resp = post_file(client, make_csv(tmp_path, df, "text.csv"))
+    assert resp.status_code == 200
+    assert "must be numeric" in resp.get_data(as_text=True)
+    assert list((tmp_path / "uploads").iterdir()) == []
+
+
+def test_upload_rejects_invalid_target(client, tmp_path, default_df):
+    df = default_df[default_df["StudentID"] != 0].head(100).copy()
+    df["PlacementStatus"] = 2
+    resp = post_file(client, make_csv(tmp_path, df, "bad-target.csv"))
+    assert resp.status_code == 200
+    assert "must contain only 0 or 1" in resp.get_data(as_text=True)
+    assert list((tmp_path / "uploads").iterdir()) == []
+
+
+def test_upload_rejects_infinite_feature(client, tmp_path, default_df):
+    df = default_df[default_df["StudentID"] != 0].head(100).copy()
+    df.loc[df.index[0], "CGPA"] = float("inf")
+    resp = post_file(client, make_csv(tmp_path, df, "infinite.csv"))
+    assert resp.status_code == 200
+    assert "non-finite" in resp.get_data(as_text=True)
+    assert list((tmp_path / "uploads").iterdir()) == []
+
+
+def test_active_dataset_error_does_not_silently_fallback(client, tmp_path, default_df, monkeypatch):
+    df = default_df[default_df["StudentID"] != 0].head(100).copy()
+    post_file(client, make_csv(tmp_path, df, "active.csv"))
+    def fail(path):
+        raise RuntimeError("synthetic analysis failure")
+    monkeypatch.setattr(app_module.eda, "get_bundle", fail)
+    resp = client.get("/")
+    body = resp.get_data(as_text=True)
+    assert resp.status_code == 200
+    assert "active.csv" in body
+    assert "could not be analysed" in body
+    assert DEFAULT_DATASET_NAME not in body
+
 def _sign_with(secret, payload):
     """Sign a session payload with an arbitrary key (forgery simulation)."""
     app = app_module.app

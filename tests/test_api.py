@@ -70,6 +70,12 @@ def test_api_predict_includes_salary_package(client):
     assert weak["expected_package_lpa"] < weak["salary_package_lpa"]
 
 
+@pytest.mark.slow
+def test_api_predict_rejects_boolean_feature(client):
+    resp = client.post("/api/predict", json={"CGPA": True})
+    assert resp.status_code == 400
+    assert "expected a number, got boolean" in resp.get_json()["details"][0]
+
 def test_api_predict_requires_json(client):
     resp = client.post("/api/predict", data="CGPA=8")
     assert resp.status_code == 415
@@ -77,6 +83,12 @@ def test_api_predict_requires_json(client):
 
 
 @pytest.mark.slow
+def test_api_predict_invalid_json_is_json_error(client):
+    resp = client.post("/api/predict", data="{broken", content_type="application/json")
+    assert resp.status_code == 400
+    assert resp.is_json
+    assert resp.get_json()["error"] == "Request body is not valid JSON."
+
 def test_api_predict_validation(client):
     resp = client.post("/api/predict", json={"CGPA": 999})
     assert resp.status_code == 400
@@ -86,6 +98,18 @@ def test_api_predict_validation(client):
     assert resp.status_code == 400
     assert "expected a number" in resp.get_json()["details"][0]
 
+
+@pytest.mark.slow
+def test_api_predict_model_failure_is_json(client, monkeypatch):
+    client.get("/train")
+    def fail(*args, **kwargs):
+        raise RuntimeError("internal estimator detail")
+    monkeypatch.setattr(app_module.model, "predict", fail)
+    resp = client.post("/api/predict", json={"CGPA": 8.0})
+    assert resp.status_code == 503
+    body = resp.get_json()
+    assert body["error"] == "Prediction failed for this dataset."
+    assert "internal estimator detail" not in resp.get_data(as_text=True)
 
 # -- model selection ----------------------------------------------------------
 
@@ -202,6 +226,13 @@ def test_api_benchmark_empty_body_benchmarks_all(client):
     assert resp.status_code == 200
     assert len(resp.get_json()["models"]) == 3
 
+
+def test_api_benchmark_busy_is_rate_limited(client, monkeypatch):
+    monkeypatch.setattr(app_module, "_fresh_benchmark_in_progress", True)
+    resp = client.post("/api/benchmark", json={"fresh": True})
+    assert resp.status_code == 429
+    assert resp.headers["Retry-After"]
+    assert resp.get_json()["error"] == "A fresh benchmark is already running."
 
 def test_api_benchmark_fresh_rate_limited(client, monkeypatch):
     """The expensive fresh path cannot be hammered through the public API."""

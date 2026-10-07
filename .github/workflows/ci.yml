@@ -24,15 +24,37 @@ jobs:
           cache: pip
       - name: Install dependencies
         run: pip install -r requirements.txt pytest
+      - name: Verify Python sources compile
+        run: python -m compileall -q flask_project tests tools
+      - name: Verify installed dependencies
+        run: pip check
       - name: Run the test suite
-        run: pytest -q
+        run: pytest --strict-markers -q
 
   docker:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
       - name: Build the image (no push)
-        run: docker build .
+        run: docker build -t placement-predict:ci .
+      - name: Smoke-test the container
+        shell: bash
+        run: |
+          set -euo pipefail
+          cid="$(docker run -d --rm -p 18080:7860 -e SECRET_KEY=ci-smoke placement-predict:ci)"
+          cleanup() {
+            docker stop "$cid" >/dev/null 2>&1 || true
+          }
+          trap cleanup EXIT
+          for _ in {1..30}; do
+            if curl --fail --silent --show-error http://127.0.0.1:18080/api/health >/tmp/health.json; then
+              break
+            fi
+            sleep 1
+          done
+          test -s /tmp/health.json
+          grep -q '"status":"ok"' /tmp/health.json
+          docker logs "$cid" 2>&1 | tail -n 80
 
   pip-audit:
     runs-on: ubuntu-latest
