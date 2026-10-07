@@ -1,5 +1,6 @@
 """EDA bundle facts for the bundled 50k cohort."""
 
+import pandas as pd
 import pytest
 
 import app as app_module
