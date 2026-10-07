@@ -293,7 +293,7 @@ Dependencies: `flask>=3.1.3`, `jinja2>=3.1.6`, `werkzeug>=3.1.8`, `numpy>=1.26`,
 python flask_project/app.py   # → http://127.0.0.1:5000
 ```
 
-Set `FLASK_DEBUG=1` to opt into Flask debug mode. On a fresh clone, the first visit to a model stage trains all three models with calibration (~40 s), then caches in memory and writes artifacts to disk; EDA pages are instant.
+Set `FLASK_DEBUG=1` to opt into Flask debug mode. On a fresh clone without prebuilt artifacts, the first model-stage visit trains all three models with calibration (about 10 s on the audited environment), then caches in memory; EDA pages are instant. Production Docker/Render builds pretrain the artifacts.
 
 **Production:**
 
