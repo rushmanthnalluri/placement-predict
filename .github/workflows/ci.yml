@@ -100,8 +100,8 @@ jobs:
       - name: Commit regenerated visuals on main
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config user.name "Rushmanth Nalluri"
+          git config user.email "223413137+rushmanthnalluri@users.noreply.github.com"
           git add screenshots docs
           if git diff --cached --quiet; then
             echo "No generated visual changes to commit."
