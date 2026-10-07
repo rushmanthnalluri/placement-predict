@@ -9,9 +9,11 @@ from conftest import DEFAULT_DATASET_NAME, make_csv, post_file
 def test_upload_no_file_shows_error(client):
     resp = client.post("/upload", data={}, content_type="multipart/form-data")
     assert resp.status_code == 200
-    assert "Choose a CSV or Excel file before uploading." in resp.get_data(
-        as_text=True
-    )
+    body = resp.get_data(as_text=True)
+    assert "Choose a CSV or Excel file before uploading." in body
+    # Preview tables must show an explicit missing-value marker, never Python's
+    # raw "nan" representation.
+    assert ">nan<" not in body.lower()
 
 
 def test_upload_wrong_extension_rejected(client):
