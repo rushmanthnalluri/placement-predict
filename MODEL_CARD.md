@@ -112,5 +112,5 @@ MockInterviewScore, then the skill-score cluster.
 Seed 42 everywhere; two fresh-process training runs produce byte-identical
 metric bundles (audit-verified for the v1 recipe; v2 adds calibration on top
 of the same split and transforms). Retrain: start the app and hit `/train`
-(~40 s cold with calibration, cached after). Full environment:
+(about 10 s cold with calibration on the audited environment, cached after). Full environment:
 `requirements.txt`; container: `Dockerfile`.
