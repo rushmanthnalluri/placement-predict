@@ -285,6 +285,10 @@ def _build_preview(df, max_rows=MAX_PREVIEW_ROWS):
     preview_df = df.head(max_rows).copy()
     for col in preview_df.select_dtypes(include="number").columns:
         preview_df[col] = preview_df[col].round(2)
+    # Missing values are data, not the Python string "nan".  Convert them to
+    # an explicit UI marker so the preview never renders a misleading NaN
+    # literal (and so CSV/Excel previews behave identically).
+    preview_df = preview_df.astype(object).where(preview_df.notna(), "—")
 
     return {
         "rows": int(df.shape[0]),
