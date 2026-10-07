@@ -272,6 +272,7 @@ def _active_bundle():
         app.logger.exception("Could not analyse active dataset %s", path)
         return {
             "schema_ok": False,
+            "analysis_error": True,
             "error": "The active dataset could not be analysed. Re-upload the file and try again.",
         }, name, is_default
 
@@ -810,7 +811,11 @@ def api_dataset():
     bundle, dataset_name, is_default = _active_bundle()
     if not bundle["schema_ok"]:
         return jsonify({
-            "error": "The active dataset does not match the placement schema.",
+            "error": (
+                "The active dataset could not be analysed."
+                if bundle.get("analysis_error")
+                else "The active dataset does not match the placement schema."
+            ),
             "dataset": dataset_name,
         }), 503
     ov = bundle["overview"]
@@ -861,7 +866,11 @@ def api_predict():
     bundle, dataset_name, _ = _active_bundle()
     if not bundle["schema_ok"]:
         return jsonify({
-            "error": "The active dataset does not match the placement schema.",
+            "error": (
+                "The active dataset could not be analysed."
+                if bundle.get("analysis_error")
+                else "The active dataset does not match the placement schema."
+            ),
             "dataset": dataset_name,
         }), 503
 
@@ -971,7 +980,11 @@ def api_benchmark():
     bundle, dataset_name, _ = _active_bundle()
     if not bundle["schema_ok"]:
         return jsonify({
-            "error": "The active dataset does not match the placement schema.",
+            "error": (
+                "The active dataset could not be analysed."
+                if bundle.get("analysis_error")
+                else "The active dataset does not match the placement schema."
+            ),
             "dataset": dataset_name,
         }), 503
 

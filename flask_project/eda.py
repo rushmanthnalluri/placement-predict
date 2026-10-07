@@ -140,7 +140,7 @@ def validate_dataset(df):
     """
     missing = sorted(REQUIRED_COLS - set(df.columns))
     if missing:
-        return False, "Missing required columns: " + ", ".join(missing) + "."
+        return False, "That file is missing required columns: " + ", ".join(missing) + "."
 
     if len(df) == 0:
         return False, "The dataset is empty — add at least one data row."
