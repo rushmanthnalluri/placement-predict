@@ -370,6 +370,7 @@ All 12 prediction fields are optional (absent = dataset median) and validated ag
 
 - `400` — validation failed (with per-field details), unknown model (returns `valid_models`), or bad benchmark body (unknown/empty model list)
 - `415` — request body is not JSON
+- `429` — the expensive `fresh` benchmark is temporarily rate-limited (30s default; controlled by `FRESH_BENCHMARK_COOLDOWN`)
 - `503` — no trained model available, schema mismatch, or active dataset off-schema
 
 A wrong HTTP method (`405`) or unknown URL (`404`) renders the branded HTML error page.
